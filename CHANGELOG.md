@@ -31,8 +31,11 @@ To see an old version: `git checkout v3` (go back with `git checkout main`).
 - Approvals: the back button no longer points to the same page.
 - Version number shown at the bottom of the menu.
 
-**Demo guide PDF:** not changed yet. Pages to update: Payment, Branches, Drop-down lists,
-Expense types (now in the menu), Stock value and VAT detail (new place), History of one gem.
+**Demo guide PDF:** updated to v4 on 14/11/2026 (`doc/Ceylon_Gem_House_Demo_Guide.pdf`, 51 pages).
+New screenshots; menu paths fixed for Payment, Branches, Drop-down lists, Email & WhatsApp settings,
+Expense types, transfers, stock mistakes, supplier returns and History of one gem. *Stock value* is now
+"Value by gem type" in the Reports chapter; *VAT detail* is now "Every VAT invoice" in Month end.
+Cover and page footer show "Prototype v4".
 
 ## v3 – 13/11/2026 – section home pages
 - Each menu item opens a section home page (needs attention, task buttons, look-up cards).
