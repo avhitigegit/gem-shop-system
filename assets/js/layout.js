@@ -258,7 +258,7 @@
   window.CUR_SECTION = curSec;
 
   /* ---------- sidebar ---------- */
-  const subList = sec => {
+  const subList = (sec, open) => {
     const seen = new Set();
     const list = [];
     sec.groups.forEach(g => { const v = visible(g.items).filter(it => !seen.has(it[0])); v.forEach(it => seen.add(it[0])); if (v.length && list.length) list.push(null); list.push(...v); });
@@ -266,20 +266,40 @@
     const activeKey = hereItem ? hereItem[0] : (hereHidden && hereHidden[1]);
     const lis = list.map(it => {
       if (!it) return '<span class="nav-sub-sep"></span>';
-      const act = !activeDone && activeKey && it[0] === activeKey; if (act) activeDone = true;
+      const act = sec === curSec && !activeDone && activeKey && it[0] === activeKey; if (act) activeDone = true;
       return `<a href="${url(it[0])}" class="nav-sub-i ${act ? 'active' : ''}"><span>${it[2]}</span>${esc(it[1])}</a>`;
     }).join('');
-    return lis ? `<div class="nav-sub">${lis}</div>` : '';
+    return lis ? `<div class="nav-sub ${sec === curSec ? 'cur' : ''} ${open ? '' : 'closed'}" data-sec="${sec.key}">${lis}</div>` : '';
   };
-  const navHTML = SECTIONS.filter(s => s.roles.includes(P.role) && secHref(s)).map(s =>
-    `<a href="${url(secHref(s))}" class="nav-big ${s === curSec ? 'active' : ''} ${s === curSec && onHub ? 'on-hub' : ''}"><span class="ni">${s.icon}</span><span class="nt">${esc(s.title)}</span>${s.count ? '<span class="nav-count hidden" id="navCount"></span>' : ''}</a>` +
-    (s === curSec && !s.home ? subList(s) : '')).join('');
+  /* which sections are opened/closed with the ⌄ arrow — remembered while the browser tab is open */
+  const NAV_KEY = 'gemshop.nav.v1';
+  let navMem = {}; try { navMem = JSON.parse(sessionStorage.getItem(NAV_KEY)) || {}; } catch (e) {}
+  const isOpen = s => (s.key in (navMem.open || {})) ? navMem.open[s.key] : s === curSec;
+  const saveNav = () => { try { sessionStorage.setItem(NAV_KEY, JSON.stringify(navMem)); } catch (e) {} };
+  const navHTML = SECTIONS.filter(s => s.roles.includes(P.role) && secHref(s)).map(s => {
+    const sub = s.home ? '' : subList(s, isOpen(s));
+    const chev = sub ? `<button type="button" class="nav-chev ${isOpen(s) ? 'open' : ''}" data-sec="${s.key}" title="Show / hide pages" aria-label="Show or hide ${esc(s.title)} pages"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>` : '';
+    return `<a href="${url(secHref(s))}" class="nav-big ${s === curSec ? 'active' : ''} ${s === curSec && onHub ? 'on-hub' : ''}"><span class="ni">${s.icon}</span><span class="nt">${esc(s.title)}</span>${s.count ? '<span class="nav-count hidden" id="navCount"></span>' : ''}${chev}</a>` + sub;
+  }).join('');
   const sidebar = document.createElement('aside');
   sidebar.className = 'sidebar no-print';
   sidebar.innerHTML = `<div class="brand"><img src="${url('assets/img/logo.svg')}" alt=""><div><b>${esc(S.shop.name)}</b><span>GEM SHOP</span></div></div>
     ${isRole(O, SP) && here !== 'f-pos/pos.html' ? `<div style="padding:14px 14px 4px"><a class="btn btn-gold btn-block btn-lg" href="${url('f-pos/pos.html')}">+ New sale</a></div>` : ''}
     <nav class="nav-simple">${navHTML}</nav>
-    <div class="side-foot">Prototype v4 · sample data only</div>`;
+    <div class="side-foot">Prototype v5 · sample data only</div>`;
+  /* ⌄ arrow: open / close a section's page list without leaving the page */
+  sidebar.addEventListener('click', e => {
+    const b = e.target.closest('.nav-chev'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const sub = sidebar.querySelector(`.nav-sub[data-sec="${b.dataset.sec}"]`); if (!sub) return;
+    const open = sub.classList.toggle('closed') === false;
+    b.classList.toggle('open', open);
+    navMem.open = Object.assign({}, navMem.open, { [b.dataset.sec]: open }); saveNav();
+  });
+  /* keep the menu where it was scrolled to when the next page opens (no jump back to the top) */
+  const saveScroll = () => { navMem.scroll = sidebar.scrollTop; saveNav(); };
+  sidebar.addEventListener('scroll', saveScroll, { passive: true });
+  window.addEventListener('pagehide', saveScroll);
 
   /* ---------- "where am I" bar (replaces the old tab strip) ---------- */
   let wherebar = null;
@@ -335,6 +355,7 @@
   app.appendChild(sidebar); app.appendChild(main);
   body.insertBefore(scrim, body.firstChild);
   body.insertBefore(app, scrim.nextSibling);
+  if (typeof navMem.scroll === 'number') { sidebar.scrollTop = navMem.scroll; requestAnimationFrame(() => { sidebar.scrollTop = navMem.scroll; }); }
 
   /* ---------- role access for the page ---------- */
   const allowed = (body.dataset.roles || ALL.join(' ')).split(/\s+/);
@@ -370,7 +391,7 @@
 
   /* header buttons that only repeat a page already in the menu are hidden – one way to each page.
      Main action buttons (blue / green / gold) stay. */
-  const menuHrefs = new Set($$('.nav-sub-i', sidebar).map(a => a.href.split(/[?#]/)[0]));
+  const menuHrefs = new Set($$('.nav-sub.cur .nav-sub-i', sidebar).map(a => a.href.split(/[?#]/)[0]));
   const dedupe = () => $$('.page-head .actions a[href]').forEach(a => {
     if (/btn-(sapphire|success|gold)/.test(a.className) || a.href.includes('?')) return;
     if (menuHrefs.has(a.href.split(/[?#]/)[0])) a.style.display = 'none';

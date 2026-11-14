@@ -3,6 +3,18 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v5 – 14/11/2026 – menu keeps its place, ⌄ arrows to open / close
+- The left menu no longer jumps back to the top when you press a main item (e.g. Reports);
+  it stays scrolled where it was.
+- Each main item has a small arrow: **›** = closed, **⌄** = open. Press the arrow to show or hide
+  that section's pages without leaving the screen you are on. Pressing the name still opens the
+  section home page.
+- Sections you open or close stay that way while the browser tab is open.
+- Checked: 77 pages × 4 roles, no errors.
+
+**Demo guide PDF:** "How the screens work" point 1 should mention the arrows (small text change;
+screenshots still match apart from the arrows).
+
 ## v4 – 14/11/2026 – menu matches the demo guide, duplicates removed
 **Menu (left side)**
 - The open section now lists **every** page of that section, with a thin line between
