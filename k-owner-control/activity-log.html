@@ -1,0 +1,42 @@
+<!-- Screen: Activity log (read-only, cannot be deleted) | BRD: K4, D5 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Activity Log · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="k-owner-control/activity-log.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { q: '', user: '', from: daysAgoYmd(30), to: todayYmd() };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'K · Owner control', title: 'Activity log', brd: ['K4'], sub: 'A full record of who did what and when.', actions: UI.exportButtons('#logT', 'Activity log') }) +
+    `<div class="alert info mb">🔒 <div><b>This log cannot be edited or deleted.</b> Every action is recorded automatically by the system (audit log, tech stack §7). There are no edit or delete buttons on purpose.</div></div>
+    <div class="card"><div class="card-content filters">
+      <div class="field" style="flex:1"><label>Search</label><input class="input" id="q" placeholder="Action or detail…"></div>
+      <div class="field"><label>User</label><select id="u">${UI.opts(S.users.map(u => ({ v: u.id, l: u.name + ' (' + ROLES[u.role] + ')' })), '', 'All users')}</select></div>
+      <div class="field"><label>From</label><input class="input" type="date" id="fr" value="${f.from}"></div>
+      <div class="field"><label>To</label><input class="input" type="date" id="to" value="${f.to}"></div>
+    </div><div id="list"></div></div>`;
+  function render() {
+    const q = f.q.toLowerCase();
+    const rows = S.log.filter(l => ymd(l.at) >= f.from && ymd(l.at) <= f.to && (!f.user || l.user === f.user) && (!q || (l.action + ' ' + l.detail).toLowerCase().includes(q))).filter(inBranch);
+    $('#list').innerHTML = UI.table([
+      { h: 'When', f: l => `<span class="nowrap">${fmt.dt(l.at)}</span>` },
+      { h: 'Who', f: l => { const u = user(l.user); return `<div class="row" style="gap:6px;flex-wrap:nowrap"><div class="avatar" style="width:24px;height:24px;font-size:10px">${initials(u.name)}</div>${esc(u.name)}</div>`; } },
+      { h: 'Action', f: l => `<b>${esc(l.action)}</b>` },
+      { h: 'Detail', f: l => esc(l.detail) },
+      { h: 'Branch', f: l => esc(branchName(l.branch)) }
+    ], rows.slice(0, 300), { id: 'logT', cls: 'stack-sm' }) + `<div class="card-footer"><span class="muted">${rows.length} entries</span></div>`;
+  }
+  $('#q').oninput = e => { f.q = e.target.value; render(); };
+  $('#u').onchange = e => { f.user = e.target.value; render(); };
+  $('#fr').onchange = e => { f.from = e.target.value; render(); };
+  $('#to').onchange = e => { f.to = e.target.value; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

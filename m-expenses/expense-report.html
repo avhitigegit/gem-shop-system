@@ -1,0 +1,34 @@
+<!-- Screen: Expense report (by month, branch, category) | BRD: M7, L6 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expense Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="m-expenses/expense-report.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const months = [...new Set(S.expenses.map(e => monthKey(e.date)))].sort();
+  const f = { branch: branchScope() };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'M · Shop expenses', title: 'Expense report', brd: ['M7', 'L6'], sub: 'By month, branch and category (approved expenses).', actions: UI.exportButtons('#erT', 'Expense report') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="field"><label>Branch</label><select id="br">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div></div></div><div id="out"></div>`;
+  function render() {
+    const ex = S.expenses.filter(e => e.status === 'approved' && (f.branch === 'all' || e.branch === f.branch));
+    const cats = S.lists.expenseCategories.filter(c => ex.some(e => e.category === c));
+    const cell = (c, m) => sum(ex.filter(e => e.category === c && monthKey(e.date) === m), e => e.amount);
+    const max = Math.max(1, ...months.map(m => sum(ex.filter(e => monthKey(e.date) === m), e => e.amount)));
+    $('#out').innerHTML = `<div class="grid g3 mb">${months.map(m => { const t = sum(ex.filter(e => monthKey(e.date) === m), e => e.amount); return UI.kpi(fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : ''), fmt.cur(t), 'VAT on bills ' + fmt.cur(sum(ex.filter(e => monthKey(e.date) === m), e => e.vat)) + `<div class="bar gold mt-s"><i style="width:${t / max * 100}%"></i></div>`); }).join('')}</div>
+      <div class="card"><div class="card-header"><h3>By category and month</h3></div>${UI.table(
+        [{ h: 'Category', f: c => `<b>${esc(c)}</b>` }].concat(months.map(m => ({ h: fmt.month(m), num: 1, f: c => cell(c, m) ? fmt.cur(cell(c, m)) : '—' }))).concat([{ h: 'Total', num: 1, f: c => `<b>${fmt.cur(sum(months, m => cell(c, m)))}</b>` }]),
+        cats, { id: 'erT', foot: ['Total'].concat(months.map(m => fmt.cur(sum(cats, c => cell(c, m))))).concat([fmt.cur(sum(ex, e => e.amount))]) })}</div>
+      <div class="card mt"><div class="card-header"><h3>By payment method</h3></div>${UI.table([{ h: 'Method', f: r => esc(r[0]) }, { h: 'Expenses', num: 1, f: r => r[1].length }, { h: 'Total', num: 1, f: r => fmt.cur(sum(r[1], e => e.amount)) }], Object.entries(groupBy(ex, e => e.method)))}</div>`;
+  }
+  $('#br').onchange = e => { f.branch = e.target.value; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

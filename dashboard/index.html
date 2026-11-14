@@ -1,0 +1,72 @@
+<!-- Screen: Home (landing page after login) – big action buttons + today's numbers | BRD: K1, K2, D6, I1, I3, A1 | Rules: 1, 9 | Roles: Owner, Salesperson, Shop Staff (Accountant is sent to the Accountant home) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="dashboard/index.html" data-roles="owner salesperson staff accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (isRole('accountant')) location.replace('../n-accountant/dashboard.html');
+else (function () {
+  const b = branchScope(), today = todayYmd(), u = currentUser(), owner = isRole('owner');
+  const todays = Metrics.salesOn(today, b);
+  const cash = Metrics.cash(today, b);
+  const stock = Metrics.stock(b);
+  const pend = S.approvals.filter(a => a.status === 'pending' && (b === 'all' || a.branch === b || a.branch === 'all'));
+  const licDays = Math.round((new Date(S.shop.ngjaExpiry) - new Date(today)) / 864e5);
+  const opened = !!S.openings[today + '|' + activeBranch()];
+  const inTransit = S.transfers.filter(t => t.status === 'in_transit').length;
+  const soldToday = todays.flatMap(s => s.items.map(i => ({ s, i, p: prod(i.productId) })));
+  const hour = new Date().getHours();
+
+  const T = (href, icon, title, sub, o) => `<a class="home-tile ${o && o.primary ? 'primary' : ''}" href="../${href}">${o && o.badge ? `<span class="ht-badge">${o.badge}</span>` : ''}<span class="ht-i">${icon}</span><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</a>`;
+  const tiles = {
+    owner: [
+      T('f-pos/pos.html', '💎', 'New sale', 'Scan a tag and sell', { primary: true }),
+      T('k-owner-control/approvals.html', '✅', 'Approvals', pend.length ? pend.length + ' waiting for you' : 'Nothing waiting', { badge: pend.length || '' }),
+      T('c-products/product-form.html', '➕', 'Add a gem', 'New stock with photo'),
+      T('c-products/products.html', '🔍', 'Find a gem', stock.count + ' in stock'),
+      T('i-daily-closing/day-end.html', '🧮', 'Close the day', 'Count the cash'),
+      T('m-expenses/add-expense.html', '🧾', 'Add expense', 'With bill photo'),
+      T('h-commissions/commissions-payable.html', '🚐', 'Pay commissions', 'Guides & drivers'),
+      T('hub/reports.html', '📊', 'Reports', 'Sales, profit, VAT')
+    ],
+    salesperson: [
+      T('f-pos/pos.html', '💎', 'New sale', 'Scan a tag and sell', { primary: true }),
+      T('c-products/products.html', '🔍', 'Find a gem', stock.count + ' in stock'),
+      T('g-payments/invoices.html', '🧾', 'Invoices', 'Print or send again'),
+      T('e-returns/new-return.html', '↩️', 'Gem brought back', 'Refund or exchange'),
+      T('f-pos/reservations.html', '📌', 'Reserved & quotes', 'Kept for customers'),
+      T(opened ? 'i-daily-closing/day-end.html' : 'i-daily-closing/opening-cash.html', '🧮', opened ? 'Close the day' : 'Start the day', opened ? 'Count the cash' : 'Enter opening cash'),
+      T('j-customers-promotions/customers.html', '👥', 'Customers', S.customers.length + ' customers')
+    ],
+    staff: [
+      T('c-products/products.html', '🔍', 'Find a gem', stock.count + ' in stock', { primary: true }),
+      T('d-stock/stock-check.html', '📋', 'Stock check', 'Scan every tag'),
+      T('c-products/tag-print.html', '🏷', 'Print tags', 'QR / barcode labels'),
+      T('d-stock/transfers.html', '🚚', 'Transfers', inTransit ? inTransit + ' to receive' : 'Send or receive', { badge: inTransit || '' }),
+      T('d-stock/stock-correction.html', '✎', 'Fix stock', 'Owner will approve')
+    ]
+  }[P.role];
+
+  const nums = isRole('staff')
+    ? [['Gems in stock', stock.count, esc(branchName(b))], ['On the way', inTransit, 'Transfers to receive'], ['Waiting for owner', pend.length, 'Requests']]
+    : [["Today's sales", fmt.cur(sum(todays, s => s.total)), todays.length + ' sale' + (todays.length === 1 ? '' : 's')],
+       ['Cash in drawer', 'LKR ' + fmt.num(cash.LKR), (cash.USD || cash.EUR) ? 'plus USD ' + fmt.num(cash.USD) + ' · EUR ' + fmt.num(cash.EUR) : 'No foreign cash'],
+       owner ? ['Waiting for you', pend.length, pend.length ? 'Tap Approvals' : 'All done'] : ['Card payments', fmt.cur(cash.card), 'Today']];
+
+  $('#page').innerHTML = `
+    <div class="page-head"><div><h1>Good ${hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}, ${esc(u.name.split(' ')[0])}</h1><p class="muted" style="margin:4px 0 0">${esc(branchName(b))} · ${fmt.date(new Date().toISOString())}</p></div></div>
+    ${owner && licDays <= S.shop.ngjaRemindDays ? `<div class="alert warning mb">📜 <div><b>Gem dealer licence expires in ${licDays} days</b> (${fmt.date(S.shop.ngjaExpiry)}). <a href="../a-setup/shop-vat.html">Update →</a></div></div>` : ''}
+    ${isRole('owner', 'salesperson') ? Flows.bar('day', null, { compact: true }) : ''}
+    <div class="grid g3 mb">${nums.map(n => `<div class="card"><div class="card-content"><div class="muted" style="font-size:13px">${n[0]}</div><div class="big-num">${n[1]}</div><small class="muted">${n[2]}</small></div></div>`).join('')}</div>
+    <div class="home-tiles mb">${tiles.join('')}</div>
+    ${isRole('owner', 'salesperson') ? `<div class="card"><div class="card-header"><h2>Sold today</h2><a class="btn btn-sm btn-ghost" href="../g-payments/invoices.html">All invoices →</a></div><div class="card-content">${soldToday.length ? `<div class="prod-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${soldToday.map(x => `<a class="card prod-card" href="../g-payments/invoice.html?id=${x.s.id}" style="text-decoration:none;color:inherit"><div class="pic" style="height:100px">${gemSVG(x.p.gem, x.p.type, 74)}</div><div class="body"><span class="name" style="font-size:13px">${esc(x.p.name)}</span><span class="muted" style="font-size:11px">${fmt.time(x.s.date)} · ${esc((cust(x.s.customerId) || {}).country || '')}</span><span class="price">${fmt.cur(x.i.agreed)}</span></div></a>`).join('')}</div>` : '<div class="empty">No sales yet today.</div>'}</div></div>` : ''}`;
+})();
+</script>
+</body>
+</html>

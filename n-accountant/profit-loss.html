@@ -1,0 +1,42 @@
+<!-- Screen: Profit & Loss summary (by month and branch) | BRD: N4, L2, M7 | Roles: Accountant, Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profit &amp; Loss · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="n-accountant/profit-loss.html" data-roles="accountant owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const months = Fin.months();
+  const f = { month: months[1] || months[0], branch: 'all' };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant & tax', title: 'Profit & Loss', brd: ['N4'], sub: 'Sales − cost of products sold − commissions − expenses = net profit, by month and branch.', actions: UI.exportButtons('#plT', 'Profit and Loss') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="field"><label>Month</label><select data-f="month">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) })), f.month)}</select></div><div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div></div></div><div id="out"></div>`;
+  function render() {
+    const m = Fin.month(f.month, f.branch);
+    const line = (l, v, cls) => `<tr class="${cls || ''}"><td>${l}</td><td class="num">${v}</td></tr>`;
+    $('#out').innerHTML = `<div class="grid g-1-2"><div class="card"><div class="card-header"><div><h3>${fmt.month(m.mk)} · ${esc(branchName(f.branch))}</h3><p>Example layout from BRD page 11</p></div>${isLocked(m.mk + '-01') ? badge('closed') : badge('open')}</div><div class="card-content"><table class="table" id="plT"><tbody>
+      ${line('<b>Sales (before VAT)</b>', '<b>' + fmt.lkr(m.salesNet) + '</b>')}
+      ${line('<span class="muted">incl. credit notes</span>', '<span class="muted">− ' + fmt.lkr(m.cnNet) + '</span>')}
+      ${line('Less: cost of products sold', '− ' + fmt.lkr(m.cogs))}
+      ${line('<b>Gross profit</b>', '<b>' + fmt.lkr(m.gross) + '</b>')}
+      ${line('Less: commissions (guides &amp; staff)', '− ' + fmt.lkr(m.comm))}
+      ${line('Less: shop expenses (rent, electricity, salaries…)', '− ' + fmt.lkr(m.expenses))}
+      ${Object.entries(m.byCat).map(([c, l]) => line('<span class="muted" style="padding-left:16px">' + esc(c) + '</span>', '<span class="muted">' + fmt.lkr(sum(l, e => e.amount - e.vat)) + '</span>')).join('')}
+      </tbody><tfoot><tr><td>Net profit for the month</td><td class="num" style="font-size:18px;color:${m.net < 0 ? 'var(--danger)' : 'var(--success)'}">${fmt.lkr(m.net)}</td></tr></tfoot></table></div></div>
+      <div class="card"><div class="card-header"><h3>Month by month</h3></div>${UI.table([
+        { h: 'Month', f: x => `<b>${fmt.month(x.mk)}</b>` }, { h: 'Sales', num: 1, f: x => fmt.cur(x.salesNet) }, { h: 'Cost', num: 1, f: x => fmt.cur(x.cogs) }, { h: 'Commissions', num: 1, f: x => fmt.cur(x.comm) }, { h: 'Expenses', num: 1, f: x => fmt.cur(x.expenses) },
+        { h: 'Net profit', num: 1, f: x => `<b class="${x.net < 0 ? 'text-danger' : 'text-success'}">${fmt.cur(x.net)}</b>` }
+      ], months.map(k => Fin.month(k, f.branch)), { cls: 'stack-sm' })}
+      <div class="card-content"><h3>By branch – ${fmt.month(m.mk)}</h3>${UI.table([{ h: 'Branch', f: b => esc(b.name) }, { h: 'Sales', num: 1, f: b => fmt.cur(Fin.month(m.mk, b.id).salesNet) }, { h: 'Net profit', num: 1, f: b => fmt.cur(Fin.month(m.mk, b.id).net) }], S.branches)}</div></div></div>
+      <p class="muted mt-s" style="font-size:12px">The current month is month-to-date. Expenses are shown without the VAT that is claimed back.</p>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

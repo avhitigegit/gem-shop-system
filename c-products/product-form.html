@@ -1,0 +1,123 @@
+<!-- Screen: Add / edit product | BRD: C1, C2, C3, C4, C5, C6, C7, C8, C9, A5 | Rules: 1, 6 | Roles: Owner only -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add Product · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="c-products/product-form.html" data-roles="owner" data-denied="Only the owner can add products and set prices (BRD C6, business rule 1).">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const edit = prod(qs('id'));
+  const code = edit ? edit.id : 'GEM-' + String((S.seq.product || 130) + 1).padStart(5, '0');
+  const p = edit || { id: code, name: '', gem: '', type: '', carat: '', colour: '', shape: '', treatment: 'Heated', description: '', cert: { type: '', lab: '', no: '', date: '', scan: '' }, cost: '', price: '', min: '', branch: activeBranch(), supplierId: '', photos: 0 };
+  const L = S.lists;
+  $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="products.html">C · Gem products</a> / ' + (edit ? 'Edit' : 'Add'), title: edit ? 'Edit ' + p.id : 'Add product', brd: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], sub: 'The product code is created automatically. Required fields are marked *.' }) + `
+  <form id="f" novalidate class="grid g-2-1">
+    <div class="stack">
+      <div class="card"><div class="card-header"><h2>Product &amp; gem details</h2><span class="badge badge-navy mono">${p.id}</span></div><div class="card-content form-grid">
+        <div class="field"><label>Product code (C1)</label><input class="input mono" value="${p.id}" readonly><span class="hint">Created automatically · QR/barcode tag printed after saving</span></div>
+        <div class="field"><label class="req">Product name</label><input class="input" name="name" required value="${esc(p.name)}" placeholder="e.g. Blue Sapphire Ring"></div>
+        <div class="field"><label class="req">Product type (C2)</label><select name="type" required>${UI.opts(L.productTypes, p.type, 'Select…')}</select></div>
+        <div class="field"><label class="req">Gem type (C3)</label><select name="gem" required id="gem">${UI.opts(L.gemTypes, p.gem, 'Select…')}</select></div>
+        <div class="field"><label class="req">Carat weight (C4)</label><div class="input-group"><input class="input" type="number" name="carat" required min="0.01" step="0.01" value="${p.carat}"><span class="addon" style="border-left:0;border-right:1px solid var(--input);border-radius:0 8px 8px 0;order:2">ct</span></div><span class="hint">1 carat = 0.2 grams</span></div>
+        <div class="field"><label class="req">Colour</label><select name="colour" required>${UI.opts(L.colours, p.colour, 'Select…')}</select></div>
+        <div class="field"><label class="req">Shape / cut</label><select name="shape" required>${UI.opts(L.shapes, p.shape, 'Select…')}</select></div>
+        <div class="field"><label class="req">Treatment</label><select name="treatment" required>${UI.opts(L.treatments, p.treatment)}</select><span class="hint">Natural / heated / untreated – shown on the invoice</span></div>
+        <div class="field full"><label>Description</label><textarea name="description" placeholder="Clarity, origin, setting, metal…">${esc(p.description)}</textarea></div>
+      </div></div>
+      <div class="card"><div class="card-header"><div><h2>Certificate (C7–C9)</h2><p>Sapphires default to a lab certificate; other gems default to the shop certificate. You can change it.</p></div></div><div class="card-content form-grid">
+        <div class="field"><label class="req">Certificate type</label><select name="certType" id="certType" required>${UI.opts([{ v: 'lab', l: 'Lab certificate' }, { v: 'shop', l: 'Shop certificate' }, { v: 'none', l: 'No certificate' }], p.cert.type, 'Select…')}</select><span class="hint" id="certHint"></span></div>
+        <div></div>
+        <div class="field lab"><label class="req">Lab name</label><select name="lab" id="lab">${UI.opts(L.labs, p.cert.lab, 'Select lab…')}</select><span class="hint">Edit the list in <a href="../a-setup/lists.html">Setup → Drop-down lists</a></span></div>
+        <div class="field lab"><label class="req">Certificate number</label><input class="input mono" name="certNo" id="certNo" value="${esc(p.cert.no)}"></div>
+        <div class="field lab"><label class="req">Certificate date</label><input class="input" type="date" name="certDate" id="certDate" value="${p.cert.date}"></div>
+        <div class="field lab"><label>Scanned copy</label><div class="upload" id="scanUp" data-accept="image/*,.pdf">${p.cert.scan ? '✔ ' + esc(p.cert.scan) : '⇪ Upload certificate scan (PDF / photo)'}</div></div>
+        <div class="field full shopc"><div class="alert info">The shop certificate is printed from the system with the photo, gem details, code and shop details (C10). <a href="shop-certificate.html?id=${p.id}">Preview</a></div></div>
+      </div></div>
+    </div>
+    <div class="stack">
+      <div class="card"><div class="card-header"><h2>Photos (C5)</h2></div><div class="card-content">
+        <div class="gem-pic" id="prev" style="height:170px;width:100%">${gemSVG(p.gem || 'Blue Sapphire', p.type || 'Loose gem', 130)}</div>
+        <div class="upload mt-s" id="photoUp" data-multiple="1" data-accept="image/*">⇪ Add photos (several per product)<br><small>${p.photos ? p.photos + ' photo(s) on file' : 'Shown on the POS and the invoice'}</small></div>
+      </div></div>
+      <div class="card"><div class="card-header"><div><h2>Prices (C6)</h2><p>Set by the owner only. Cost is hidden from staff.</p></div></div><div class="card-content stack" style="gap:12px">
+        <div class="field"><label class="req">Cost price (LKR)</label><input class="input" type="number" name="cost" required min="1" value="${p.cost}"></div>
+        <div class="field"><label class="req">Selling price (LKR)</label><input class="input" type="number" name="price" required min="1" value="${p.price}"><span class="hint" id="pfx"></span></div>
+        <div class="field"><label class="req">Minimum price (LKR)</label><input class="input" type="number" name="min" required min="1" value="${p.min}"><span class="hint">Lowest price staff may sell at without your approval (rule 2)</span><span class="err" id="minErr">Must be between cost and selling price.</span></div>
+        <div id="margin" class="muted" style="font-size:12px"></div>
+      </div></div>
+      <div class="card"><div class="card-header"><h2>Stock</h2></div><div class="card-content stack" style="gap:12px">
+        <div class="field"><label class="req">Branch (D1)</label><select name="branch" required>${UI.opts(S.branches.map(b => ({ v: b.id, l: b.name })), p.branch)}</select></div>
+        <div class="field"><label>Supplier</label><select name="supplierId">${UI.opts(S.suppliers.map(s => ({ v: s.id, l: s.name })), p.supplierId, 'Not linked')}</select><span class="hint">Products bought in a purchase are linked automatically (B3)</span></div>
+      </div></div>
+      <div class="row"><a class="btn btn-outline" href="${edit ? 'product-detail.html?id=' + p.id : 'products.html'}">Cancel</a><button class="btn btn-sapphire btn-lg" style="flex:1" type="submit">${edit ? 'Save changes' : 'Save product & print tag'}</button></div>
+      ${UI.ruleNote(6, 'Sapphires normally have a lab certificate; other gems have the shop certificate.')}
+    </div>
+  </form>`;
+  const F = $('#f');
+  const val = n => F.elements[n].value;
+  function certUI() {
+    const t = $('#certType').value;
+    $$('.lab', F).forEach(x => x.classList.toggle('hidden', t !== 'lab'));
+    $$('.shopc', F).forEach(x => x.classList.toggle('hidden', t !== 'shop'));
+    ['lab', 'certNo', 'certDate'].forEach(id => { $('#' + id).required = t === 'lab'; });
+  }
+  function suggest() { // C9 automatic suggestion
+    const g = $('#gem').value; if (!g) return;
+    const sug = /Sapphire|Padparadscha/.test(g) ? 'lab' : 'shop';
+    const cur = $('#certType').value;
+    if (!cur || !edit) { $('#certType').value = sug; certUI(); }
+    $('#certHint').innerHTML = `Suggested for ${esc(g)}: <b>${sug === 'lab' ? 'Lab certificate' : 'Shop certificate'}</b>` + (cur && cur !== sug ? ' – <a href="#" id="useSug">use suggestion</a>' : '');
+    const us = $('#useSug'); if (us) us.onclick = e => { e.preventDefault(); $('#certType').value = sug; certUI(); suggest(); };
+  }
+  function preview() { $('#prev').innerHTML = gemSVG(val('gem') || 'Other', val('type') || 'Loose gem', 130); }
+  function prices() {
+    const c = +val('cost'), s = +val('price'), m = +val('min');
+    $('#pfx').textContent = s ? fmt.tri(s) : '';
+    $('#margin').innerHTML = s && c ? `Margin at selling price: <b>${fmt.lkr(Calc.split(s).net - c)}</b> · at minimum: <b>${fmt.lkr(Calc.split(m || 0).net - c)}</b> (before VAT &amp; commission)` : '';
+  }
+  $('#gem').addEventListener('change', () => { suggest(); preview(); });
+  F.elements.type.addEventListener('change', preview);
+  $('#certType').addEventListener('change', () => { certUI(); suggest(); });
+  ['cost', 'price', 'min'].forEach(n => F.elements[n].addEventListener('input', prices));
+  UI.bindUpload($('#photoUp'), files => { p._photos = files.length; });
+  UI.bindUpload($('#scanUp'));
+  certUI(); prices(); if (p.gem) suggest();
+
+  F.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!UI.validate(F)) return;
+    const c = +val('cost'), s = +val('price'), m = +val('min');
+    const mf = F.elements.min.closest('.field');
+    if (m > s || m < c) { mf.classList.add('invalid'); toast('Check the minimum price', 'Minimum must be at or above cost and not above the selling price.', 'error'); return; }
+    const t = val('certType');
+    const data = {
+      name: val('name').trim(), type: val('type'), gem: val('gem'), carat: +val('carat'), colour: val('colour'), shape: val('shape'), treatment: val('treatment'), description: val('description'),
+      cert: { type: t, lab: t === 'lab' ? val('lab') : '', no: t === 'lab' ? val('certNo') : (t === 'shop' ? 'CGH-SC-' + p.id.slice(-5) : ''), date: t === 'lab' ? val('certDate') : '', scan: t === 'lab' ? ($('#scanUp').dataset.file || p.cert.scan || '') : '' },
+      cost: c, price: s, min: m, branch: val('branch'), supplierId: val('supplierId')
+    };
+    if (edit) {
+      const changes = ['price', 'min', 'cost'].filter(k => edit[k] !== data[k]).map(k => k + ' ' + fmt.lkr(edit[k]) + ' → ' + fmt.lkr(data[k]));
+      Object.assign(edit, data); if (p._photos) edit.photos += p._photos;
+      Hist.add(edit.id, 'Edited', changes.length ? changes.join(', ') : 'Details updated');
+      Log.add('Product edited', edit.id + (changes.length ? ' · ' + changes.join(', ') : ''));
+      Store.save(); toast('Saved', edit.id + ' updated', 'success');
+      setTimeout(() => location.href = 'product-detail.html?id=' + edit.id, 500);
+    } else {
+      S.seq.product = (S.seq.product || 130) + 1;
+      const np = Object.assign({ id: code, status: 'in_stock', photos: p._photos || 1, addedAt: new Date().toISOString(), addedBy: currentUser().id, purchaseId: null, history: [] }, data);
+      S.products.push(np);
+      Hist.add(np.id, 'Added', 'Product created by ' + currentUser().name);
+      Log.add('Product added', np.id + ' · ' + np.name + ' · ' + fmt.lkr(np.price));
+      Store.save(); toast('Product saved', np.id + ' – opening the tag print preview', 'success');
+      setTimeout(() => location.href = 'tag-print.html?ids=' + np.id, 600);
+    }
+  });
+})();
+</script>
+</body>
+</html>

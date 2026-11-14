@@ -1,0 +1,59 @@
+<!-- Screen: Product detail | BRD: C1, C4, C5, C6, C7, C8, D2, D5 | Rules: 1, 3 | Roles: Owner, Salesperson, Shop Staff (prices by role) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product Detail · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="c-products/product-detail.html" data-roles="owner salesperson staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const p = prod(qs('id')) || prod('GEM-00125');
+  const s = p.saleId ? sale(p.saleId) : null;
+  const angles = [['Loose gem', 'Top view'], [p.type, 'Product'], ['Loose gem', 'Side view']];
+  let sel = 1;
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="products.html">C · Gem products</a> / ' + p.id, title: esc(p.name), brd: ['C4', 'C5', 'C6', 'C8', 'D2'], sub: '<span class="mono">' + p.id + '</span> · ' + esc(p.gem) + ' · ' + esc(p.type) + ' · ' + badge(p.status),
+      actions: `<a class="btn btn-outline" href="../d-stock/product-history.html?id=${p.id}" data-roles="owner staff">History</a><a class="btn btn-outline" href="tag-print.html?ids=${p.id}" data-roles="owner staff">Print tag</a>${p.cert.type === 'shop' ? `<a class="btn btn-outline" href="shop-certificate.html?id=${p.id}" data-roles="owner salesperson">Shop certificate</a>` : ''}<a class="btn btn-sapphire" href="product-form.html?id=${p.id}" data-roles="owner">Edit</a>${Sales.available(p) ? `<a class="btn btn-success" href="../f-pos/pos.html" data-roles="owner salesperson" id="sellBtn">Sell</a>` : ''}` }) +
+    `${p.status === 'sold' ? `<div class="mb">${UI.ruleNote(3, 'This product was sold on ' + fmt.date(p.soldAt) + (s ? ' (invoice <a href="../g-payments/invoice.html?id=' + s.id + '">' + s.id + '</a>)' : '') + '. It cannot be sold again unless it is returned.')}</div>` : ''}
+    <div class="grid g-1-2">
+      <div class="stack">
+        <div class="card"><div class="card-content"><div class="gem-pic" style="height:260px;width:100%">${gemSVG(p.gem, angles[sel][0], 210)}</div>
+        <div class="row mt-s" style="justify-content:center">${angles.map((a, i) => `<button class="btn btn-outline" data-ph="${i}" style="height:64px;width:64px;padding:0;${i === sel ? 'border-color:var(--sapphire);box-shadow:0 0 0 2px var(--sapphire-soft)' : ''}">${gemSVG(p.gem, a[0], 50)}</button>`).join('')}</div>
+        <p class="muted center mt-s" style="font-size:12px">${p.photos || 3} photo(s) · ${angles[sel][1]} · photos are compressed to ~300 KB with thumbnails</p></div></div>
+        <div class="card"><div class="card-header"><h3>Tag</h3><span class="brd">C1</span></div><div class="card-content row" style="flex-wrap:nowrap">${qrSVG(p.id, 84)}<div style="flex:1">${barcodeSVG(p.id, 42)}<div class="mono center" style="font-size:12px">${p.id}</div></div></div></div>
+      </div>
+      <div class="stack">
+        <div class="card"><div class="card-header"><h2>Gem details</h2><span class="brd">C4</span></div><div class="card-content"><dl class="dl">
+          <dt>Product type</dt><dd>${esc(p.type)}</dd><dt>Gem type</dt><dd>${esc(p.gem)}</dd><dt>Carat weight</dt><dd>${fmt.ct(p.carat)} <small class="muted">(${fmt.num(p.carat * 0.2, 3)} g)</small></dd>
+          <dt>Colour</dt><dd>${esc(p.colour)}</dd><dt>Shape / cut</dt><dd>${esc(p.shape)}</dd><dt>Treatment</dt><dd>${esc(p.treatment)}</dd><dt>Description</dt><dd>${esc(p.description)}</dd>
+          <dt>Branch</dt><dd>${esc(branchName(p.branch))}</dd><dt>Status</dt><dd>${badge(p.status)}</dd>
+          <dt>Supplier</dt><dd data-roles="owner">${p.supplierId ? `<a href="../b-purchasing/supplier-detail.html?id=${p.supplierId}">${esc(sup(p.supplierId).name)}</a>` : '—'} ${p.purchaseId ? '· ' + p.purchaseId : ''}</dd>
+          <dt>Added</dt><dd>${fmt.date(p.addedAt)} by ${esc(user(p.addedBy).name)}</dd>
+        </dl></div></div>
+        <div class="card"><div class="card-header"><h2>Certificate</h2><span class="brd">C7 C8</span></div><div class="card-content"><dl class="dl">
+          <dt>Type</dt><dd>${certBadge(p.cert)}</dd>
+          ${p.cert.type === 'lab' ? `<dt>Lab</dt><dd>${esc(p.cert.lab)}</dd><dt>Certificate no.</dt><dd class="mono">${esc(p.cert.no)}</dd><dt>Date</dt><dd>${fmt.date(p.cert.date)}</dd><dt>Scanned copy</dt><dd>${p.cert.scan ? `<a href="#" id="scanLink">📄 ${esc(p.cert.scan)}</a>` : '—'}</dd>` : ''}
+          ${p.cert.type === 'shop' ? `<dt>Shop cert. no.</dt><dd class="mono">${esc(p.cert.no || 'CGH-SC-' + p.id.slice(-5))}</dd><dt>Print</dt><dd><a href="shop-certificate.html?id=${p.id}">Open shop certificate (C10)</a></dd>` : ''}
+        </dl></div></div>
+        <div class="card"><div class="card-header"><h2>Prices</h2><span class="brd">C6</span></div><div class="card-content"><dl class="dl">
+          <dt>Selling price</dt><dd><b style="font-size:18px">${fmt.lkr(p.price)}</b><br><small class="muted">USD ${fmt.num(fx.from(p.price, 'USD'))} · EUR ${fmt.num(fx.from(p.price, 'EUR'))}</small></dd>
+          <dt data-roles="owner">Minimum price</dt><dd data-roles="owner">${fmt.lkr(p.min)}</dd>
+          <dt data-roles="owner">Cost price</dt><dd data-roles="owner">${fmt.lkr(p.cost)} <span class="badge badge-gold">owner only</span></dd>
+          <dt data-roles="owner">Margin (before VAT)</dt><dd data-roles="owner">${fmt.lkr(Calc.split(p.price).net - p.cost)}</dd>
+          ${s ? `<dt>Sold for</dt><dd>${fmt.lkr(s.items.find(i => i.productId === p.id).agreed)} · ${fmt.date(s.date)}</dd>` : ''}
+        </dl><div class="muted mt-s" data-roles="salesperson staff" style="font-size:12px">Cost and minimum prices are visible to the owner only.</div></div></div>
+      </div>
+    </div>`;
+    const sl = $('#scanLink'); if (sl) sl.onclick = e => { e.preventDefault(); UI.modal({ title: 'Certificate scan', body: `<div class="doc" style="padding:20px"><h2>${esc(p.cert.lab)}</h2><p class="mono">Report ${esc(p.cert.no)} · ${fmt.date(p.cert.date)}</p><div class="row" style="flex-wrap:nowrap">${gemSVG(p.gem, 'Loose gem', 110)}<dl class="dl" style="flex:1"><dt>Species</dt><dd>Corundum</dd><dt>Variety</dt><dd>${esc(p.gem)}</dd><dt>Weight</dt><dd>${fmt.ct(p.carat)}</dd><dt>Colour</dt><dd>${esc(p.colour)}</dd><dt>Treatment</dt><dd>${esc(p.treatment)}</dd><dt>Origin</dt><dd>Sri Lanka</dd></dl></div><p class="muted" style="font-size:11px">Demo scan image</p></div>`, size: 'lg' }); };
+    const sb = $('#sellBtn'); if (sb) sb.onclick = e => { try { const d = JSON.parse(localStorage.getItem('gemshop.pos.draft') || 'null') || { items: [], guideId: '', custMode: 'new', customerId: '', newCust: { name: '', country: '', email: '', whatsapp: '', consent: false }, heldId: null, quoteId: null }; if (!d.heldId && !d.items.some(i => i.productId === p.id)) d.items.push({ productId: p.id, listPrice: p.price, agreed: p.price, minPrice: p.min }); localStorage.setItem('gemshop.pos.draft', JSON.stringify(d)); } catch (x) { } };
+  }
+  $('#page').addEventListener('click', e => { const b = e.target.closest('[data-ph]'); if (b) { sel = +b.dataset.ph; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

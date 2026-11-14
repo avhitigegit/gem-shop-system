@@ -1,0 +1,34 @@
+<!-- Screen: Daily closing report (differences highlighted) | BRD: L5, I3, I4, L6 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Closing Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="l-reports/daily-closing.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { from: daysAgoYmd(30), to: todayYmd(), only: false };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Daily closing report', brd: ['L5', 'I4', 'L6'], sub: 'Every day-end closing, with any difference highlighted. Sent to the owner automatically.', actions: UI.exportButtons('#rT', 'Daily closing report') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="field"><label>From</label><input class="input" type="date" data-f="from" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" data-f="to" value="${f.to}"></div><label class="check" style="align-self:center"><input type="checkbox" id="only"> Only days with a difference</label></div></div><div id="out"></div>`;
+  function render() {
+    const rows = S.closings.filter(c => inBranch(c) && c.date >= f.from && c.date <= f.to && (!f.only || Math.abs(Calc.closingDiff(c)) >= 0.5)).sort((a, b) => b.date.localeCompare(a.date));
+    const diffs = rows.map(c => Calc.closingDiff(c));
+    const dcell = (c, k) => { const e = k === 'card' ? c.cardExpected : c.expected[k], n = k === 'card' ? c.cardCounted : c.counted[k]; const d = r2(n - e); return `${fmt.num(n)}${Math.abs(d) >= 0.005 ? `<br><span class="badge badge-danger">${d > 0 ? '+' : ''}${fmt.num(d)}</span>` : ''}`; };
+    $('#out').innerHTML = `<div class="grid g3 mb">${UI.kpi('Days closed', rows.length, '')}${UI.kpi('Days with a difference', diffs.filter(d => Math.abs(d) >= 0.5).length, '', diffs.some(d => Math.abs(d) >= 0.5) ? 'accent' : '')}${UI.kpi('Net difference', fmt.lkr(sum(diffs)), 'all currencies in LKR')}</div>
+      <div class="card">${UI.table([
+        { h: 'Date', f: c => `<b>${fmt.date(c.date)}</b><br><small class="muted">${esc(branchName(c.branch))} · ${esc(user(c.by).name)} ${fmt.time(c.at)}</small>` },
+        { h: 'LKR counted', num: 1, f: c => dcell(c, 'LKR') }, { h: 'USD counted', num: 1, f: c => dcell(c, 'USD') }, { h: 'EUR counted', num: 1, f: c => dcell(c, 'EUR') }, { h: 'Card machine', num: 1, f: c => dcell(c, 'card') },
+        { h: 'Difference (LKR)', num: 1, f: c => { const d = Calc.closingDiff(c); return Math.abs(d) < 0.5 ? '<span class="badge badge-success">Balanced</span>' : `<b class="text-danger">${fmt.lkr(d)}</b>`; } },
+        { h: 'Note', f: c => esc(c.note || '') }, { h: 'Owner', f: c => c.sentToOwner ? '<span class="badge badge-blue">Sent ✓</span>' : '' }
+      ], rows, { id: 'rT', cls: 'stack-sm', rowAttr: c => Math.abs(Calc.closingDiff(c)) >= 0.5 ? 'style="background:#fff5f5"' : '', empty: 'No closings in this period.' })}</div>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } if (e.target.id === 'only') { f.only = e.target.checked; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

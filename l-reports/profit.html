@@ -1,0 +1,39 @@
+<!-- Screen: Profit report (per product and total) | BRD: L2, L6, N1 | Rule: 1 | Roles: Owner, Accountant (hidden from Salesperson & Shop Staff) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profit Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="l-reports/profit.html" data-roles="owner accountant" data-denied="Profit uses cost prices, which are hidden from staff (BRD C6, L2, rule 1).">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { from: daysAgoYmd(29), to: todayYmd(), branch: branchScope(), gem: '' };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Profit report', brd: ['L2', 'L6'], sub: 'Selling price (before VAT) minus cost and commissions, per product and in total.', actions: UI.exportButtons('#rT', 'Profit report') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="field"><label>From</label><input class="input" type="date" data-f="from" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" data-f="to" value="${f.to}"></div>
+    <div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div><div class="field"><label>Gem type</label><select data-f="gem">${UI.opts(S.lists.gemTypes, '', 'All')}</select></div></div></div><div id="out"></div>`;
+  function render() {
+    const sales = S.sales.filter(s => s.status !== 'cancelled' && ymd(s.date) >= f.from && ymd(s.date) <= f.to && (f.branch === 'all' || s.branch === f.branch));
+    const rows = sales.flatMap(s => {
+      const active = s.items.filter(i => !i.returned); const net = Calc.split(sum(active, i => i.agreed)).net; const comm = Calc.saleComm(s);
+      return active.map(i => { const p = prod(i.productId); const n = Calc.split(i.agreed).net; const c = net ? comm * n / net : 0; return { s, p, i, net: n, cost: p.cost, comm: c, profit: n - p.cost - c }; });
+    }).filter(r => !f.gem || r.p.gem === f.gem).sort((a, b) => b.s.date.localeCompare(a.s.date));
+    const T = k => sum(rows, r => r[k]);
+    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Sales before VAT', fmt.cur(T('net')), rows.length + ' products sold')}${UI.kpi('Cost of products sold', fmt.cur(T('cost')), '')}${UI.kpi('Commissions', fmt.cur(T('comm')), 'guides + staff')}${UI.kpi('Gross profit', fmt.cur(T('profit')), fmt.pct(T('profit') / Math.max(1, T('net')) * 100) + ' margin', 'accent')}</div>
+      <div class="card">${UI.table([
+        { h: 'Product', f: r => UI.prodCell(r.p) }, { h: 'Sold', f: r => fmt.date(r.s.date) + '<br><a class="mono" style="font-size:11px" href="../g-payments/invoice.html?id=' + r.s.id + '">' + r.s.id + '</a>' },
+        { h: 'Price before VAT', num: 1, f: r => fmt.cur(r.net) }, { h: 'Cost', num: 1, f: r => fmt.cur(r.cost) }, { h: 'Commission', num: 1, f: r => fmt.cur(r.comm) },
+        { h: 'Profit', num: 1, f: r => `<b class="${r.profit < 0 ? 'text-danger' : 'text-success'}">${fmt.cur(r.profit)}</b>` },
+        { h: 'Margin', num: 1, f: r => fmt.pct(r.profit / Math.max(1, r.net) * 100) + (r.i.agreed < r.i.minPrice ? '<br><span class="badge badge-warning">below min</span>' : '') }
+      ], rows, { id: 'rT', cls: 'stack-sm', foot: ['Total', '', fmt.cur(T('net')), fmt.cur(T('cost')), fmt.cur(T('comm')), fmt.cur(T('profit')), fmt.pct(T('profit') / Math.max(1, T('net')) * 100)] })}</div>
+      <p class="muted mt-s" style="font-size:12px">Commissions are shared across the items of a bill by price. Shop expenses are not included here – see <a href="../n-accountant/profit-loss.html">Profit &amp; Loss</a> for net profit.</p>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

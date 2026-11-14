@@ -1,0 +1,52 @@
+<!-- Screen: Sales report | BRD: L1, L6 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="l-reports/sales.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { from: daysAgoYmd(29), to: todayYmd(), branch: branchScope(), gem: '', staff: '', guide: '', pay: '', by: 'day' };
+  const payType = s => s.payments.length > 1 ? 'Split' : (s.payments[0].method === 'card' ? 'Card' : 'Cash ' + s.payments[0].currency);
+  const BY = { day: 'Day', month: 'Month', branch: 'Branch', gem: 'Gem type', staff: 'Salesperson', guide: 'Guide / driver', pay: 'Payment method', country: 'Customer country' };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Sales report', brd: ['L1', 'L6'], sub: 'By day, month, branch, gem type, salesperson, guide and payment method. Cancelled invoices are excluded.', actions: UI.exportButtons('#rT', 'Sales report') }) +
+    `<div class="card mb"><div class="card-content filters">
+      <div class="field"><label>From</label><input class="input" type="date" data-f="from" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" data-f="to" value="${f.to}"></div>
+      <div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div>
+      <div class="field"><label>Gem type</label><select data-f="gem">${UI.opts(S.lists.gemTypes, '', 'All')}</select></div>
+      <div class="field"><label>Salesperson</label><select data-f="staff">${UI.opts(S.users.filter(u => ['owner', 'salesperson'].includes(u.role)).map(u => ({ v: u.id, l: u.name })), '', 'All')}</select></div>
+      <div class="field"><label>Guide</label><select data-f="guide">${UI.opts([{ v: 'walkin', l: 'Walk-in only' }].concat(S.guides.map(g => ({ v: g.id, l: g.name }))), '', 'All')}</select></div>
+      <div class="field"><label>Payment</label><select data-f="pay">${UI.opts(['Card', 'Cash LKR', 'Cash USD', 'Cash EUR', 'Split'], '', 'All')}</select></div>
+      <div class="field"><label>Group by</label><select data-f="by">${UI.opts(Object.keys(BY).map(k => ({ v: k, l: BY[k] })), f.by)}</select></div>
+    </div></div><div id="out"></div>`;
+  function key(s, i) {
+    const p = prod(i.productId);
+    return { day: fmt.date(s.date), month: fmt.month(monthKey(s.date)), branch: branchName(s.branch), gem: p.gem, staff: user(s.staffId).name, guide: s.guideId ? guide(s.guideId).name : 'Walk-in', pay: payType(s), country: (cust(s.customerId) || {}).country }[f.by];
+  }
+  function render() {
+    const sales = S.sales.filter(s => s.status !== 'cancelled' && ymd(s.date) >= f.from && ymd(s.date) <= f.to && (f.branch === 'all' || s.branch === f.branch) && (!f.staff || s.staffId === f.staff) && (!f.guide || (f.guide === 'walkin' ? !s.guideId : s.guideId === f.guide)) && (!f.pay || payType(s) === f.pay));
+    const lines = sales.flatMap(s => s.items.filter(i => !i.returned && (!f.gem || prod(i.productId).gem === f.gem)).map(i => ({ s, i, t: Calc.split(i.agreed) })));
+    const g = groupBy(lines, l => key(l.s, l.i));
+    const rows = Object.entries(g).map(([k, ls]) => ({ k, bills: new Set(ls.map(l => l.s.id)).size, items: ls.length, net: sum(ls, l => l.t.net), vat: sum(ls, l => l.t.vat), total: sum(ls, l => l.t.total) }));
+    if (f.by === 'day') rows.sort((a, b) => b.k.split('/').reverse().join().localeCompare(a.k.split('/').reverse().join())); else rows.sort((a, b) => b.total - a.total);
+    const T = k => sum(rows, r => r[k]);
+    const max = Math.max(1, ...rows.map(r => r.total));
+    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Sales (incl. VAT)', fmt.cur(T('total')), new Set(lines.map(l => l.s.id)).size + ' bills · ' + lines.length + ' items', 'accent')}${UI.kpi('Before VAT', fmt.cur(T('net')), '')}${UI.kpi('VAT collected', fmt.cur(T('vat')), S.shop.vatRate + '%')}${UI.kpi('Average bill', fmt.cur(T('total') / Math.max(1, new Set(lines.map(l => l.s.id)).size)), '')}</div>
+      ${f.by === 'day' ? `<div class="card mb"><div class="card-content">${Metrics.bars(rows.slice().reverse().map(r => ({ d: r.k.split('/').reverse().join('-'), v: r.total })), v => fmt.cur(v))}</div></div>` : ''}
+      <div class="card">${UI.table([
+        { h: BY[f.by], f: r => `<b>${esc(r.k)}</b>` }, { h: 'Bills', num: 1, f: r => r.bills }, { h: 'Items', num: 1, f: r => r.items },
+        { h: 'Before VAT', num: 1, f: r => fmt.cur(r.net) }, { h: 'VAT', num: 1, f: r => fmt.cur(r.vat) }, { h: 'Total', num: 1, f: r => `<b>${fmt.cur(r.total)}</b>` },
+        { h: 'Share', f: r => `<div class="bar" style="width:120px"><i style="width:${r.total / max * 100}%"></i></div>` }
+      ], rows, { id: 'rT', empty: 'No sales for these filters.', foot: ['Total', new Set(lines.map(l => l.s.id)).size, T('items'), fmt.cur(T('net')), fmt.cur(T('vat')), fmt.cur(T('total')), ''] })}</div>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

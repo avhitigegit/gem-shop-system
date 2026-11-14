@@ -1,0 +1,44 @@
+<!-- Screen: Commission breakdown per sale | BRD: H1, H2, H3, A6 | Rule: 5 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commission per Sale · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="h-commissions/commission-breakdown.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let selId = qs('id');
+  const sales = S.sales.filter(inBranch).filter(s => s.status !== 'cancelled').sort((a, b) => b.date.localeCompare(a.date));
+  function render() {
+    const s = sale(selId) || sales[0];
+    const g = guide(s.guideId); const slabI = Calc.slabIndex(s.net);
+    const cs = S.commissions.filter(c => c.saleId === s.id);
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'H · Commissions', title: 'Commission per sale', brd: ['H1', 'H2', 'H3'], sub: 'Commission is calculated on every single sale – a percentage for the guide/driver plus a fixed amount by price level for the salesperson.' }) +
+      `<div class="mb">${UI.ruleNote(5, 'Commission is calculated per sale: a percentage for guides/drivers, a fixed amount by price level for staff. Calculated on the agreed price before VAT.')}</div>
+      <div class="grid g-1-2"><div class="card"><div class="card-header"><h3>Sales</h3></div><div class="card-content" style="max-height:70vh;overflow:auto;padding:0">${sales.map(x => `<button class="dp-item" style="all:unset;box-sizing:border-box;display:flex;gap:8px;width:100%;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;${x.id === s.id ? 'background:var(--sapphire-soft)' : ''}" data-s="${x.id}"><span class="mono" style="font-size:12px">${x.id}</span><span class="muted" style="font-size:12px;flex:1">${fmt.date(x.date)}</span><b style="font-size:12px">${fmt.cur(x.guideComm + x.staffComm)}</b></button>`).join('')}</div></div>
+      <div class="card"><div class="card-header"><div><h2><span class="mono">${s.id}</span></h2><p>${fmt.dt(s.date)} · ${esc((cust(s.customerId) || {}).name)} · sold by ${esc(user(s.staffId).name)}</p></div><a class="btn btn-sm btn-outline" href="../g-payments/invoice.html?id=${s.id}">Invoice</a></div>
+        <div class="card-content">
+          <table class="table"><tbody>
+            <tr><td>Agreed total (incl. VAT)</td><td class="num">${fmt.lkr(s.total)}</td></tr>
+            <tr><td>Less VAT ${S.shop.vatRate}%</td><td class="num">− ${fmt.lkr(s.vat)}</td></tr>
+            <tr><td><b>Sale amount before VAT</b> (commission base)</td><td class="num"><b>${fmt.lkr(s.net)}</b></td></tr>
+            <tr><td>Guide / driver: ${g ? esc(g.name) + ' (' + esc(g.vehicle) + ') × ' + s.guidePct + '%' : 'Walk-in – no guide'} <span class="brd">H1</span></td><td class="num">${fmt.lkr(s.guideComm)}</td></tr>
+            <tr><td>Staff: ${esc(user(s.staffId).name)} – level ${slabI + 1} (${slabLabel(slabI)}) <span class="brd">H2</span></td><td class="num">${fmt.lkr(s.staffComm)}</td></tr>
+          </tbody><tfoot><tr><td>Total commission on this sale <span class="brd">H3</span></td><td class="num">${fmt.lkr(s.guideComm + s.staffComm)}</td></tr></tfoot></table>
+          <h3 class="mt">Commission records</h3>
+          ${UI.table([{ h: 'Payee', f: c => esc(Commissions.payeeName(c)) + ' <span class="badge badge-outline">' + (c.payee === 'guide' ? 'Guide/driver' : 'Staff') + '</span>' }, { h: 'Amount', num: 1, f: c => `<b class="${c.amount < 0 ? 'text-danger' : ''}">${fmt.lkr(c.amount)}</b>` }, { h: 'Status', f: c => badge(c.status) + (c.note ? ' <small class="muted">' + esc(c.note) + '</small>' : '') }], cs)}
+          <h3 class="mt">Staff price levels (A6)</h3>
+          ${UI.table([{ h: 'Level', f: (x, i) => (i === slabI ? '▶ ' : '') + 'Level ' + (i + 1) }, { h: 'Total selling price of the sale', f: (x, i) => slabLabel(i) }, { h: 'Fixed commission', num: 1, f: x => fmt.lkr(x.amount) }], S.commissionRules.slabs, { rowAttr: (x, i) => i === slabI ? 'style="background:var(--gold-soft)"' : '' })}
+        </div></div></div>`;
+  }
+  function slabLabel(i) { const sl = S.commissionRules.slabs; const lo = i === 0 ? 0 : sl[i - 1].upTo + 1; return sl[i].upTo == null ? 'Above LKR ' + fmt.num(sl[i - 1].upTo, 0) : (i === 0 ? 'Up to LKR ' + fmt.num(sl[i].upTo, 0) : 'LKR ' + fmt.num(lo, 0) + ' – ' + fmt.num(sl[i].upTo, 0)); }
+  $('#page').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b) { selId = b.dataset.s; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

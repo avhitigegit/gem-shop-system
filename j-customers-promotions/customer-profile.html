@@ -1,0 +1,41 @@
+<!-- Screen: Customer profile | BRD: J1, J2, J5, F5 | Rule: 8 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customer Profile · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="j-customers-promotions/customer-profile.html" data-roles="owner salesperson">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const c = cust(qs('id')) || S.customers[0];
+  function render() {
+    const ss = S.sales.filter(s => s.customerId === c.id).sort((a, b) => b.date.localeCompare(a.date));
+    const qs_ = S.quotes.filter(q => q.customerId === c.id);
+    const camps = S.campaigns.filter(cp => cp.status === 'sent' && c.consent && (!cp.audience.countries.length || cp.audience.countries.includes(c.country)));
+    $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="customers.html">J · Customers</a>', title: esc(c.name), brd: ['J1', 'J2'], sub: esc(c.country) + ' · customer since ' + fmt.date(c.createdAt), actions: '<button class="btn btn-outline" id="edit">Edit</button><a class="btn btn-success" href="../f-pos/pos.html">New sale</a>' }) +
+      `<div class="grid g-1-2"><div class="stack"><div class="card"><div class="card-content center"><div class="avatar" style="width:64px;height:64px;font-size:22px;margin:0 auto">${initials(c.name)}</div><h2 class="mt-s">${esc(c.name)}</h2><p class="muted">${esc(c.country)}</p></div><div class="card-content" style="border-top:1px solid var(--border)"><dl class="dl" style="grid-template-columns:100px 1fr"><dt>Email</dt><dd>${esc(c.email || '—')}</dd><dt>WhatsApp</dt><dd>${esc(c.whatsapp || '—')}</dd><dt>Passport</dt><dd data-roles="owner">${c.passport ? '•••• ' + esc(c.passport.slice(-3)) + ' <span class="badge badge-outline">encrypted</span>' : '—'}</dd><dt>Spent</dt><dd>${fmt.cur(sum(ss.filter(s => s.status !== 'cancelled'), s => s.total))}</dd></dl></div></div>
+        <div class="card"><div class="card-header"><h3>Promotions consent (J2)</h3></div><div class="card-content">
+          <label class="row between"><span>Agrees to receive promotions</span><label class="switch"><input type="checkbox" id="cons" ${c.consent && !c.unsubscribed ? 'checked' : ''}><span></span></label></label>
+          <p class="muted mt-s" style="font-size:12px">${c.unsubscribed ? 'Unsubscribed on ' + fmt.date(c.unsubAt) + ' via the unsubscribe link.' : c.consent ? 'Consent recorded on ' + fmt.dt(c.consentAt) + ' at the sales counter.' : 'No consent – this customer receives invoices only, never promotions (rule 8).'}</p>
+          <button class="btn btn-sm btn-outline mt-s" id="unsub">Simulate “unsubscribe” click</button></div></div>
+        <div class="card"><div class="card-header"><h3>Automatic messages (J5)</h3></div><div class="card-content" style="font-size:12px"><ul class="list">${ss.slice(0, 4).map(s => `<li>✉ VAT invoice ${s.id} · ${fmt.date(s.date)} ${s.sentEmail ? '<span class="badge badge-success">sent</span>' : ''}</li><li>💬 Thank-you message · ${fmt.date(s.date)} <span class="badge badge-success">sent</span></li>`).join('') || '<li class="muted">None</li>'}</ul></div></div></div>
+      <div class="stack"><div class="card"><div class="card-header"><h3>Purchase history</h3><span class="muted">${ss.length} invoice(s)</span></div>${UI.table([
+        { h: 'Invoice', f: s => `<a class="mono" href="../g-payments/invoice.html?id=${s.id}">${s.id}</a><br><small class="muted">${fmt.date(s.date)}</small>` },
+        { h: 'Products', f: s => s.items.map(i => UI.prodCell(prod(i.productId))).join('') },
+        { h: 'Total', num: 1, f: s => fmt.cur(s.total) }, { h: 'Status', f: s => badge(s.status) }
+      ], ss, { empty: 'No purchases yet.' })}</div>
+      <div class="card"><div class="card-header"><h3>Reservations & quotations</h3></div>${UI.table([{ h: 'No.', f: q => `<a class="mono" href="../f-pos/quotation-print.html?id=${q.id}">${q.id}</a>` }, { h: 'Items', f: q => q.items.map(i => i.productId).join(', ') }, { h: 'Expires', f: q => fmt.date(q.expires) }, { h: 'Status', f: q => badge(q.status) }], qs_, { empty: 'None.' })}</div>
+      <div class="card" data-roles="owner"><div class="card-header"><h3>Campaigns received</h3></div>${UI.table([{ h: 'Campaign', f: x => esc(x.name) }, { h: 'Channel', f: x => x.channel === 'email' ? '✉ Email' : '💬 WhatsApp' }, { h: 'Sent', f: x => fmt.date(x.sentAt) }], camps, { empty: 'None.' })}</div></div></div>`;
+    $('#cons').onchange = e => { c.consent = e.target.checked; c.unsubscribed = false; c.consentAt = e.target.checked ? new Date().toISOString() : c.consentAt; Log.add('Consent changed', c.name + ': ' + (c.consent ? 'given' : 'withdrawn')); Store.save(); toast('Consent updated', c.name, 'success'); render(); };
+    $('#unsub').onclick = () => { c.unsubscribed = true; c.unsubAt = new Date().toISOString(); Log.add('Unsubscribed', c.name + ' clicked the unsubscribe link'); Store.save(); toast('Unsubscribed', c.name + ' will not receive promotions.', 'warning'); render(); };
+    $('#edit').onclick = () => UI.modal({ title: 'Edit ' + c.name, body: `<form class="form-grid" novalidate><div class="field full"><label class="req">Name</label><input class="input" name="name" required value="${esc(c.name)}"></div><div class="field"><label class="req">Country</label><input class="input" name="country" required value="${esc(c.country)}"></div><div class="field"><label>Email</label><input class="input" type="email" name="email" value="${esc(c.email)}"></div><div class="field"><label>WhatsApp</label><input class="input" name="whatsapp" value="${esc(c.whatsapp)}"></div></form>`, actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { const fm = $('form', el); if (!UI.validate(fm)) return false; Object.assign(c, { name: fm.name.value, country: fm.country.value, email: fm.email.value, whatsapp: fm.whatsapp.value }); Log.add('Customer edited', c.name); Store.save(); toast('Saved', '', 'success'); render(); } }] });
+  }
+  render();
+})();
+</script>
+</body>
+</html>

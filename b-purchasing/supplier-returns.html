@@ -1,0 +1,45 @@
+<!-- Screen: Return to supplier | BRD: B4, D2, D5 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Return to Supplier · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="b-purchasing/supplier-returns.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  function render() {
+    const supSel = qs('sup') || '';
+    const avail = S.products.filter(p => ['in_stock', 'returned'].includes(p.status) && (!supSel || p.supplierId === supSel));
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'B · Suppliers & purchasing', title: 'Return to supplier', brd: ['B4'], sub: 'A wrong or faulty product can be returned to the supplier with a reason. Stock is corrected automatically.' }) +
+      `<div class="grid g-1-2"><form class="card" id="f" novalidate><div class="card-header"><h3>New supplier return</h3></div><div class="card-content stack" style="gap:12px">
+        <div class="field"><label class="req">Product (in stock)</label><select name="pid" required>${UI.opts(avail.map(p => ({ v: p.id, l: p.id + ' · ' + p.name + ' · ' + (p.supplierId ? sup(p.supplierId).name : '') })), '', 'Select…')}</select><span class="hint" id="pi"></span></div>
+        <div class="field"><label class="req">Reason</label><select name="reasonT" required>${UI.opts(['Faulty / damaged', 'Not as described', 'Wrong item delivered', 'Treatment not disclosed', 'Other'], '', 'Select…')}</select></div>
+        <div class="field"><label class="req">Details</label><textarea name="reason" required placeholder="Describe the problem"></textarea><span class="err">Details are required.</span></div>
+        <div class="form-grid"><div class="field"><label class="req">Refund received (LKR)</label><input class="input" type="number" min="0" name="refund" required></div><div class="field"><label>Refund method</label><select name="method">${UI.opts(['Cash', 'Replacement product', 'Credit with supplier'])}</select></div></div>
+        <button class="btn btn-sapphire" type="submit">Record return &amp; remove from stock</button></div></form>
+      <div class="card"><div class="card-header"><h3>Returns to suppliers</h3></div>${UI.table([
+        { h: 'No.', f: r => `<span class="mono">${r.id}</span><br><small class="muted">${fmt.date(r.date)}</small>` }, { h: 'Product', f: r => UI.prodCell(prod(r.productId)) },
+        { h: 'Supplier', f: r => esc(sup(r.supplierId).name) }, { h: 'Reason', f: r => esc(r.reason) }, { h: 'Refund', num: 1, f: r => fmt.cur(r.refund) + '<br><small class="muted">' + esc(r.refundMethod) + '</small>' }
+      ], S.supplierReturns.slice().sort((a, b) => b.date.localeCompare(a.date)), { cls: 'stack-sm' })}</div></div>`;
+    const F = $('#f');
+    F.pid.onchange = () => { const p = prod(F.pid.value); $('#pi').innerHTML = p ? `Cost ${fmt.lkr(p.cost)} · bought ${fmt.date(p.addedAt)} (${p.purchaseId || '—'})` : ''; if (p) F.refund.value = p.cost; };
+    F.onsubmit = e => {
+      e.preventDefault(); if (!UI.validate(F)) return;
+      const p = prod(F.pid.value); if (guardLocked(todayYmd())) return;
+      UI.confirm('Return ' + p.id + ' to ' + esc(sup(p.supplierId).name) + '?', 'The product will be removed from stock (status “Returned to supplier”).', () => {
+        const r = { id: nextId('supplierReturn', 'SR-'), supplierId: p.supplierId, productId: p.id, reason: F.reasonT.value + ': ' + F.reason.value, refund: +F.refund.value, refundMethod: F.method.value, date: new Date().toISOString(), by: currentUser().id };
+        S.supplierReturns.push(r); p.status = 'returned_supplier';
+        Hist.add(p.id, 'Returned to supplier', r.id + ' · ' + r.reason); Log.add('Returned to supplier', r.id + ' · ' + p.id + ' · refund ' + fmt.lkr(r.refund));
+        Store.save(); toast('Returned to supplier', r.id + ' – stock corrected automatically', 'success'); render();
+      }, { yes: 'Record return' });
+    };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

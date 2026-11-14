@@ -1,0 +1,36 @@
+<!-- Screen: Purchase history (by supplier and by date) | BRD: B3, B2, L5 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Purchase History · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="b-purchasing/purchase-history.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { sup: '', from: daysAgoYmd(180), to: todayYmd() };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'B · Suppliers & purchasing', title: 'Purchase history', brd: ['B3'], sub: 'Kept by supplier and by date.', actions: '<a class="btn btn-sapphire" data-roles="owner" href="new-purchase.html">+ New purchase</a>' + UI.exportButtons('#phT', 'Purchase history') }) +
+    `<div class="card"><div class="card-content filters"><div class="field"><label>Supplier</label><select id="su">${UI.opts(S.suppliers.map(s => ({ v: s.id, l: s.name })), '', 'All suppliers')}</select></div><div class="field"><label>From</label><input class="input" type="date" id="fr" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" id="to" value="${f.to}"></div></div><div id="list"></div></div>`;
+  function render() {
+    const rows = S.purchases.filter(inBranch).filter(p => (!f.sup || p.supplierId === f.sup) && ymd(p.date) >= f.from && ymd(p.date) <= f.to).sort((a, b) => b.date.localeCompare(a.date));
+    $('#list').innerHTML = UI.table([
+      { h: 'Purchase', f: p => `<b class="mono">${p.id}</b>` }, { h: 'Date', f: p => fmt.date(p.date) },
+      { h: 'Supplier', f: p => `<a href="supplier-detail.html?id=${p.supplierId}">${esc(sup(p.supplierId).name)}</a>` },
+      { h: 'Branch', f: p => esc(branchName(p.branch)) },
+      { h: 'Products', f: p => p.lines.length + ' · ' + p.lines.slice(0, 4).map(l => gemSVG(prod(l.productId).gem, prod(l.productId).type, 20)).join('') },
+      { h: 'Bill', f: p => p.billPhoto ? '📎' : '<span class="text-danger">missing</span>' },
+      { h: 'Total (cash)', num: 1, f: p => `<b>${fmt.cur(p.total)}</b>` },
+      { h: 'Month', f: p => isLocked(p.date) ? '<span class="badge badge-navy">🔒 closed</span>' : '' }
+    ], rows, { id: 'phT', cls: 'stack-sm', foot: [rows.length + ' purchases', '', '', '', sum(rows, p => p.lines.length) + ' items', '', fmt.cur(sum(rows, p => p.total)), ''] });
+  }
+  $('#su').onchange = e => { f.sup = e.target.value; render(); };
+  $('#fr').onchange = e => { f.from = e.target.value; render(); };
+  $('#to').onchange = e => { f.to = e.target.value; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

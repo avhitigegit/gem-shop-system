@@ -1,0 +1,36 @@
+<!-- Screen: Accountant dashboard | BRD: N1, N2, N3, N4, N5, N6 | Rules: 4, 11 | Roles: Accountant, Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accountant Dashboard · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="n-accountant/dashboard.html" data-roles="accountant owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const b = branchScope();
+  const ms = Fin.months().slice(0, 3);
+  const cur = Fin.month(ms[0], b), prev = ms[1] ? Fin.month(ms[1], b) : null;
+  const missingBills = S.expenses.filter(e => !e.billPhoto).length;
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant access', title: 'Accountant dashboard', brd: ['N1', 'N2'], sub: 'Sales, purchases, expenses, VAT and profit for all branches – everything for tax work, without asking the shop for papers.', actions: '<a class="btn btn-sapphire" href="tax-pack.html">⇩ Tax pack</a><a class="btn btn-outline" href="../m-expenses/add-expense.html">+ Record expense</a>' }) +
+    `<div class="alert info mb"><div><b>Accountant access (N2):</b> you can view everything and record or correct expenses. You cannot sell, change prices or delete invoices. Closed months are locked (rule 11).</div></div>
+    <div class="grid g4 mb">${UI.kpi('Sales before VAT – ' + fmt.month(ms[0]), fmt.cur(cur.salesNet), prev ? 'last month ' + fmt.cur(prev.salesNet) : '', 'accent')}${UI.kpi('VAT to pay', fmt.cur(cur.vatToPay), 'output ' + fmt.cur(cur.outVat) + ' − input ' + fmt.cur(cur.inVat))}${UI.kpi('Expenses', fmt.cur(cur.expenses), 'excl. VAT')}${UI.kpi('Net profit (month to date)', fmt.cur(cur.net), 'after cost, commissions & expenses')}</div>
+    <div class="grid g-2-1"><div class="card"><div class="card-header"><h3>Months</h3><a class="btn btn-sm btn-ghost" href="month-closing.html">Month closing →</a></div>${UI.table([
+      { h: 'Month', f: m => `<b>${fmt.month(m.mk)}</b>` }, { h: 'Invoices', num: 1, f: m => m.invoices }, { h: 'Sales before VAT', num: 1, f: m => fmt.cur(m.salesNet) }, { h: 'VAT to pay', num: 1, f: m => fmt.cur(m.vatToPay) }, { h: 'Net profit', num: 1, f: m => `<b>${fmt.cur(m.net)}</b>` },
+      { h: 'Status', f: m => isLocked(m.mk + '-01') ? badge('closed') : badge('open') }
+    ], Fin.months().map(m => Fin.month(m, b)), { cls: 'stack-sm' })}</div>
+    <div class="card"><div class="card-header"><h3>To do</h3></div><div class="card-content"><ul class="list">
+      <li>🧾 <div style="flex:1">Monthly VAT summary<br><small class="muted">${fmt.month(ms[0])}</small></div><a class="btn btn-sm btn-outline" href="vat-summary.html">Open</a></li>
+      <li>📊 <div style="flex:1">Profit &amp; Loss<br><small class="muted">by month and branch</small></div><a class="btn btn-sm btn-outline" href="profit-loss.html">Open</a></li>
+      <li>📎 <div style="flex:1">Expenses without bill photo<br><small class="muted">${missingBills} found</small></div><a class="btn btn-sm btn-outline" href="../m-expenses/expenses.html">Check</a></li>
+      <li>⏳ <div style="flex:1">Expenses waiting for owner<br><small class="muted">${S.expenses.filter(e => e.status === 'pending').length} pending</small></div><a class="btn btn-sm btn-outline" href="../k-owner-control/approvals.html">View</a></li>
+      <li>🔒 <div style="flex:1">Close ${fmt.month(ms[1] || ms[0])}<br><small class="muted">${isLocked((ms[1] || ms[0]) + '-01') ? 'already closed' : 'ready to close'}</small></div><a class="btn btn-sm btn-outline" href="month-closing.html">Open</a></li>
+    </ul></div></div></div>
+    <div class="grid g3 mt">${[['l-reports/sales.html', 'Sales report', 'L1'], ['b-purchasing/purchase-history.html', 'Purchases', 'B3'], ['m-expenses/expense-report.html', 'Expense report', 'M7'], ['l-reports/vat.html', 'VAT report (invoices)', 'L4'], ['l-reports/profit.html', 'Profit report', 'L2'], ['l-reports/commissions.html', 'Commission report', 'L5']].map(l => `<a class="card kpi" href="../${l[0]}" style="text-decoration:none"><div class="k-label">${l[2]}</div><div class="k-value" style="font-size:16px">${l[1]} →</div></a>`).join('')}</div>`;
+})();
+</script>
+</body>
+</html>

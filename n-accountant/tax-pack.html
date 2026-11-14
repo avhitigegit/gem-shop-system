@@ -1,0 +1,51 @@
+<!-- Screen: Tax pack download (Excel / PDF, with bill photos) | BRD: N5, L6, N3, N4 | Roles: Accountant, Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tax Pack · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="n-accountant/tax-pack.html" data-roles="accountant owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const months = Fin.months();
+  const PARTS = [['sales', 'Sales & VAT invoices', 'L1, L4'], ['purchases', 'Purchases by supplier (+ bill photos)', 'B3, L5'], ['expenses', 'Expenses (+ bill photos)', 'M2, M7'], ['vat', 'Monthly VAT summary', 'N3'], ['pl', 'Profit & Loss', 'N4'], ['comm', 'Commissions', 'H5'], ['closing', 'Daily closings', 'L5'], ['cn', 'Credit notes', 'E2']];
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant & tax', title: 'Tax pack download', brd: ['N5'], sub: 'Download all of the above for any period (Excel / PDF), with bill photos.' }) +
+    `<div class="grid g-2-1"><form class="card" id="f" novalidate><div class="card-content form-grid">
+      <div class="field"><label class="req">From month</label><select name="from">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) })), months[months.length - 1])}</select></div>
+      <div class="field"><label class="req">To month</label><select name="to">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) })), months[0])}</select></div>
+      <div class="field"><label>Branch</label><select name="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))))}</select></div>
+      <div class="field"><label>Format</label><select name="fmt">${UI.opts(['Excel (.xlsx) + PDF', 'Excel only', 'PDF only'])}</select></div>
+      <div class="field full"><label>Include</label><div class="grid g2" style="gap:6px">${PARTS.map(p => `<label class="check"><input type="checkbox" name="part" value="${p[0]}" checked> ${p[1]} <span class="brd">${p[2]}</span></label>`).join('')}</div></div>
+      <label class="check full"><input type="checkbox" name="photos" checked> Include bill photos (ZIP folder)</label>
+    </div><div class="card-footer"><button type="button" class="btn btn-outline" id="csv">⇩ Download summary now (CSV)</button><button class="btn btn-sapphire" type="submit">Prepare tax pack</button></div></form>
+    <div class="card" style="align-self:start"><div class="card-header"><h3>Preview</h3></div><div class="card-content" id="pv"></div></div></div>
+    <div class="card mt"><div class="card-header"><h3>Earlier downloads</h3></div><div class="card-content" id="hist"></div></div>`;
+  const F = $('#f');
+  let hist; try { hist = JSON.parse(localStorage.getItem('gemshop.taxpacks') || '[]'); } catch (e) { hist = []; }
+  function range() { const a = F.from.value, b = F.to.value; return months.filter(m => m >= (a < b ? a : b) && m <= (a < b ? b : a)).sort(); }
+  function preview() {
+    const ms = range(); const rows = ms.map(m => Fin.month(m, F.branch.value));
+    const nBills = S.expenses.filter(e => ms.includes(monthKey(e.date)) && e.billPhoto).length + S.purchases.filter(p => ms.includes(monthKey(p.date))).length;
+    $('#pv').innerHTML = `<dl class="dl" style="grid-template-columns:1fr auto"><dt>Period</dt><dd class="right">${fmt.month(ms[0])} – ${fmt.month(ms[ms.length - 1])}</dd><dt>Invoices</dt><dd class="right">${sum(rows, r => r.invoices)}</dd><dt>Sales before VAT</dt><dd class="right">${fmt.lkr(sum(rows, r => r.salesNet))}</dd><dt>VAT to pay</dt><dd class="right">${fmt.lkr(sum(rows, r => r.vatToPay))}</dd><dt>Net profit</dt><dd class="right">${fmt.lkr(sum(rows, r => r.net))}</dd><dt>Bill photos</dt><dd class="right">${nBills}</dd></dl>`;
+    $('#hist').innerHTML = hist.length ? `<ul class="list">${hist.map(h => `<li>📦 <div style="flex:1"><b>${esc(h.name)}</b><br><small class="muted">${fmt.dt(h.at)} · ${esc(h.fmt)}</small></div><button class="btn btn-sm btn-outline" onclick="toast('Download started','${esc(h.name)} (demo)','success')">Download</button></li>`).join('')}</ul>` : '<div class="muted">None yet.</div>';
+  }
+  F.addEventListener('change', preview); preview();
+  $('#csv').onclick = () => {
+    const ms = range(); const rows = ms.map(m => Fin.month(m, F.branch.value));
+    const t = document.createElement('table'); t.innerHTML = '<tr><th>Month</th><th>Invoices</th><th>Sales before VAT</th><th>Output VAT</th><th>Input VAT</th><th>VAT to pay</th><th>Cost of sales</th><th>Commissions</th><th>Expenses</th><th>Net profit</th></tr>' + rows.map(r => `<tr><td>${fmt.month(r.mk)}</td><td>${r.invoices}</td><td>${r2(r.salesNet)}</td><td>${r2(r.outVat)}</td><td>${r2(r.inVat)}</td><td>${r2(r.vatToPay)}</td><td>${r2(r.cogs)}</td><td>${r2(r.comm)}</td><td>${r2(r.expenses)}</td><td>${r2(r.net)}</td></tr>`).join('');
+    t.style.position = 'absolute'; t.style.left = '-9999px'; document.body.appendChild(t); UI.exportExcel(t, 'Tax pack summary'); t.remove();
+  };
+  F.onsubmit = e => {
+    e.preventDefault(); const parts = $$('input[name=part]:checked', F); if (!parts.length) { toast('Choose at least one part', '', 'error'); return; }
+    const ms = range(); const name = 'TaxPack_' + ms[0] + '_to_' + ms[ms.length - 1] + '.zip';
+    const btn = $('button[type=submit]', F); btn.disabled = true; btn.textContent = 'Preparing…';
+    setTimeout(() => { hist.unshift({ name, at: new Date().toISOString(), fmt: F.fmt.value }); try { localStorage.setItem('gemshop.taxpacks', JSON.stringify(hist.slice(0, 8))); } catch (x) { } Log.add('Tax pack downloaded', name, 'all'); Store.save(); btn.disabled = false; btn.textContent = 'Prepare tax pack'; toast('Tax pack ready', name + ' – ' + parts.length + ' reports' + (F.photos.checked ? ' + bill photos' : '') + ' (demo). Real build: OpenPDF + Apache POI on the server.', 'success'); preview(); }, 1200);
+  };
+})();
+</script>
+</body>
+</html>

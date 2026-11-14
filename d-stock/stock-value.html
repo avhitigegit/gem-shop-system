@@ -1,0 +1,32 @@
+<!-- Screen: Stock value (at cost and at selling price) | BRD: D6, L3 | Rules: 1, 9 | Roles: Owner only -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Value · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="d-stock/stock-value.html" data-roles="owner" data-denied="Stock value at cost is visible to the owner only (BRD D6, business rule 1).">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const b = branchScope();
+  const st = Metrics.stock(b);
+  const by = k => Object.entries(groupBy(st.items, p => p[k])).map(([g, ps]) => ({ g, n: ps.length, cost: sum(ps, p => p.cost), sell: sum(ps, p => p.price), ct: sum(ps, p => p.carat) })).sort((a, b) => b.sell - a.sell);
+  const max = Math.max(1, ...by('gem').map(r => r.sell));
+  const tbl = (k, label) => UI.table([
+    { h: label, f: r => (k === 'gem' ? `<span class="row" style="gap:6px">${gemSVG(r.g, 'Loose gem', 22)}${esc(r.g)}</span>` : esc(k === 'branch' ? branchName(r.g) : r.g)) },
+    { h: 'Items', num: 1, f: r => r.n }, { h: 'Carats', num: 1, f: r => fmt.num(r.ct) },
+    { h: 'At cost', num: 1, f: r => fmt.cur(r.cost) }, { h: 'At selling price', num: 1, f: r => `<b>${fmt.cur(r.sell)}</b>` },
+    { h: 'Margin', num: 1, f: r => fmt.cur(r.sell - r.cost) }, { h: '', f: r => `<div class="bar gold" style="width:120px"><i style="width:${r.sell / max * 100}%"></i></div>` }
+  ], by(k), { id: k === 'gem' ? 'svT' : '', foot: ['Total', st.count, fmt.num(sum(st.items, p => p.carat)), fmt.cur(st.cost), fmt.cur(st.sell), fmt.cur(st.sell - st.cost), ''] });
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Stock value – ' + esc(branchName(b)), brd: ['D6'], sub: 'Stock value at cost and at selling price. Owner only.', actions: UI.exportButtons('#svT', 'Stock value') }) +
+    `<div class="grid g3 mb">${UI.kpi('At cost', fmt.cur(st.cost), st.count + ' items', 'accent')}${UI.kpi('At selling price', fmt.cur(st.sell), 'incl. VAT where applicable')}${UI.kpi('Potential margin', fmt.cur(st.sell - st.cost), fmt.pct((st.sell - st.cost) / Math.max(1, st.sell) * 100) + ' of selling price')}</div>
+    <div class="stack"><div class="card"><div class="card-header"><h3>By gem type</h3></div>${tbl('gem', 'Gem type')}</div>
+    <div class="grid g2"><div class="card"><div class="card-header"><h3>By product type</h3></div>${tbl('type', 'Product type')}</div><div class="card"><div class="card-header"><h3>By branch (rule 9)</h3></div>${tbl('branch', 'Branch')}</div></div></div>
+    <div class="mt">${UI.ruleNote(1, 'Only the owner can see cost prices. This screen is hidden from the Salesperson, Shop Staff and Accountant.')}</div>`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!-- Screen: POS Sales | BRD: F1, F2, F3, F4, F5, F6, F7, G1, G2, H3, J2, J5 | Rules: 2, 3, 5, 10 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Sale (POS) · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="f-pos/pos.html" data-roles="owner salesperson" data-denied="Only the Owner and the Salesperson can sell. The Accountant and Shop Staff cannot sell (BRD §03).">
+<div id="page">
+  <div id="head"></div>
+  <div id="intent"></div>
+  <div id="saleSteps"></div>
+  <div class="grid g-2-1">
+    <div class="stack">
+      <div class="card">
+        <div class="card-header"><h2><span class="step-n" id="sn1">1</span>Add the gems</h2></div>
+        <div class="card-content">
+          <div class="scan-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8M18 8v8"/></svg>
+            <input class="input input-lg" id="scan" autocomplete="off" autofocus placeholder="Scan the QR / barcode tag, or type a code or name… (F1)">
+            <div class="suggest hidden" id="suggest"></div>
+          </div>
+          <div class="row mt-s" style="font-size:12px"><span class="muted">USB scanner types like a keyboard + Enter (tech stack §7). Demo scans:</span><span id="demoScans" class="row" style="gap:6px"></span></div>
+        </div>
+      </div>
+      <div id="heldBanner"></div>
+      <div class="card">
+        <div class="card-header"><div><h2>On this bill</h2><p>More than one product can be sold on one bill (F6). Enter the agreed price for each item (F2).</p></div><button class="btn btn-ghost btn-sm" id="clearBtn">Clear bill</button></div>
+        <div class="card-content" id="cart"></div>
+      </div>
+      <div id="heldList"></div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <div class="card-header"><h2><span class="step-n" id="sn2">2</span>Who is buying? <span class="brd">F5</span></h2><div class="tabs" id="custTabs"><button data-t="new" class="active">New customer</button><button data-t="existing">Came before</button></div></div>
+        <div class="card-content" id="custBox"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2><span class="step-n" id="sn3">3</span>Came with a guide or driver? <span class="brd">F4</span></h2></div>
+        <div class="card-content"><select id="guide"></select><div class="hint muted mt-s" id="guideHint" style="font-size:12px"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2><span class="step-n" id="sn4">4</span>Total &amp; payment</h2><span class="muted" style="font-size:12px" id="vatMode"></span></div>
+        <div class="card-content" id="totals"></div>
+        <div class="card-footer" style="flex-direction:column;align-items:stretch">
+          <button class="btn btn-lg btn-success btn-block" id="payBtn">Complete sale &amp; take payment</button>
+          <div class="muted center" style="font-size:12px">Not buying today?</div>
+          <div class="row" style="gap:8px"><button class="btn btn-outline" style="flex:1" id="reserveBtn">📌 Keep for customer</button><button class="btn btn-outline" style="flex:1" id="quoteBtn">📝 Give a quote</button></div>
+        </div>
+      </div>
+      <div id="rules"></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const KEY = 'gemshop.pos.draft';
+  const blank = () => ({ items: [], guideId: '', custMode: 'new', customerId: '', newCust: { name: '', country: '', email: '', whatsapp: '', consent: false }, heldId: null, quoteId: null });
+  let D; try { D = JSON.parse(localStorage.getItem(KEY)) || blank(); } catch (e) { D = blank(); }
+  const saveDraft = () => { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { } };
+  const owner = isRole('owner');
+
+  $('#head').innerHTML = UI.pageHead({
+    crumbs: 'F · Sales screen', title: 'New sale – ' + esc(branchName(activeBranch())), brd: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6'],
+    sub: 'Salesperson: ' + esc(currentUser().name) + ' · ' + fmt.date(new Date().toISOString()) + ' · Rates: USD ' + fmt.num(S.rates.USD) + ' · EUR ' + fmt.num(S.rates.EUR),
+    actions: `<a class="btn btn-outline" href="reservations.html">Reservations &amp; quotations</a><a class="btn btn-outline" href="../g-payments/invoices.html">Invoices</a>`
+  });
+  $('#rules').innerHTML = `<div class="stack" style="gap:8px">${UI.ruleNote(2, 'A product cannot be sold below its minimum price without the owner\'s approval.')}${UI.ruleNote(3, 'Each product is unique. Once sold it cannot be sold again unless it is returned.')}${UI.ruleNote(10, 'Prices and payments use LKR, USD and EUR only.')}</div>`;
+  $('#vatMode').textContent = S.shop.vatInclusive ? 'Prices include VAT ' + S.shop.vatRate + '%' : 'VAT ' + S.shop.vatRate + '% added';
+
+  /* ---------- opened for "keep a gem" / "give a quote" from Sell ---------- */
+  const INTENT = qs('intent');
+  if (INTENT === 'reserve' || INTENT === 'quote') {
+    $('#intent').innerHTML = `<div class="intent-banner"><span style="font-size:24px">${INTENT === 'reserve' ? '📌' : '📝'}</span><div><b>${INTENT === 'reserve' ? 'Keep a gem for a customer' : 'Give a price quote'}</b><br>① Add the gem(s) and the agreed price · ② choose the customer · ③ press <b>${INTENT === 'reserve' ? '📌 Keep for customer' : '📝 Give a quote'}</b> at the bottom right.</div><a class="btn btn-sm btn-ghost" href="pos.html" style="margin-left:auto">This is a normal sale</a></div>`;
+    $(INTENT === 'reserve' ? '#reserveBtn' : '#quoteBtn').classList.add('btn-gold', 'glow');
+    const h1 = $('#head h1'); if (h1 && h1.firstChild) h1.firstChild.textContent = (INTENT === 'reserve' ? 'Keep a gem for a customer' : 'Give a price quote') + ' – ' + branchName(activeBranch());
+  }
+
+  /* ---------- progress: 1 gems · 2 customer · 3 guide · 4 pay · 5 invoice ---------- */
+  function custReady() { return D.custMode === 'existing' ? !!D.customerId : !!(D.newCust.name.trim() && D.newCust.country); }
+  function renderSteps() {
+    const h = held();
+    const st = [
+      ['Add the gems', D.items.length ? D.items.length + ' gem(s)' : 'Scan a tag', D.items.length > 0],
+      ['Customer', custReady() ? (D.custMode === 'existing' ? (cust(D.customerId) || {}).name : D.newCust.name) : 'Name & country', custReady()],
+      ['Guide / driver', D.guideId ? (guide(D.guideId) || {}).name : 'Walk-in if none', D.items.length > 0 && custReady()],
+      [h && h.status === 'pending' ? 'Owner approval' : 'Take payment', h && h.status === 'pending' ? 'Waiting…' : h && h.status === 'approved' ? 'Approved ✓' : 'Cash, card or both', false],
+      ['VAT invoice', 'Print or send', false]
+    ];
+    const next = st.findIndex(x => !x[2]);
+    $('#saleSteps').innerHTML = `<nav class="flowbar no-print"><span class="fb-title">This sale</span><ol>${st.map((x, i) => `<li class="${x[2] ? 'done' : ''} ${i === next ? 'here' : ''}"><a href="#" data-jump="${i}"><span class="fb-n">${x[2] ? '✓' : i + 1}</span><span class="fb-t"><b>${esc(x[0])}</b><small>${esc(x[1] || '')}</small></span></a></li>`).join('')}</ol></nav>`;
+    [1, 2, 3].forEach(i => { const el = $('#sn' + i); if (el) { el.classList.toggle('ok', st[i - 1][2]); el.textContent = st[i - 1][2] ? '✓' : i; } });
+  }
+  $('#saleSteps').addEventListener('click', e => {
+    const a = e.target.closest('[data-jump]'); if (!a) return; e.preventDefault();
+    const target = ['#scan', '#custBox', '#guide', '#payBtn', '#payBtn'][Number(a.dataset.jump)];
+    const el = $(target); if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => { const f = el.matches('input,select,button') ? el : el.querySelector('input,select'); if (f) f.focus(); }, 300);
+  });
+
+  // load from ?held= or ?quote=
+  const heldQ = qs('held'), quoteQ = qs('quote');
+  if (heldQ) { const h = find('held', heldQ); if (h) loadHeld(h); history.replaceState(null, '', 'pos.html'); }
+  if (quoteQ) {
+    const q = find('quotes', quoteQ);
+    if (q) { D = blank(); D.quoteId = q.id; D.custMode = 'existing'; D.customerId = q.customerId; q.items.forEach(it => { const p = prod(it.productId); if (p) D.items.push({ productId: p.id, listPrice: p.price, agreed: it.price, minPrice: p.min }); }); saveDraft(); toast('Loaded ' + q.id, 'Items and agreed prices loaded from the ' + q.kind + '.'); }
+    history.replaceState(null, '', 'pos.html');
+  }
+  function loadHeld(h) {
+    D = blank(); D.heldId = h.id; D.guideId = h.guideId || ''; D.custMode = h.customer.id ? 'existing' : 'new'; D.customerId = h.customer.id || ''; if (!h.customer.id) D.newCust = h.customer;
+    D.items = h.items.map(i => Object.assign({}, i)); saveDraft();
+  }
+
+  /* ---------- scan & search (F1) ---------- */
+  const scan = $('#scan');
+  const sellable = () => S.products.filter(p => Sales.available(p) && !D.items.some(i => i.productId === p.id));
+  $('#demoScans').innerHTML = sellable().slice(0, 4).map(p => `<button class="btn btn-outline btn-sm mono" data-code="${p.id}">${p.id}</button>`).join('') + `<button class="btn btn-outline btn-sm mono" data-code="${(S.products.find(p => p.status === 'sold') || {}).id}" title="Try a sold item">sold item</button>`;
+  $('#demoScans').onclick = e => { const c = e.target.dataset.code; if (c) { scan.value = c; addByCode(c); } };
+  function addByCode(code) {
+    code = code.trim().toUpperCase();
+    const p = S.products.find(x => x.id.toUpperCase() === code || x.id.replace('GEM-', '') === code.replace('GEM-', ''));
+    if (!p) { toast('Not found', 'No product with code ' + code, 'error'); return false; }
+    return addProduct(p);
+  }
+  function addProduct(p) {
+    if (D.heldId && held() && held().status !== 'rejected') { toast('This bill is waiting for owner approval', 'Start a new bill to add items.', 'warning'); return false; }
+    if (D.items.some(i => i.productId === p.id)) { toast('Already on this bill', p.id, 'warning'); return false; }
+    if (p.status === 'sold') { toast('Already sold – cannot sell again', p.id + ' was sold on ' + fmt.date(p.soldAt) + ' (rule 3).', 'error'); return false; }
+    if (p.status === 'reserved') { const q = S.quotes.find(q => q.status === 'active' && q.items.some(i => i.productId === p.id)); toast('Reserved', p.id + ' is reserved' + (q ? ' for ' + cust(q.customerId).name + ' until ' + fmt.date(q.expires) : '') + '. Open it from Reservations to sell.', 'warning'); return false; }
+    if (!Sales.available(p)) { toast('Not available here', p.id + ' is ' + (STATUS[p.status] || [p.status])[0].toLowerCase() + (p.branch !== activeBranch() ? ' / at ' + branchName(p.branch) : '') + '.', 'error'); return false; }
+    D.items.push({ productId: p.id, listPrice: p.price, agreed: p.price, minPrice: p.min });
+    saveDraft(); scan.value = ''; hideSuggest(); render();
+    toast('Added ' + p.id, p.name + ' · ' + fmt.lkr(p.price), 'success');
+    setTimeout(() => { const inp = $(`[data-agreed="${p.id}"]`); if (inp) inp.select(); }, 50);
+    return true;
+  }
+  let hl = 0, matches = [];
+  function showSuggest() {
+    const q = scan.value.trim().toLowerCase(); if (q.length < 2) return hideSuggest();
+    matches = S.products.filter(p => inBranch(p) && (p.id.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.gem.toLowerCase().includes(q))).slice(0, 8);
+    hl = 0;
+    $('#suggest').innerHTML = matches.map((p, i) => `<button data-id="${p.id}" class="${i === 0 ? 'hl' : ''}">${gemSVG(p.gem, p.type, 34)}<div style="flex:1"><b>${esc(p.name)}</b> <span class="mono muted" style="font-size:11px">${p.id}</span><br><small class="muted">${fmt.ct(p.carat)} · ${esc(p.colour)} · ${esc(p.treatment)}</small></div><div class="right"><b>${fmt.lkr(p.price)}</b><br>${badge(p.status)}</div></button>`).join('') || '<div class="empty">No match</div>';
+    $('#suggest').classList.remove('hidden');
+  }
+  function hideSuggest() { $('#suggest').classList.add('hidden'); }
+  scan.addEventListener('input', showSuggest);
+  scan.addEventListener('keydown', e => {
+    const btns = $$('#suggest button');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (!btns.length) return; btns[hl] && btns[hl].classList.remove('hl'); hl = (hl + (e.key === 'ArrowDown' ? 1 : btns.length - 1)) % btns.length; btns[hl].classList.add('hl'); }
+    if (e.key === 'Enter') {
+      e.preventDefault(); const v = scan.value.trim(); if (!v) return;
+      const exact = S.products.find(x => x.id.toUpperCase() === v.toUpperCase());
+      if (exact || /^gem-?\d+$/i.test(v)) addByCode(v); else if (btns[hl]) addProduct(prod(btns[hl].dataset.id));
+    }
+    if (e.key === 'Escape') hideSuggest();
+  });
+  $('#suggest').addEventListener('click', e => { const b = e.target.closest('button'); if (b) addProduct(prod(b.dataset.id)); });
+  document.addEventListener('click', e => { if (!e.target.closest('.scan-box')) hideSuggest(); });
+
+  /* ---------- guide (F4) ---------- */
+  $('#guide').innerHTML = `<option value="">Walk-in (no guide or driver)</option>` + S.guides.map(g => `<option value="${g.id}">${esc(g.name)} (${esc(g.vehicle)}) · ${g.pct}%</option>`).join('');
+  $('#guide').value = D.guideId || '';
+  $('#guide').onchange = e => { D.guideId = e.target.value; saveDraft(); render(); };
+
+  /* ---------- customer (F5, J2) ---------- */
+  const countries = ['Germany', 'United Kingdom', 'France', 'USA', 'Australia', 'Netherlands', 'India', 'Italy', 'Spain', 'Switzerland', 'Russia', 'China', 'Japan', 'Sri Lanka', 'Other'];
+  $('#custTabs').onclick = e => { const t = e.target.dataset.t; if (!t) return; D.custMode = t; saveDraft(); renderCust(); renderSteps(); };
+  function renderCust() {
+    $$('#custTabs button').forEach(b => b.classList.toggle('active', b.dataset.t === D.custMode));
+    const c = D.newCust;
+    $('#custBox').innerHTML = D.custMode === 'existing'
+      ? `<div class="field"><label class="req">Customer</label><select id="custSel">${UI.opts(S.customers.map(x => ({ v: x.id, l: x.name + ' · ' + x.country })), D.customerId, 'Select a customer…')}</select></div><div id="custInfo" class="mt-s"></div>`
+      : `<div class="stack" style="gap:10px">
+          <div class="field"><label class="req">Name</label><input class="input" data-c="name" value="${esc(c.name)}" placeholder="e.g. Anna Müller"></div>
+          <div class="field"><label class="req">Country</label><select data-c="country">${UI.opts(countries, c.country, 'Select country…')}</select></div>
+          <div class="field"><label>Email</label><input class="input" type="email" data-c="email" value="${esc(c.email)}" placeholder="for the VAT invoice PDF"></div>
+          <div class="field"><label>WhatsApp number</label><input class="input" data-c="whatsapp" value="${esc(c.whatsapp)}" placeholder="+49 …"></div>
+          <label class="check"><input type="checkbox" data-c="consent" ${c.consent ? 'checked' : ''}><span>Customer agrees to receive promotions by email / WhatsApp (J2, PDPA). They can unsubscribe at any time.</span></label>
+        </div>`;
+    if (D.custMode === 'existing') {
+      const info = () => { const x = cust(D.customerId); $('#custInfo').innerHTML = x ? `<div class="muted" style="font-size:12px">${esc(x.email)} · ${esc(x.whatsapp)}<br>Promotions: ${x.consent ? '<span class="badge badge-success">Consent given</span>' : '<span class="badge badge-default">No consent</span>'} · ${S.sales.filter(s => s.customerId === x.id).length} previous purchases</div>` : ''; };
+      $('#custSel').onchange = e => { D.customerId = e.target.value; saveDraft(); info(); };
+      info();
+    }
+  }
+  $('#custBox').addEventListener('input', e => { const k = e.target.dataset.c; if (!k) return; D.newCust[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; saveDraft(); renderSteps(); });
+  $('#custBox').addEventListener('change', e => { const k = e.target.dataset.c; if (!k) { if (e.target.id === 'custSel') renderSteps(); return; } D.newCust[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; saveDraft(); renderSteps(); });
+
+  /* ---------- cart & totals (F2, F3, H3) ---------- */
+  const held = () => D.heldId ? find('held', D.heldId) : null;
+  function render() {
+    const h = held();
+    const locked = !!h && h.status !== 'rejected';
+    $('#cart').innerHTML = D.items.length ? D.items.map(i => {
+      const p = prod(i.productId); const below = i.agreed < i.minPrice;
+      return `<div class="cart-line ${below ? 'below' : ''}">
+        ${gemPic(p, 50, 56)}
+        <div>
+          <b style="color:var(--navy)">${esc(p.name)}</b> <span class="mono muted" style="font-size:11px">${p.id}</span><br>
+          <small class="muted">${esc(p.type)} · ${fmt.ct(p.carat)} · ${esc(p.colour)} · ${esc(p.shape)} · ${esc(p.treatment)}</small> ${certBadge(p.cert)}<br>
+          <small>Selling price: <b>${fmt.lkr(i.listPrice)}</b> <span class="muted">(${'USD ' + fmt.num(fx.from(i.listPrice, 'USD'))} · EUR ${fmt.num(fx.from(i.listPrice, 'EUR'))})</span></small>
+          <small data-roles="owner"><br>Minimum: ${fmt.lkr(i.minPrice)} · Cost: ${fmt.lkr(p.cost)}</small>
+          ${below ? `<div class="mt-s"><span class="badge badge-warning">⚠ Below the minimum price${owner ? '' : ' – owner approval needed'}</span></div>` : ''}
+        </div>
+        <div class="right" style="min-width:170px">
+          <label class="label">Agreed price (LKR)</label>
+          <input class="input right" type="number" min="1" step="500" data-agreed="${p.id}" value="${i.agreed}" ${locked ? 'readonly' : ''} style="margin-top:4px">
+          <div class="muted" style="font-size:11px;margin-top:4px" data-fx="${p.id}">USD ${fmt.num(fx.from(i.agreed, 'USD'))} · EUR ${fmt.num(fx.from(i.agreed, 'EUR'))}</div>
+          ${locked ? '' : `<button class="btn btn-ghost btn-sm mt-s" data-remove="${p.id}">Remove</button>`}
+        </div></div>`;
+    }).join('') : `<div class="empty">${gemSVG('Blue Sapphire', 'Ring', 60)}<br>Scan a tag or search to add the first product.</div>`;
+    renderTotals(); renderHeld(); renderHeldList(); renderSteps();
+    $('#guide').disabled = locked; $('#clearBtn').textContent = locked ? 'Start a new bill' : 'Clear bill';
+  }
+  $('#cart').addEventListener('input', e => {
+    const id = e.target.dataset.agreed; if (!id) return;
+    const it = D.items.find(i => i.productId === id); it.agreed = Number(e.target.value) || 0; saveDraft();
+    $(`[data-fx="${id}"]`).textContent = 'USD ' + fmt.num(fx.from(it.agreed, 'USD')) + ' · EUR ' + fmt.num(fx.from(it.agreed, 'EUR'));
+    const line = e.target.closest('.cart-line'); line.classList.toggle('below', it.agreed < it.minPrice);
+    renderTotals();
+  });
+  $('#cart').addEventListener('change', e => { if (e.target.dataset.agreed) render(); });
+  $('#cart').addEventListener('click', e => { const id = e.target.dataset.remove; if (id) { D.items = D.items.filter(i => i.productId !== id); saveDraft(); render(); } });
+  $('#clearBtn').onclick = () => { D = blank(); saveDraft(); $('#guide').value = ''; renderCust(); render(); scan.focus(); };
+
+  function renderTotals() {
+    const t = Calc.saleTotals(D.items, D.guideId);
+    const g = guide(D.guideId);
+    $('#guideHint').innerHTML = g ? `${esc(g.vehicle)} ${esc(g.vehicleNo)} · ${esc(g.phone)} · commission ${g.pct}% of the price before VAT (H1)` : 'Walk-in: no guide commission. Staff commission still applies (H2).';
+    const below = D.items.some(i => i.agreed < i.minPrice);
+    $('#totals').innerHTML = `
+      <div class="dl" style="grid-template-columns:1fr auto">
+        <dt>Items</dt><dd class="right">${D.items.length}</dd>
+        <dt>Agreed total</dt><dd class="right">${fmt.lkr(t.subtotal)}</dd>
+        <dt>Before VAT</dt><dd class="right">${fmt.lkr(t.net)}</dd>
+        <dt>VAT ${S.shop.vatRate}%</dt><dd class="right">${fmt.lkr(t.vat)}</dd>
+      </div>
+      <div class="sep"></div>
+      <div class="row between"><b>Total to pay</b><b style="font-size:20px;color:var(--navy)">${fmt.lkr(t.total)}</b></div>
+      <div class="right text-gold" style="font-size:13px">USD ${fmt.num(fx.from(t.total, 'USD'))} · EUR ${fmt.num(fx.from(t.total, 'EUR'))}</div>
+      <div class="sep"></div>
+      <div class="dl" style="grid-template-columns:1fr auto;font-size:12px">
+        <dt>Guide commission ${g ? '(' + g.pct + '%)' : ''}</dt><dd class="right">${fmt.lkr(t.guideComm)}</dd>
+        <dt>Staff commission (level ${D.items.length ? Calc.slabIndex(t.net) + 1 : '–'})</dt><dd class="right">${fmt.lkr(t.staffComm)}</dd>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:4px">Commissions are calculated per sale automatically (H3, rule 5).</div>`;
+    const h = held(); const pay = $('#payBtn');
+    pay.className = 'btn btn-lg btn-block ' + (below && !owner && !(h && h.status === 'approved') ? 'btn-gold' : 'btn-success');
+    if (h && h.status === 'pending') { pay.textContent = '⏳ Waiting for owner approval…'; pay.disabled = true; }
+    else if (h && h.status === 'approved') { pay.textContent = '✓ Approved – take payment'; pay.disabled = false; }
+    else { pay.disabled = !D.items.length; pay.textContent = below && !owner ? 'Send for owner approval (below minimum)' : 'Complete sale & take payment'; }
+    $('#reserveBtn').disabled = $('#quoteBtn').disabled = !D.items.length || !!h;
+  }
+
+  function renderHeld() {
+    const h = held();
+    if (!h) { $('#heldBanner').innerHTML = ''; return; }
+    const a = find('approvals', h.approvalId);
+    if (h.status === 'pending') $('#heldBanner').innerHTML = `<div class="alert warning pending-pulse"><div style="font-size:22px">⏳</div><div><b>Waiting for owner approval – ${h.id}</b><br>The price is below the minimum. An approval request (${h.approvalId}) was sent to the owner's phone. This screen checks every 3 seconds (tech stack §7).<div class="row mt-s"><a class="btn btn-sm btn-outline" href="../k-owner-control/approvals.html#${h.approvalId}">Open approvals inbox</a><span class="muted" style="font-size:12px">Demo: switch the role to <b>Owner</b>, approve, then come back.</span></div></div></div>`;
+    else if (h.status === 'approved') $('#heldBanner').innerHTML = `<div class="alert success"><div style="font-size:22px">✅</div><div><b>Owner approved the price</b> – ${esc(user(a && a.decidedBy).name)} at ${a ? fmt.dt(a.decidedAt) : ''}${a && a.note ? ' · “' + esc(a.note) + '”' : ''}<br>You can now take payment and complete the sale.</div></div>`;
+    else if (h.status === 'rejected') $('#heldBanner').innerHTML = `<div class="alert danger"><div style="font-size:22px">✖</div><div><b>Owner rejected the price</b>${a && a.note ? ': “' + esc(a.note) + '”' : ''}<br>Agree a new price at or above the minimum, or start a new bill.</div></div>`;
+  }
+  function renderHeldList() {
+    const list = S.held.filter(h => ['pending', 'approved'].includes(h.status) && inBranch(h) && h.id !== D.heldId);
+    $('#heldList').innerHTML = list.length ? `<div class="card"><div class="card-header"><h3>Held sales (below minimum)</h3></div>${UI.table([
+      { h: 'Held', f: h => `<span class="mono">${h.id}</span><br><small class="muted">${fmt.dt(h.at)}</small>` },
+      { h: 'Item', f: h => UI.prodCell(prod(h.items[0].productId)) },
+      { h: 'Agreed', num: 1, f: h => fmt.lkr(sum(h.items, i => i.agreed)) },
+      { h: 'Status', f: h => badge(h.status, h.status === 'pending' ? 'Waiting for owner' : 'Approved') },
+      { h: '', f: h => `<button class="btn btn-sm btn-outline" data-resume="${h.id}">Resume</button>` }
+    ], list)}</div>` : '';
+  }
+  $('#heldList').addEventListener('click', e => { const id = e.target.dataset.resume; if (!id) return; loadHeld(find('held', id)); $('#guide').value = D.guideId; renderCust(); render(); toast('Resumed ' + id, ''); });
+
+  /* ---------- customer resolve ---------- */
+  function resolveCustomer(createIfNew) {
+    if (D.custMode === 'existing') { if (!D.customerId) { toast('Select the customer', 'Customer details are needed for the VAT invoice (F5).', 'error'); return null; } return cust(D.customerId); }
+    const c = D.newCust;
+    if (!c.name.trim() || !c.country) { $$('#custBox [data-c="name"], #custBox [data-c="country"]').forEach(i => !i.value && i.closest('.field').classList.add('invalid')); toast('Customer name and country are required', 'F5', 'error'); return null; }
+    if (c.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) { toast('Email address looks wrong', c.email, 'error'); return null; }
+    if (!createIfNew) return { id: null, name: c.name, country: c.country, email: c.email, whatsapp: c.whatsapp, consent: c.consent };
+    const nc = { id: nextId('customer', 'C-', 3), name: c.name.trim(), country: c.country, email: c.email, whatsapp: c.whatsapp, consent: !!c.consent, consentAt: c.consent ? new Date().toISOString() : null, unsubscribed: false, passport: '', createdAt: new Date().toISOString(), notes: '' };
+    S.customers.push(nc); Log.add('Customer added', nc.name + ' · ' + nc.country + (nc.consent ? ' · consent given' : ''));
+    D.custMode = 'existing'; D.customerId = nc.id; saveDraft();
+    return nc;
+  }
+
+  /* ---------- complete / approval (F3, G1) ---------- */
+  $('#payBtn').onclick = () => {
+    if (!D.items.length) return;
+    if (D.items.some(i => !(i.agreed > 0))) { toast('Enter the agreed price for every item', '', 'error'); return; }
+    const h = held();
+    const below = D.items.filter(i => i.agreed < i.minPrice);
+    if (below.length && !owner && !(h && h.status === 'approved')) {
+      const c = resolveCustomer(false); if (!c) return;
+      const hs = { id: nextId('held', 'HS-'), at: new Date().toISOString(), branch: activeBranch(), staffId: currentUser().id, customer: c.id ? { id: c.id } : D.newCust, guideId: D.guideId || null, items: D.items.map(i => Object.assign({}, i)), status: 'pending' };
+      const names = below.map(i => prod(i.productId).name + ' (' + i.productId + ')').join(', ');
+      const a = Approvals.request({ type: 'below_min', title: 'Below minimum: ' + names, detail: below.map(i => i.productId + ': agreed ' + fmt.lkr(i.agreed) + ' · minimum ' + fmt.lkr(i.minPrice) + ' · list ' + fmt.lkr(i.listPrice)).join(' | ') + ' · Customer ' + c.name + ' (' + c.country + ')' + (D.guideId ? ', guide ' + guide(D.guideId).name : ', walk-in'), amount: sum(D.items, i => i.agreed), payload: { heldId: hs.id } });
+      hs.approvalId = a.id; S.held.unshift(hs);
+      hs.items.forEach(i => { const p = prod(i.productId); p.status = 'on_hold'; Hist.add(p.id, 'On hold', 'Below-minimum price ' + fmt.lkr(i.agreed) + ' – waiting for owner approval (' + a.id + ')'); });
+      Store.save(); D.heldId = hs.id; saveDraft(); render(); window.renderBell && renderBell();
+      toast('Sent to the owner for approval', 'Sale held: ' + hs.id + '. You will see the answer here.', 'warning');
+      return;
+    }
+    const c = resolveCustomer(true); if (!c) return;
+    if (owner && below.length) Log.add('Below-minimum sale by owner', below.map(i => i.productId + ' at ' + fmt.lkr(i.agreed)).join(', '));
+    const t = Calc.saleTotals(D.items, D.guideId);
+    UI.payment(t.total, pay => {
+      D.items.forEach(i => { if (h) i.approvalId = h.approvalId; });
+      const s = Sales.complete({ items: D.items, guideId: D.guideId, customerId: c.id, heldId: D.heldId, quoteId: D.quoteId }, pay);
+      const autoE = S.messaging.auto.invoiceEmail && S.messaging.emailOn && c.email, autoW = S.messaging.auto.invoiceWhatsapp && S.messaging.wa.enabled && S.messaging.wa.verified && c.whatsapp;
+      if (autoE) s.sentEmail = true; if (autoW) s.sentWhatsapp = true; Store.save();
+      D = blank(); saveDraft(); $('#guide').value = ''; renderCust(); render();
+      UI.modal({
+        title: 'Sale completed ✓', desc: 'Invoice ' + s.id + ' · ' + fmt.lkr(s.total),
+        body: `<div class="dl"><dt>Invoice</dt><dd class="mono">${s.id}</dd><dt>Customer</dt><dd>${esc(c.name)} (${esc(c.country)})</dd><dt>Paid</dt><dd>${s.payments.map(p => p.method === 'card' ? 'Card ' + fmt.lkr(p.lkr) : 'Cash ' + fmt.money(p.amount, p.currency)).join(' + ')}</dd><dt>Change due</dt><dd class="text-gold bold">${fmt.lkr(s.change)}</dd><dt>Commissions</dt><dd>Guide ${fmt.lkr(s.guideComm)} · Staff ${fmt.lkr(s.staffComm)}</dd></div>
+          ${autoE || autoW ? `<div class="alert success mt">Invoice PDF sent automatically by ${[autoE && 'email', autoW && 'WhatsApp'].filter(Boolean).join(' and ')} (J5). Thank-you message queued.</div>` : ''}
+          <div class="alert info mt">The owner received an instant sale alert (K2).</div>`,
+        actions: [{ label: 'New sale', cls: 'btn-outline', onClick: () => setTimeout(() => scan.focus(), 50) }, { label: 'Send invoice', cls: 'btn-outline', onClick: () => { UI.send('VAT invoice ' + s.id, c, r => { s.sentEmail = s.sentEmail || r.email; s.sentWhatsapp = s.sentWhatsapp || r.whatsapp; Store.save(); }); } }, { label: 'Print VAT invoice', cls: 'btn-sapphire', onClick: () => { location.href = '../g-payments/invoice.html?id=' + s.id; } }]
+      });
+    });
+  };
+
+  /* ---------- reserve & quote (F7) ---------- */
+  function makeQuote(kind) {
+    const c = resolveCustomer(true); if (!c) return;
+    const days = kind === 'reservation' ? 3 : 14;
+    const exp = new Date(); exp.setDate(exp.getDate() + days);
+    UI.modal({
+      title: kind === 'reservation' ? 'Reserve for a returning customer' : 'Give a price quotation', desc: 'Both have an expiry date (F7).',
+      body: `<div class="form-grid"><div class="field"><label class="req">Expiry date</label><input class="input" type="date" id="qExp" required value="${ymd(exp)}" min="${todayYmd()}"></div>
+        ${kind === 'reservation' ? '<div class="field"><label>Deposit taken (LKR)</label><input class="input" type="number" id="qDep" min="0" value="0"></div>' : '<div></div>'}
+        <div class="field full"><label>Note</label><input class="input" id="qNote" placeholder="e.g. coming back on Friday"></div></div>
+        <p class="muted mt-s" style="font-size:12px">${D.items.length} item(s), ${fmt.lkr(sum(D.items, i => i.agreed))} for ${esc(c.name)}.${kind === 'reservation' ? ' Reserved items cannot be sold to anyone else until the expiry date.' : ''}</p>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, {
+        label: kind === 'reservation' ? 'Reserve' : 'Create quotation', cls: 'btn-sapphire', onClick: ({ el }) => {
+          if (!UI.validate(el)) return false;
+          const q = { id: nextId('quote', kind === 'reservation' ? 'RS-' : 'QT-'), kind, items: D.items.map(i => ({ productId: i.productId, price: i.agreed })), customerId: c.id, created: new Date().toISOString(), expires: $('#qExp', el).value, deposit: Number(($('#qDep', el) || {}).value || 0), status: 'active', by: currentUser().id, branch: activeBranch(), notes: $('#qNote', el).value };
+          S.quotes.unshift(q);
+          if (kind === 'reservation') q.items.forEach(i => { const p = prod(i.productId); p.status = 'reserved'; Hist.add(p.id, 'Reserved', q.id + ' for ' + c.name + ' until ' + fmt.date(q.expires)); });
+          Log.add(kind === 'reservation' ? 'Reservation created' : 'Quotation created', q.id + ' · ' + c.name);
+          Store.save(); D = blank(); saveDraft(); renderCust(); render();
+          toast(q.id + ' created', kind === 'reservation' ? 'Item reserved until ' + fmt.date(q.expires) : 'Opening the quotation print preview…', 'success');
+          if (kind === 'quotation') setTimeout(() => location.href = 'quotation-print.html?id=' + q.id, 700);
+        }
+      }]
+    });
+  }
+  $('#reserveBtn').onclick = () => makeQuote('reservation');
+  $('#quoteBtn').onclick = () => makeQuote('quotation');
+
+  /* ---------- poll for approval (tech stack §7: POS checks every few seconds) ---------- */
+  let lastStatus = held() && held().status;
+  poll(() => {
+    const h = held(); if (!h) return;
+    if (h.status !== lastStatus) { lastStatus = h.status; render(); if (h.status === 'approved') toast('Owner approved ✓', 'You can complete the sale now.', 'success'); if (h.status === 'rejected') { toast('Owner rejected the price', '', 'error'); } }
+  }, 3000);
+
+  renderCust(); render(); scan.focus();
+})();
+</script>
+</body>
+</html>

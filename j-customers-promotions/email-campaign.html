@@ -1,0 +1,56 @@
+<!-- Screen: Email campaign builder | BRD: J3, J2, J7 | Rule: 8 | Tech stack §6.1 (Amazon SES for campaigns) | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email Campaign · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="j-customers-promotions/email-campaign.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const draft = S.campaigns.find(c => c.id === qs('id')) || null;
+  const on = S.messaging.emailOn && S.messaging.ses.enabled;
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'J · Customers & promotions', title: 'Email campaign', brd: ['J3', 'J2'], sub: 'Create a promotion with pictures and text, choose who receives it, and send. Sent through Amazon SES from the shop\'s domain, with an unsubscribe link.', actions: '<a class="btn btn-outline" href="campaign-report.html">Campaign report</a>' }) +
+    `${on ? '' : '<div class="alert danger mb">Email messages are switched off in <a href="message-settings.html">Message settings</a> (J7). You can prepare a draft but not send.</div>'}
+    <div class="mb">${UI.ruleNote(8, 'Promotions are sent only to customers who gave permission. Each message has an “unsubscribe” option.')}</div>
+    <div class="grid g2"><form class="card" id="f" novalidate><div class="card-header"><h3>1 · Message</h3></div><div class="card-content stack" style="gap:12px">
+      <div class="field"><label class="req">Campaign name</label><input class="input" name="name" required value="${esc(draft ? draft.name : '')}" placeholder="e.g. New padparadscha arrivals"></div>
+      <div class="field"><label class="req">Email subject</label><input class="input" name="subject" required value="${esc(draft ? draft.subject : '')}" placeholder="Rare gems just arrived in Ella"></div>
+      <div class="field"><label>Picture</label><div class="row" id="pics">${['Blue Sapphire', 'Padparadscha', 'Pink Sapphire', 'Moonstone', 'Ruby', "Cat's Eye"].map((g, i) => `<button type="button" class="btn btn-outline" data-pic="${esc(g)}" style="height:58px;width:58px;padding:0">${gemSVG(g, i % 2 ? 'Ring' : 'Loose gem', 44)}</button>`).join('')}</div><div class="upload mt-s" id="up" data-accept="image/*">⇪ or upload your own photo</div></div>
+      <div class="field"><label class="req">Text</label><textarea name="body" required rows="7">${esc(draft ? draft.body : 'Dear {name},\n\nThank you for visiting Ceylon Gem House in Ella. We have just received a small collection of rare Ceylon sapphires and padparadschas.\n\nReply to this email or WhatsApp us to reserve a piece – we ship worldwide with full lab certificates.\n\nWarm regards,\nRuwan')}</textarea><span class="hint">{name} is replaced with the customer's first name</span></div>
+    </div><div class="card-header" style="border-top:1px solid var(--border)"><h3>2 · Who receives it</h3></div><div class="card-content">${Campaign.audienceUI('a')}<div id="aud" class="mt"></div></div>
+    <div class="card-footer"><button type="button" class="btn btn-outline" id="save">Save draft</button><button type="button" class="btn btn-outline" id="test">Send test to me</button><button type="submit" class="btn btn-sapphire" ${on ? '' : 'disabled'}>Send campaign</button></div></form>
+    <div class="stack"><div class="card"><div class="card-header"><h3>Preview</h3><span class="muted" style="font-size:12px">as the customer sees it</span></div><div class="card-content" style="background:#eef1f6"><div id="pv" style="background:#fff;max-width:520px;margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:var(--shadow)"></div></div></div></div></div>`;
+  const F = $('#f'); let pic = draft ? draft.image : 'Padparadscha';
+  if (draft) { draft.audience.countries.forEach(c => { const i = $(`[data-ac][value="${c}"]`); if (i) i.checked = true; }); draft.audience.gems.forEach(g => { const i = $(`[data-ag][value="${g}"]`); if (i) i.checked = true; }); }
+  UI.bindUpload($('#up'), () => { pic = 'upload'; preview(); });
+  function preview() {
+    const a = Campaign.audience(Campaign.readAudience(F, 'a'), 'email');
+    const first = (a.ok[0] || { name: 'Anna Müller' }).name.split(' ')[0];
+    $('#aud').innerHTML = `<div class="alert ${a.ok.length ? 'info' : 'warning'}"><div><b>${a.ok.length} recipient(s)</b> will receive this email.<br><small>${a.all.length} customers match the filters · ${a.excluded} excluded (no consent, unsubscribed or no email) – rule 8.</small><br><small>Estimated cost: ~US$${(a.ok.length * 0.0001).toFixed(4)} via Amazon SES</small></div></div>`;
+    $$('#pics [data-pic]').forEach(b => b.style.borderColor = b.dataset.pic === pic ? 'var(--sapphire)' : '');
+    $('#pv').innerHTML = `<div style="background:var(--navy);color:#fff;padding:14px 18px" class="row"><img src="../assets/img/logo.svg" width="28"><b>${esc(S.shop.name)}</b></div>
+      <div style="height:180px;display:grid;place-items:center;background:radial-gradient(circle,#fff,#e8eefa)">${pic === 'upload' ? '<span class="muted">[your uploaded photo]</span>' : gemSVG(pic, 'Loose gem', 140)}</div>
+      <div style="padding:16px 18px"><b style="font-size:16px">${esc(F.subject.value || 'Subject')}</b><p style="white-space:pre-wrap;font-size:13px;margin-top:8px">${esc(F.body.value.replace(/\{name\}/g, first))}</p>
+      <a class="btn btn-gold" style="pointer-events:none">View new arrivals</a></div>
+      <div style="padding:10px 18px;background:#f8fafc;font-size:11px;color:#64748b">${esc(S.shop.address)}<br>You receive this because you agreed at our shop. <u>Unsubscribe</u></div>`;
+    return a;
+  }
+  F.addEventListener('input', preview); F.addEventListener('change', preview);
+  $('#pics').onclick = e => { const b = e.target.closest('[data-pic]'); if (b) { pic = b.dataset.pic; preview(); } };
+  const build = () => Object.assign(draft || { id: nextId('campaign', 'CP-'), channel: 'email', stats: { sent: 0, delivered: 0, opened: 0, clicked: 0, unsubscribed: 0 } }, { name: F.name.value, subject: F.subject.value, body: F.body.value, image: pic, audience: Campaign.readAudience(F, 'a'), status: 'draft' });
+  $('#save').onclick = () => { if (!UI.validate(F)) return; const c = build(); if (!S.campaigns.includes(c)) S.campaigns.unshift(c); Store.save(); toast('Draft saved', c.name, 'success'); };
+  $('#test').onclick = () => toast('Test email sent', 'Sent to ' + currentUser().email + ' (demo).', 'success');
+  F.onsubmit = e => {
+    e.preventDefault(); if (!UI.validate(F)) return;
+    const a = preview(); if (!a.ok.length) { toast('No recipients', 'No customers with consent match these filters.', 'error'); return; }
+    UI.confirm('Send to ' + a.ok.length + ' customers?', 'Only customers who agreed to receive promotions are included. Each email has an unsubscribe link.', () => { const c = build(); const n = Campaign.send(c); toast('Campaign sent', n + ' emails queued via Amazon SES (demo).', 'success'); setTimeout(() => location.href = 'campaign-report.html?id=' + c.id, 900); }, { yes: 'Send now' });
+  };
+  preview();
+})();
+</script>
+</body>
+</html>

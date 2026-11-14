@@ -1,0 +1,66 @@
+<!-- Screen: Signup – owner account setup | BRD: A1, A2, A3, A4 | Roles: Owner (first-time setup, public) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner Setup · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-layout="none">
+<div class="auth-wrap">
+  <div class="auth-side">
+    <div class="row"><img src="../assets/img/logo.svg" width="44" alt=""><b style="color:#fff">Gem Shop System</b></div>
+    <div><h1>Set up your shop<br><span class="gold">in three short steps.</span></h1><p class="mt">The owner account controls everything: products, prices, approvals, staff and reports. Staff accounts are added afterwards.</p></div>
+    <small>Prototype · nothing is really created</small>
+  </div>
+  <div class="auth-main"><div class="auth-card" style="max-width:480px">
+    <div class="card"><div class="card-content" style="padding:28px">
+      <h2 style="font-size:22px">Owner account setup</h2>
+      <div class="stepper mt" id="steps"><span class="on">1 · Owner</span><span>2 · Shop &amp; VAT</span><span>3 · Branch &amp; rates</span></div>
+      <form id="f" novalidate>
+        <div data-step="1" class="stack" style="gap:12px">
+          <div class="field"><label class="req">Full name</label><input class="input" name="oname" required placeholder="e.g. Ruwan Perera"></div>
+          <div class="field"><label class="req">Email (login)</label><input class="input" type="email" name="email" required></div>
+          <div class="field"><label class="req">Mobile (for owner alerts)</label><input class="input" name="phone" required placeholder="+94 77 …"></div>
+          <div class="field"><label class="req">Password</label><input class="input" type="password" name="pw" required minlength="8"><span class="hint" id="pwH">At least 8 characters with a number</span></div>
+          <div class="field"><label class="req">Confirm password</label><input class="input" type="password" name="pw2" required></div>
+        </div>
+        <div data-step="2" class="stack hidden" style="gap:12px">
+          <div class="field"><label class="req">Shop name</label><input class="input" name="shop" required></div>
+          <div class="field"><label class="req">Address</label><input class="input" name="address" required value="Ella, Sri Lanka"></div>
+          <div class="field"><label class="req">VAT registration number</label><input class="input mono" name="vatNo" required></div>
+          <div class="form-grid"><div class="field"><label class="req">VAT rate %</label><input class="input" type="number" name="vatRate" required value="18"></div><div class="field"><label class="req">NGJA licence no.</label><input class="input mono" name="ngja" required></div></div>
+          <div class="field"><label class="req">NGJA licence expiry</label><input class="input" type="date" name="ngjaExp" required></div>
+        </div>
+        <div data-step="3" class="stack hidden" style="gap:12px">
+          <div class="field"><label class="req">First branch</label><input class="input" name="branch" required value="Ella"></div>
+          <div class="form-grid"><div class="field"><label class="req">1 USD = LKR</label><input class="input" type="number" name="usd" required value="300"></div><div class="field"><label class="req">1 EUR = LKR</label><input class="input" type="number" name="eur" required value="325"></div></div>
+          <div class="alert info" style="font-size:12px">Currencies are LKR, USD and EUR only (A4). You can add the second branch, staff and lists later in Setup.</div>
+          <label class="check"><input type="checkbox" name="terms" required> I agree that customer data is kept private and used only with permission (PDPA No. 9 of 2022)</label>
+        </div>
+        <div class="row between mt"><button type="button" class="btn btn-outline" id="back" style="visibility:hidden">Back</button><button type="submit" class="btn btn-sapphire" id="next">Next</button></div>
+      </form>
+      <p class="muted center mt" style="font-size:12px">Already set up? <a href="login.html">Sign in</a></p>
+    </div></div>
+  </div></div>
+</div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+(function () {
+  let step = 1; const F = $('#f');
+  function show() { $$('[data-step]').forEach(d => d.classList.toggle('hidden', +d.dataset.step !== step)); $$('#steps span').forEach((s, i) => s.classList.toggle('on', i < step)); $('#back').style.visibility = step > 1 ? 'visible' : 'hidden'; $('#next').textContent = step === 3 ? 'Create owner account' : 'Next'; }
+  $('#back').onclick = () => { step--; show(); };
+  F.onsubmit = e => {
+    e.preventDefault(); const cur = $(`[data-step="${step}"]`); if (!UI.validate(cur)) return;
+    if (step === 1) {
+      if (F.pw.value.length < 8 || !/\d/.test(F.pw.value)) { F.pw.closest('.field').classList.add('invalid'); toast('Password too weak', 'At least 8 characters with a number (NFR-2).', 'error'); return; }
+      if (F.pw.value !== F.pw2.value) { F.pw2.closest('.field').classList.add('invalid'); toast('Passwords do not match', '', 'error'); return; }
+    }
+    if (step < 3) { step++; show(); return; }
+    UI.modal({ title: 'Owner account created ✓', desc: 'Demo only – the prototype keeps using the sample shop data.', body: `<dl class="dl"><dt>Owner</dt><dd>${esc(F.oname.value)}</dd><dt>Shop</dt><dd>${esc(F.shop.value)}</dd><dt>VAT</dt><dd>${esc(F.vatNo.value)} · ${esc(F.vatRate.value)}%</dd><dt>Branch</dt><dd>${esc(F.branch.value)}</dd><dt>Rates</dt><dd>USD ${esc(F.usd.value)} · EUR ${esc(F.eur.value)}</dd></dl><div class="alert info mt">A verification email was sent to ${esc(F.email.value)}.</div>`, actions: [{ label: 'Go to dashboard', cls: 'btn-sapphire', onClick: () => { Prefs.set('role', 'owner'); Prefs.set('branch', 'all'); Prefs.set('loggedIn', true); location.href = '../dashboard/index.html'; } }] });
+  };
+  show();
+})();
+</script>
+</body>
+</html>

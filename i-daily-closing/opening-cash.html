@@ -1,0 +1,36 @@
+<!-- Screen: Opening cash per currency | BRD: I1 | Rules: 9, 10 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opening Cash · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="i-daily-closing/opening-cash.html" data-roles="owner salesperson">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const br = activeBranch();
+  function render() {
+    const d = todayYmd(), k = d + '|' + br, op = S.openings[k];
+    const closed = S.closings.find(c => c.date === d && c.branch === br);
+    const last = S.closings.filter(c => c.branch === br).sort((a, b) => b.date.localeCompare(a.date))[0];
+    const hist = Object.entries(S.openings).filter(([kk]) => kk.endsWith('|' + br)).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10);
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'I · Daily cash closing', title: 'Opening cash – ' + fmt.date(d), brd: ['I1'], sub: esc(branchName(br)) + ' · count the drawer at the start of the day, for each currency.' }) +
+      `<div class="grid g-2-1"><form class="card" id="f" novalidate><div class="card-header"><h3>Opening cash in the drawer</h3>${op ? '<span class="badge badge-success">Entered ' + fmt.time(op.at) + ' by ' + esc(user(op.by).name) + '</span>' : '<span class="badge badge-warning">Not entered yet</span>'}</div>
+        <div class="card-content">${closed ? '<div class="alert info mb">Today is already closed. The opening cash cannot be changed.</div>' : ''}<div class="grid g3">${['LKR', 'USD', 'EUR'].map(c => `<div class="field"><label class="req">${c} cash</label><input class="input input-lg right" type="number" min="0" step="${c === 'LKR' ? 100 : 1}" name="${c}" required value="${op ? op[c] : (last ? last.counted[c] : 0)}" ${closed ? 'readonly' : ''}></div>`).join('')}</div>
+        <div class="muted mt" id="tot"></div>${last ? `<div class="muted mt-s" style="font-size:12px">Yesterday's counted closing cash: LKR ${fmt.num(last.counted.LKR)} · USD ${fmt.num(last.counted.USD)} · EUR ${fmt.num(last.counted.EUR)}</div>` : ''}</div>
+        <div class="card-footer">${closed ? '' : `<button class="btn btn-sapphire" type="submit">${op ? 'Update opening cash' : 'Save opening cash'}</button>`}<a class="btn btn-outline" href="drawer-expenses.html">Drawer expenses →</a><a class="btn btn-outline" href="day-end.html">Day-end closing →</a></div></form>
+      <div class="card"><div class="card-header"><h3>Recent openings</h3></div>${UI.table([{ h: 'Date', f: r => fmt.date(r[0].split('|')[0]) }, { h: 'LKR', num: 1, f: r => fmt.num(r[1].LKR) }, { h: 'USD', num: 1, f: r => fmt.num(r[1].USD) }, { h: 'EUR', num: 1, f: r => fmt.num(r[1].EUR) }], hist)}</div></div>
+      <div class="mt">${UI.ruleNote(9, 'Each branch has its own stock and cash.')}</div>`;
+    const F = $('#f');
+    const tot = () => { $('#tot').textContent = 'Total value ≈ ' + fmt.lkr(+F.LKR.value + fx.toLKR(+F.USD.value, 'USD') + fx.toLKR(+F.EUR.value, 'EUR')) + ' at today\'s rates'; };
+    F.addEventListener('input', tot); tot();
+    F.onsubmit = e => { e.preventDefault(); if (!UI.validate(F)) return; S.openings[k] = { LKR: +F.LKR.value, USD: +F.USD.value, EUR: +F.EUR.value, at: new Date().toISOString(), by: currentUser().id }; Log.add('Opening cash entered', 'LKR ' + fmt.num(+F.LKR.value) + ' · USD ' + F.USD.value + ' · EUR ' + F.EUR.value); Store.save(); toast('Opening cash saved', '', 'success'); render(); };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

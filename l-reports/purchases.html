@@ -1,0 +1,34 @@
+<!-- Screen: Purchases by supplier report | BRD: L5, B3, L6 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Purchases by Supplier · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="l-reports/purchases.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { from: daysAgoYmd(180), to: todayYmd() };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Purchases by supplier', brd: ['L5', 'L6'], sub: 'What was bought from each supplier, and how much of it has been sold.', actions: UI.exportButtons('#rT', 'Purchases by supplier') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="field"><label>From</label><input class="input" type="date" data-f="from" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" data-f="to" value="${f.to}"></div></div></div><div id="out"></div>`;
+  function render() {
+    const pur = S.purchases.filter(p => ymd(p.date) >= f.from && ymd(p.date) <= f.to && inBranch(p));
+    const rows = S.suppliers.map(s => { const ps = pur.filter(p => p.supplierId === s.id); const items = ps.flatMap(p => p.lines.map(l => prod(l.productId))); return { s, n: ps.length, items: items.length, sold: items.filter(p => p.status === 'sold').length, cost: sum(ps, p => p.total), ret: sum(S.supplierReturns.filter(r => r.supplierId === s.id && ymd(r.date) >= f.from && ymd(r.date) <= f.to), r => r.refund), last: ps.map(p => p.date).sort().pop() }; }).filter(r => r.n).sort((a, b) => b.cost - a.cost);
+    const T = k => sum(rows, r => r[k]); const max = Math.max(1, ...rows.map(r => r.cost));
+    $('#out').innerHTML = `<div class="grid g3 mb">${UI.kpi('Total bought (cash)', fmt.cur(T('cost')), T('n') + ' purchases')}${UI.kpi('Products', T('items'), T('sold') + ' sold')}${UI.kpi('Returned to suppliers', fmt.cur(T('ret')), 'B4')}</div>
+      <div class="card">${UI.table([
+        { h: 'Supplier', f: r => `<a href="../b-purchasing/supplier-detail.html?id=${r.s.id}"><b>${esc(r.s.name)}</b></a><br><small class="muted">${esc(r.s.address)}</small>` },
+        { h: 'Purchases', num: 1, f: r => r.n }, { h: 'Products', num: 1, f: r => r.items }, { h: 'Sold', num: 1, f: r => r.sold + ' <small class="muted">(' + Math.round(r.sold / Math.max(1, r.items) * 100) + '%)</small>' },
+        { h: 'Total cost', num: 1, f: r => `<b>${fmt.cur(r.cost)}</b>` }, { h: 'Returned', num: 1, f: r => r.ret ? fmt.cur(r.ret) : '—' }, { h: 'Last purchase', f: r => fmt.date(r.last) },
+        { h: '', f: r => `<div class="bar gold" style="width:100px"><i style="width:${r.cost / max * 100}%"></i></div>` }
+      ], rows, { id: 'rT', cls: 'stack-sm', foot: ['Total', T('n'), T('items'), T('sold'), fmt.cur(T('cost')), fmt.cur(T('ret')), '', ''] })}</div>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

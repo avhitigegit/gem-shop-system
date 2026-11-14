@@ -1,0 +1,48 @@
+<!-- Screen: Users & roles (with role permission table) | BRD: A2, §03 user table, N1, N2 | Rule: 1 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Users &amp; Roles · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="a-setup/users.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const MATRIX = [
+    ['Add products, set / change prices', 1, 0, 0, 0], ['See cost price, profit & stock value', 1, 0, 0, '½'], ['Sell, take payments, print & send bills', 1, 1, 0, 0],
+    ['Select the guide, close the day', 1, 1, 0, 0], ['Approve below-minimum, returns, cancellations', 1, 0, 0, 0], ['View stock, stock checks, receive products', 1, '½', 1, 0],
+    ['Record / correct expenses', 1, 0, 0, 1], ['Sales, purchases, VAT, profit reports', 1, 0, 0, 1], ['Download tax pack, close months', 1, 0, 0, 1],
+    ['Customers & promotions', 1, '½', 0, 0], ['Manage staff, commissions, settings', 1, 0, 0, 0], ['Delete anything (invoices, log)', 0, 0, 0, 0]
+  ];
+  const mark = v => v === 1 ? '<span class="text-success bold">✓</span>' : v === '½' ? '<span class="text-warning" title="partly / view only">◐</span>' : '<span class="muted">—</span>';
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Users & roles', brd: ['A2'], sub: 'Each person has their own login and role, linked to a branch.', actions: '<button class="btn btn-sapphire" id="add">+ Add user</button>' }) +
+      `<div class="card mb">${UI.table([
+        { h: 'User', f: u => `<div class="row" style="flex-wrap:nowrap"><div class="avatar ${u.role === 'owner' ? 'gold' : ''}">${initials(u.name)}</div><div><b>${esc(u.name)}</b><br><small class="muted">${esc(u.email)}</small></div></div>` },
+        { h: 'Role', f: u => `<span class="badge badge-blue">${ROLES[u.role]}</span>` }, { h: 'Branch', f: u => esc(branchName(u.branch)) },
+        { h: 'Phone', f: u => esc(u.phone) }, { h: 'Last login', f: u => fmt.dt(u.lastLogin) },
+        { h: 'Status', f: u => u.active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-default">Disabled</span>' },
+        { h: '', f: u => `<button class="btn btn-sm btn-outline" data-edit="${u.id}">Edit</button> <button class="btn btn-sm btn-ghost" data-reset="${u.id}">Reset password</button>` }
+      ], S.users, { cls: 'stack-sm' })}</div>
+      <div class="card"><div class="card-header"><div><h3>What each role can do</h3><p>From the BRD user table (§03). Checked on every API call in the real build, not only hidden on screen (tech stack §7).</p></div></div>${UI.table([
+        { h: 'Permission', f: r => r[0] }, { h: 'Owner', f: r => mark(r[1]), cls: 'center' }, { h: 'Salesperson', f: r => mark(r[2]), cls: 'center' }, { h: 'Shop Staff', f: r => mark(r[3]), cls: 'center' }, { h: 'Accountant', f: r => mark(r[4]), cls: 'center' }
+      ], MATRIX)}<div class="card-footer" style="justify-content:flex-start"><span class="muted" style="font-size:12px">Tip: use the <b>DEMO ROLE</b> switcher in the top bar to see the system as each role.</span></div></div>`;
+  }
+  function form(u) {
+    const isNew = !u; u = u || { name: '', email: '', phone: '', role: 'salesperson', branch: 'ella', active: true };
+    UI.modal({ title: isNew ? 'Add user' : 'Edit ' + u.name, body: `<form class="form-grid" novalidate><div class="field full"><label class="req">Full name</label><input class="input" name="uname" required value="${esc(u.name)}"></div>
+      <div class="field"><label class="req">Email (login)</label><input class="input" type="email" name="email" required value="${esc(u.email)}"></div><div class="field"><label>Phone</label><input class="input" name="phone" value="${esc(u.phone)}"></div>
+      <div class="field"><label class="req">Role</label><select name="role" ${u.role === 'owner' && !isNew ? 'disabled' : ''}>${UI.opts(Object.keys(ROLES).map(k => ({ v: k, l: ROLES[k] })), u.role)}</select></div>
+      <div class="field"><label class="req">Branch</label><select name="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), u.branch)}</select></div>
+      <label class="check full"><input type="checkbox" name="active" ${u.active ? 'checked' : ''}> Active (can log in)</label>${isNew ? '<div class="alert info full">An invitation email with a link to set a password is sent to the user (shop SMTP).</div>' : ''}</form>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { const f = $('form', el); if (!UI.validate(f)) return false; const d = { name: f.uname.value, email: f.email.value, phone: f.phone.value, role: f.role.value || u.role, branch: f.branch.value, active: f.active.checked }; if (isNew) S.users.push(Object.assign({ id: nextId('user', 'u', 1), lastLogin: null }, d)); else Object.assign(u, d); Log.add(isNew ? 'User added' : 'User edited', d.name + ' · ' + ROLES[d.role]); Store.save(); toast(isNew ? 'User invited' : 'Saved', d.email, 'success'); render(); } }] });
+  }
+  $('#page').addEventListener('click', e => { if (e.target.id === 'add') form(); if (e.target.dataset.edit) form(user(e.target.dataset.edit)); if (e.target.dataset.reset) { const u = user(e.target.dataset.reset); toast('Password reset email sent', 'To ' + u.email + ' (demo)', 'success'); Log.add('Password reset sent', u.name); Store.save(); } });
+  render();
+})();
+</script>
+</body>
+</html>

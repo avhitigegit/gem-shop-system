@@ -1,0 +1,34 @@
+<!-- Screen: QR / barcode tag print preview | BRD: C1, D1, D4 | Roles: Owner, Shop Staff -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tag Print · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="c-products/tag-print.html" data-roles="owner staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const pre = (qs('ids') || '').split(',').filter(Boolean);
+  const avail = S.products.filter(p => inBranch(p) && Metrics.STOCK_STATUSES.includes(p.status));
+  const chosen = new Set(pre.length ? pre : avail.slice(-6).map(p => p.id));
+  let showPrice = true;
+  function render() {
+    const list = [...chosen].map(prod).filter(Boolean);
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'C · Gem products', title: 'QR / barcode tags', brd: ['C1'], sub: 'Tags print on a standard label printer from the browser print dialog. Scanners read the Code 39 barcode or the QR code.', actions: `<button class="btn btn-outline" id="pick">Choose products (${chosen.size})</button><button class="btn btn-sapphire" id="printBtn">🖨 Print ${list.length} tag(s)</button>` }) +
+      `<div class="card mb no-print"><div class="card-content row"><label class="check"><input type="checkbox" id="sp" ${showPrice ? 'checked' : ''}> Show selling price on the tag</label><span class="muted" style="font-size:12px">Label size: 60 × 30 mm · ${list.length} label(s)</span></div></div>
+      <div class="tag-sheet">${list.map(p => `<div class="tag-label">${qrSVG(p.id, 76)}<div style="min-width:0"><b style="font-size:12px;color:var(--navy)">${esc(S.shop.name)}</b><div class="mono" style="font-size:13px;font-weight:700">${p.id}</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</div><div>${fmt.ct(p.carat)} · ${esc(p.treatment)}${p.cert.type === 'lab' ? ' · Lab cert' : ''}</div>${showPrice ? `<div class="bold">${fmt.lkr(p.price)}</div>` : ''}</div><div style="grid-column:1/-1">${barcodeSVG(p.id, 30)}</div></div>`).join('') || '<div class="empty">No products chosen.</div>'}</div>`;
+    $('#printBtn').onclick = () => { list.forEach(p => Hist.add(p.id, 'Tag printed', 'QR/barcode tag printed')); Store.save(); window.print(); };
+    $('#sp').onchange = e => { showPrice = e.target.checked; render(); };
+    $('#pick').onclick = () => {
+      UI.modal({ title: 'Choose products to tag', size: 'lg', body: `<div style="max-height:55vh;overflow:auto">${avail.map(p => `<label class="check" style="padding:6px 0;border-bottom:1px solid var(--border)"><input type="checkbox" value="${p.id}" ${chosen.has(p.id) ? 'checked' : ''}> ${gemSVG(p.gem, p.type, 28)} <span><b>${p.id}</b> ${esc(p.name)}</span></label>`).join('')}</div>`,
+        actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Use selection', cls: 'btn-sapphire', onClick: ({ el }) => { chosen.clear(); $$('input:checked', el).forEach(i => chosen.add(i.value)); render(); } }] });
+    };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

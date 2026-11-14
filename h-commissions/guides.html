@@ -1,0 +1,45 @@
+<!-- Screen: Guides & drivers list | BRD: H1, A6, F4 | Roles: Owner (edit), Salesperson & Accountant (view) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guides &amp; Drivers · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="h-commissions/guides.html" data-roles="owner salesperson accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  function stats(g) {
+    const ss = S.sales.filter(s => s.guideId === g.id && s.status !== 'cancelled');
+    const cs = S.commissions.filter(c => c.payee === 'guide' && c.payeeId === g.id);
+    return { n: ss.length, sales: sum(ss, s => s.total), earned: sum(cs, c => c.amount), unpaid: sum(cs.filter(c => c.status === 'unpaid'), c => c.amount) };
+  }
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'H · Commissions', title: 'Guides & drivers', brd: ['H1'], sub: 'Non-staff who bring tourists. Each earns a percentage of the selling price (before VAT) on every sale.', actions: '<button class="btn btn-sapphire" data-roles="owner" id="add">+ Add guide / driver</button>' }) +
+      `<div class="prod-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${S.guides.map(g => { const st = stats(g); return `<div class="card"><div class="card-content"><div class="row" style="flex-wrap:nowrap"><div class="avatar gold" style="width:44px;height:44px">${initials(g.name)}</div><div style="flex:1"><a href="guide-profile.html?id=${g.id}"><b>${esc(g.name)}</b></a><br><span class="badge badge-outline">${{ 'Tuk-tuk': '🛺', Van: '🚐', Taxi: '🚕' }[g.vehicle] || ''} ${esc(g.vehicle)}</span> <span class="mono muted" style="font-size:11px">${esc(g.vehicleNo)}</span></div><div class="right"><div style="font-size:22px;font-weight:800;color:var(--sapphire)">${g.pct}%</div></div></div>
+        <div class="dl mt" style="grid-template-columns:1fr auto;font-size:12px"><dt>Phone</dt><dd class="right">${esc(g.phone)}</dd><dt>Sales brought</dt><dd class="right">${st.n} · ${fmt.cur(st.sales)}</dd><dt data-roles="owner accountant">Commission earned</dt><dd class="right" data-roles="owner accountant">${fmt.cur(st.earned)}</dd><dt data-roles="owner accountant">Not yet paid</dt><dd class="right ${st.unpaid ? 'text-warning bold' : ''}" data-roles="owner accountant">${fmt.cur(st.unpaid)}</dd></div></div>
+        <div class="card-footer"><a class="btn btn-sm btn-outline" href="guide-profile.html?id=${g.id}">Profile</a><button class="btn btn-sm btn-ghost" data-roles="owner" data-edit="${g.id}">Edit</button></div></div>`; }).join('')}</div>`;
+  }
+  function form(g) {
+    const isNew = !g; g = g || { name: '', vehicle: 'Tuk-tuk', vehicleNo: '', phone: '', pct: S.commissionRules.defaultGuidePct };
+    UI.modal({ title: isNew ? 'Add guide / driver' : 'Edit ' + g.name, body: `<form class="form-grid" novalidate>
+      <div class="field full"><label class="req">Name</label><input class="input" name="name" required value="${esc(g.name)}"></div>
+      <div class="field"><label class="req">Phone</label><input class="input" name="phone" required value="${esc(g.phone)}"></div>
+      <div class="field"><label class="req">Vehicle</label><select name="vehicle">${UI.opts(['Tuk-tuk', 'Van', 'Taxi', 'Car', 'Other'], g.vehicle)}</select></div>
+      <div class="field"><label class="req">Vehicle number</label><input class="input" name="vehicleNo" required value="${esc(g.vehicleNo)}"></div>
+      <div class="field"><label class="req">Commission %</label><input class="input" type="number" name="pct" min="0" max="50" step="0.5" required value="${g.pct}"><span class="hint">Default ${S.commissionRules.defaultGuidePct}% (A6)</span></div></form>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => {
+        const f = $('form', el); if (!UI.validate(f)) return false;
+        const d = { name: f.name.value.trim(), phone: f.phone.value, vehicle: f.vehicle.value, vehicleNo: f.vehicleNo.value, pct: +f.pct.value };
+        if (isNew) S.guides.push(Object.assign({ id: nextId('guide', 'G-', 2), since: todayYmd() }, d)); else Object.assign(g, d);
+        Log.add(isNew ? 'Guide added' : 'Guide edited', d.name + ' · ' + d.pct + '%'); Store.save(); toast('Saved', d.name, 'success'); render();
+      } }] });
+  }
+  $('#page').addEventListener('click', e => { if (e.target.id === 'add') form(); if (e.target.dataset.edit) form(guide(e.target.dataset.edit)); });
+  render();
+})();
+</script>
+</body>
+</html>

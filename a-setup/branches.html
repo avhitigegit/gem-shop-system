@@ -1,0 +1,31 @@
+<!-- Screen: Branches | BRD: A1, D3 | Rule: 9 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Branches · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="a-setup/branches.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Branches', brd: ['A1'], sub: 'Ella branch now; the second branch is added in January 2027. Each branch has its own stock, sales and cash.' }) +
+      `<div class="grid g2">${S.branches.map(b => { const st = Metrics.stock(b.id); const users = S.users.filter(u => u.branch === b.id); return `<div class="card"><div class="card-header"><div><h2>${esc(b.name)}</h2><p>${esc(b.address)} · ${esc(b.phone)}</p></div>${badge(b.status)}</div><div class="card-content"><dl class="dl"><dt>Opened</dt><dd>${fmt.date(b.opened)}</dd><dt>Stock</dt><dd>${st.count} items · <span data-roles="owner">${fmt.cur(st.sell)}</span></dd><dt>Staff</dt><dd>${users.map(u => esc(u.name) + ' (' + ROLES[u.role] + ')').join(', ') || 'None yet – add users when the branch opens'}</dd><dt>Sales (30 days)</dt><dd>${fmt.cur(sum(Metrics.salesBetween(daysAgoYmd(30), todayYmd(), b.id), s => s.total))}</dd></dl>
+        ${b.status === 'opening' ? `<div class="alert info mt">Opening Branch 2 is a setting change: add the branch and its users. No new server and no extra cost (tech stack §4). Stock arrives by <a href="../d-stock/transfers.html">branch transfer</a>.</div>` : ''}</div>
+        <div class="card-footer"><button class="btn btn-outline btn-sm" data-edit="${b.id}">Edit</button>${b.status === 'opening' ? `<button class="btn btn-success btn-sm" data-open="${b.id}">Mark as open</button>` : ''}</div></div>`; }).join('')}</div>
+      <div class="mt">${UI.ruleNote(9, 'Each branch has its own stock and cash. The owner sees all branches together.')}</div>`;
+  }
+  $('#page').addEventListener('click', e => {
+    const id = e.target.dataset.edit || e.target.dataset.open; if (!id) return; const b = find('branches', id);
+    if (e.target.dataset.open) { UI.confirm('Open ' + b.name + '?', 'Staff can then be linked to this branch and sales can start.', () => { b.status = 'active'; b.opened = todayYmd(); Log.add('Branch opened', b.name, b.id); Store.save(); toast('Branch is now active', b.name, 'success'); render(); }); return; }
+    UI.modal({ title: 'Edit branch', body: `<form class="form-grid" novalidate><div class="field full"><label class="req">Name</label><input class="input" name="bname" required value="${esc(b.name)}"></div><div class="field full"><label class="req">Address</label><input class="input" name="address" required value="${esc(b.address)}"></div><div class="field"><label>Phone</label><input class="input" name="phone" value="${esc(b.phone)}"></div><div class="field"><label class="req">Opening date</label><input class="input" type="date" name="opened" required value="${b.opened}"></div></form>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { const f = $('form', el); if (!UI.validate(f)) return false; Object.assign(b, { name: f.bname.value, address: f.address.value, phone: f.phone.value, opened: f.opened.value }); Log.add('Branch edited', b.name); Store.save(); toast('Saved', '', 'success'); render(); } }] });
+  });
+  render();
+})();
+</script>
+</body>
+</html>

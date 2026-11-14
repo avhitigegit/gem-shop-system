@@ -1,0 +1,35 @@
+<!-- Screen: Expense categories | BRD: M1, A5 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expense Categories · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="m-expenses/categories.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  function render() {
+    const L = S.lists.expenseCategories;
+    const yr = S.expenses.filter(e => e.status !== 'rejected');
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'M · Shop expenses', title: 'Expense categories', brd: ['M1'], sub: 'Drop-down list the owner can edit.' }) +
+      `<div class="grid g-2-1"><div class="card">${UI.table([
+        { h: 'Category', f: c => `<b>${esc(c)}</b>` }, { h: 'Expenses', num: 1, f: c => yr.filter(e => e.category === c).length },
+        { h: 'Total recorded', num: 1, f: c => fmt.cur(sum(yr.filter(e => e.category === c), e => e.amount)) },
+        { h: '', f: (c, i) => `<button class="btn btn-sm btn-ghost" data-ren="${i}">Rename</button><button class="btn btn-sm btn-ghost" style="color:var(--danger)" data-del="${i}">Remove</button>` }
+      ], L)}</div>
+      <form class="card" id="f" novalidate style="align-self:start"><div class="card-header"><h3>Add category</h3></div><div class="card-content stack" style="gap:10px"><div class="field"><label class="req">Name</label><input class="input" name="v" required placeholder="e.g. Insurance"></div><button class="btn btn-sapphire" type="submit">Add</button></div></form></div>`;
+    $('#f').onsubmit = e => { e.preventDefault(); if (!UI.validate(e.target)) return; const v = e.target.v.value.trim(); if (L.includes(v)) { toast('Already exists', '', 'error'); return; } L.push(v); Log.add('Expense category added', v, 'all'); Store.save(); toast('Added', v, 'success'); render(); };
+  }
+  $('#page').addEventListener('click', e => {
+    const L = S.lists.expenseCategories, d = e.target.dataset;
+    if (d.del) { const v = L[+d.del]; if (S.expenses.some(x => x.category === v)) { toast('Cannot remove', '“' + v + '” is used by expenses. Rename it instead.', 'error'); return; } L.splice(+d.del, 1); Store.save(); render(); }
+    if (d.ren) { const i = +d.ren, v = L[i]; UI.modal({ title: 'Rename category', body: `<div class="field"><label class="req">Name</label><input class="input" id="nv" required value="${esc(v)}"></div>`, actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { if (!UI.validate(el)) return false; const nv = $('#nv', el).value.trim(); L[i] = nv; S.expenses.forEach(x => { if (x.category === v) x.category = nv; }); S.recurring.forEach(x => { if (x.category === v) x.category = nv; }); Log.add('Expense category renamed', v + ' → ' + nv, 'all'); Store.save(); render(); } }] }); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>

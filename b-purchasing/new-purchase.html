@@ -1,0 +1,84 @@
+<!-- Screen: New cash purchase (with bill photo) | BRD: B2, B3, C1, C9 | Rules: 1, 6, 11 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New Purchase · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="b-purchasing/new-purchase.html" data-roles="owner" data-denied="Only the owner buys from suppliers and sets cost prices (BRD B2, rule 1).">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const lines = [];
+  const L = S.lists;
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'B · Suppliers & purchasing', title: 'New cash purchase', brd: ['B2', 'B3'], sub: 'Record what you bought, what each item cost and the photo of the supplier\'s bill. Products are added to stock at the chosen branch and get their own code.' }) +
+    `<form id="f" novalidate class="stack"><div class="card"><div class="card-content form-grid pl-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+      <div class="field"><label class="req">Date</label><input type="date" class="input" name="date" required value="${todayYmd()}" max="${todayYmd()}"></div>
+      <div class="field"><label class="req">Supplier</label><select name="sup" required>${UI.opts(S.suppliers.map(s => ({ v: s.id, l: s.name })), qs('sup') || '', 'Select supplier…')}</select></div>
+      <div class="field"><label class="req">Add to branch stock</label><select name="branch" required>${UI.opts(S.branches.map(b => ({ v: b.id, l: b.name })), activeBranch())}</select></div>
+      <div class="field"><label>Payment</label><input class="input" readonly value="Cash"></div>
+    </div></div>
+    <div class="card"><div class="card-header"><div><h3>Products bought</h3><p>Each product is unique and gets its own code (C1). Certificate type is suggested automatically (C9).</p></div><button type="button" class="btn btn-outline" id="addL">+ Add product</button></div><div class="card-content" id="lines"></div></div>
+    <div class="grid g2"><div class="card"><div class="card-header"><h3>Supplier's bill photo</h3></div><div class="card-content"><div class="field"><div class="upload" id="up">⇪ Take a photo of the bill / upload</div><span class="err">Bill photo is required.</span></div></div></div>
+    <div class="card"><div class="card-content"><div class="row between"><span>Products</span><b id="cnt">0</b></div><div class="row between mt-s"><span>Total paid in cash</span><b style="font-size:22px;color:var(--navy)" id="tot">LKR 0.00</b></div><div class="field mt"><label>Notes</label><input class="input" name="notes"></div></div><div class="card-footer"><a class="btn btn-outline" href="purchase-history.html">Cancel</a><button class="btn btn-sapphire" type="submit">Save purchase &amp; add to stock</button></div></div></div></form>`;
+  UI.bindUpload($('#up'));
+  const blank = () => ({ name: '', type: 'Loose gem', gem: '', carat: '', colour: '', shape: '', treatment: 'Heated', cert: '', cost: '', price: '', min: '' });
+  function renderLines() {
+    $('#lines').innerHTML = lines.map((l, i) => `<div class="card mb-s" style="background:#fafbfd" data-i="${i}"><div class="card-content pl-grid" style="display:grid;grid-template-columns:60px repeat(6,minmax(0,1fr));gap:10px;align-items:end">
+      <div class="gem-pic" style="width:56px;height:56px">${gemSVG(l.gem || 'Other', l.type, 46)}</div>
+      <div class="field"><label class="req">Gem type</label><select data-k="gem" required>${UI.opts(L.gemTypes, l.gem, '…')}</select></div>
+      <div class="field"><label class="req">Product type</label><select data-k="type" required>${UI.opts(L.productTypes, l.type)}</select></div>
+      <div class="field"><label class="req">Name</label><input class="input" data-k="name" required value="${esc(l.name)}"></div>
+      <div class="field"><label class="req">Carat</label><input class="input" type="number" step="0.01" min="0.01" data-k="carat" required value="${l.carat}"></div>
+      <div class="field"><label class="req">Colour</label><select data-k="colour" required>${UI.opts(L.colours, l.colour, '…')}</select></div>
+      <div class="field"><label class="req">Shape</label><select data-k="shape" required>${UI.opts(L.shapes, l.shape, '…')}</select></div>
+      <div></div>
+      <div class="field"><label>Treatment</label><select data-k="treatment">${UI.opts(L.treatments, l.treatment)}</select></div>
+      <div class="field"><label>Certificate</label><select data-k="cert">${UI.opts([{ v: 'lab', l: 'Lab certificate' }, { v: 'shop', l: 'Shop certificate' }, { v: 'none', l: 'No certificate' }], l.cert)}</select></div>
+      <div class="field"><label class="req">Cost (LKR)</label><input class="input" type="number" min="1" data-k="cost" required value="${l.cost}"></div>
+      <div class="field"><label class="req">Selling price</label><input class="input" type="number" min="1" data-k="price" required value="${l.price}"></div>
+      <div class="field"><label class="req">Minimum price</label><input class="input" type="number" min="1" data-k="min" required value="${l.min}"></div>
+      <div><button type="button" class="btn btn-ghost btn-sm" data-del="${i}">Remove</button></div>
+    </div></div>`).join('') || '<div class="empty">Add the products you bought.</div>';
+    totals();
+  }
+  function totals() { $('#cnt').textContent = lines.length; $('#tot').textContent = fmt.lkr(sum(lines, l => +l.cost || 0)); }
+  $('#lines').addEventListener('input', e => { const k = e.target.dataset.k; if (!k) return; const l = lines[e.target.closest('[data-i]').dataset.i]; l[k] = e.target.value; if (k === 'cost' && !l.price) { } totals(); });
+  $('#lines').addEventListener('change', e => {
+    const k = e.target.dataset.k; if (!k) return; const l = lines[e.target.closest('[data-i]').dataset.i]; l[k] = e.target.value;
+    if (k === 'gem') { l.cert = /Sapphire|Padparadscha/.test(l.gem) ? 'lab' : 'shop'; if (!l.name) l.name = l.gem + (l.type === 'Loose gem' ? '' : ' ' + l.type); renderLines(); }
+    if (k === 'type') renderLines();
+    if (k === 'cost' && +l.cost && !l.price) { l.price = Math.round(+l.cost * 1.6 / 1000) * 1000; l.min = Math.round(+l.cost * 1.35 / 1000) * 1000; renderLines(); toast('Prices suggested', 'Selling ×1.6, minimum ×1.35 – change as needed.'); }
+  });
+  $('#lines').addEventListener('click', e => { if (e.target.dataset.del != null) { lines.splice(+e.target.dataset.del, 1); renderLines(); } });
+  $('#addL').onclick = () => { lines.push(blank()); renderLines(); };
+  lines.push(blank()); renderLines();
+  $('#f').onsubmit = e => {
+    e.preventDefault(); const F = e.target;
+    let ok = UI.validate(F);
+    if (!$('#up').dataset.file) { $('#up').closest('.field').classList.add('invalid'); if (ok) toast('Bill photo required', 'Take a photo of the supplier\'s bill (B2).', 'error'); ok = false; }
+    if (!lines.length) { toast('Add at least one product', '', 'error'); ok = false; }
+    if (!ok) return;
+    if (lines.some(l => +l.min > +l.price || +l.min < +l.cost)) { toast('Check minimum prices', 'Minimum must be between cost and selling price.', 'error'); return; }
+    if (guardLocked(F.date.value)) return;
+    const pid = nextId('purchase', 'PUR-'); const at = F.date.value === todayYmd() ? new Date().toISOString() : F.date.value + 'T12:00:00';
+    const sname = sup(F.sup.value).name;
+    const plines = lines.map(l => {
+      S.seq.product = (S.seq.product || 130) + 1;
+      const id = 'GEM-' + String(S.seq.product).padStart(5, '0');
+      const p = { id, name: l.name, gem: l.gem, type: l.type, carat: +l.carat, colour: l.colour, shape: l.shape, treatment: l.treatment, description: '', cert: { type: l.cert, lab: '', no: l.cert === 'shop' ? 'CGH-SC-' + id.slice(-5) : '', date: '', scan: '' }, cost: +l.cost, price: +l.price, min: +l.min, branch: F.branch.value, status: 'in_stock', supplierId: F.sup.value, purchaseId: pid, photos: 0, addedAt: at, addedBy: currentUser().id, history: [] };
+      S.products.push(p); Hist.add(id, 'Added', 'Bought from ' + sname + ' (' + pid + ')');
+      return { productId: id, cost: +l.cost };
+    });
+    S.purchases.push({ id: pid, date: at, supplierId: F.sup.value, branch: F.branch.value, lines: plines, total: sum(plines, l => l.cost), billPhoto: $('#up').dataset.file, paid: 'Cash', by: currentUser().id, notes: F.notes.value });
+    Log.add('Purchase recorded', pid + ' · ' + sname + ' · ' + plines.length + ' items · ' + fmt.lkr(sum(plines, l => l.cost)));
+    Store.save();
+    UI.modal({ title: 'Purchase saved ✓', desc: pid + ' · ' + plines.length + ' product(s) added to ' + esc(branchName(F.branch.value)) + ' stock (B3)', body: `<ul class="list">${plines.map(l => `<li>${UI.prodCell(prod(l.productId))}</li>`).join('')}</ul><div class="alert info mt">Add photos and lab certificate details to each product, then print the tags.</div>`,
+      actions: [{ label: 'Purchase history', cls: 'btn-outline', onClick: () => location.href = 'purchase-history.html' }, { label: 'Print tags', cls: 'btn-sapphire', onClick: () => location.href = '../c-products/tag-print.html?ids=' + plines.map(l => l.productId).join(',') }] });
+  };
+})();
+</script>
+</body>
+</html>

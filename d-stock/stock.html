@@ -1,0 +1,49 @@
+<!-- Screen: Stock by branch | BRD: D1, D2, D6, A1 | Rule: 9 | Roles: Owner, Salesperson, Shop Staff -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock by Branch · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="d-stock/stock.html" data-roles="owner salesperson staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { q: '', gem: '', type: '', status: '' };
+  const b = branchScope();
+  const base = () => S.products.filter(p => Metrics.STOCK_STATUSES.includes(p.status) && (b === 'all' || p.branch === b));
+  const counts = st => base().filter(p => p.status === st).length;
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Stock – ' + esc(branchName(b)), brd: ['D1', 'D2'], sub: 'Each branch has its own stock (rule 9). Search by code or scan the tag.', actions: `<a class="btn btn-outline" data-roles="owner staff" href="stock-check.html">Stock check</a><a class="btn btn-outline" data-roles="owner staff" href="transfers.html">Transfer</a>` + UI.exportButtons('#stT', 'Stock list') }) +
+    `<div class="grid g4 mb">${UI.kpi('In stock', counts('in_stock') + counts('returned'), 'incl. ' + counts('returned') + ' returned item(s)')}${UI.kpi('Reserved', counts('reserved'), 'held for customers (F7)')}${UI.kpi('In transit / on hold', counts('in_transit') + ' / ' + counts('on_hold'), 'branch transfer · approval')}${isRole('owner') ? UI.kpi('Stock value (selling)', fmt.cur(sum(base(), p => p.price)), 'at cost ' + fmt.cur(sum(base(), p => p.cost))) : UI.kpi('Sold (30 days)', S.products.filter(p => p.status === 'sold' && p.soldAt >= daysAgoYmd(30) && (b === 'all' || p.branch === b)).length, 'products')}</div>
+    <div class="card"><div class="card-content filters">
+      <div class="field" style="flex:1;min-width:220px"><label>Search / scan tag</label><input class="input" id="q" autofocus placeholder="Scan or type GEM-…"></div>
+      <div class="field"><label>Gem type</label><select id="gem">${UI.opts(S.lists.gemTypes, '', 'All')}</select></div>
+      <div class="field"><label>Product type</label><select id="type">${UI.opts(S.lists.productTypes, '', 'All')}</select></div>
+      <div class="field"><label>Status (D2)</label><select id="st">${UI.opts([{ v: '', l: 'All in stock' }, { v: 'in_stock', l: 'In stock' }, { v: 'reserved', l: 'Reserved' }, { v: 'returned', l: 'Returned' }, { v: 'in_transit', l: 'In transit' }, { v: 'on_hold', l: 'On hold' }])}</select></div>
+    </div><div id="list"></div></div>`;
+  function render() {
+    const q = f.q.toLowerCase();
+    const rows = base().filter(p => (!f.gem || p.gem === f.gem) && (!f.type || p.type === f.type) && (!f.status || p.status === f.status) && (!q || (p.id + p.name).toLowerCase().includes(q)));
+    $('#list').innerHTML = UI.table([
+      { h: 'Photo / product', f: p => `<a href="../c-products/product-detail.html?id=${p.id}" style="color:inherit">${UI.prodCell(p)}</a>` },
+      { h: 'Gem', f: p => esc(p.gem) + '<br><small class="muted">' + esc(p.type) + '</small>' },
+      { h: 'Details', f: p => fmt.ct(p.carat) + ' · ' + esc(p.colour) + '<br><small class="muted">' + esc(p.treatment) + '</small>' },
+      { h: 'Branch', f: p => esc(branchName(p.branch)) },
+      { h: 'Status', f: p => badge(p.status) },
+      { h: 'In stock since', f: p => fmt.date(p.addedAt) + '<br><small class="muted">' + Math.round((Date.now() - new Date(p.addedAt)) / 864e5) + ' days</small>' },
+      { h: 'Cost', num: 1, roles: 'owner', f: p => fmt.cur(p.cost) },
+      { h: 'Selling price', num: 1, f: p => fmt.cur(p.price) }
+    ], rows, { id: 'stT', cls: 'stack-sm', empty: 'No stock here yet. ' + (b === 'b2' ? 'Branch 2 opens in January 2027 – stock arrives by branch transfer (D3).' : ''), foot: [rows.length + ' items', '', '', '', '', '', fmt.cur(sum(rows, p => p.cost)), fmt.cur(sum(rows, p => p.price))] });
+  }
+  $('#q').oninput = e => { f.q = e.target.value; render(); };
+  $('#q').onkeydown = e => { if (e.key === 'Enter') { const p = prod(e.target.value.trim().toUpperCase()); if (p) location.href = '../c-products/product-detail.html?id=' + p.id; else toast('Not found', e.target.value, 'error'); } };
+  $('#gem').onchange = e => { f.gem = e.target.value; render(); };
+  $('#type').onchange = e => { f.type = e.target.value; render(); };
+  $('#st').onchange = e => { f.status = e.target.value; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!-- Screen: Commission report (by guide and by staff, any date range) | BRD: L5, H5, L6 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commission Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="l-reports/commissions.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { from: daysAgoYmd(29), to: todayYmd(), payee: '' };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Commission report', brd: ['L5', 'H5', 'L6'], sub: 'By guide/driver and by staff member, for any date range.', actions: UI.exportButtons('#rT', 'Commission report') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="field"><label>From</label><input class="input" type="date" data-f="from" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" data-f="to" value="${f.to}"></div><div class="field"><label>Show</label><select data-f="payee">${UI.opts([{ v: '', l: 'Guides & staff' }, { v: 'guide', l: 'Guides & drivers' }, { v: 'staff', l: 'Staff' }])}</select></div></div></div><div id="out"></div>`;
+  function render() {
+    const cs = S.commissions.filter(c => ymd(c.date) >= f.from && ymd(c.date) <= f.to && (!f.payee || c.payee === f.payee) && inBranch(sale(c.saleId) || {}));
+    const rows = Object.entries(groupBy(cs, c => c.payee + ':' + c.payeeId)).map(([k, l]) => ({ c: l[0], n: new Set(l.filter(x => x.amount > 0).map(x => x.saleId)).size, base: sum([...new Set(l.filter(x => x.amount > 0).map(x => x.saleId))], id => sale(id).net), earned: sum(l.filter(x => x.amount > 0), x => x.amount), rev: sum(l.filter(x => x.amount < 0), x => x.amount), paid: sum(l.filter(x => x.status === 'paid'), x => x.amount), unpaid: sum(l.filter(x => x.status === 'unpaid'), x => x.amount) })).sort((a, b) => b.earned - a.earned);
+    const T = k => sum(rows, r => r[k]);
+    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Commission earned', fmt.cur(T('earned')), '')}${UI.kpi('Reversed (returns)', fmt.cur(T('rev')), 'E2')}${UI.kpi('Paid', fmt.cur(T('paid')), '')}${UI.kpi('Not yet paid', fmt.cur(T('unpaid')), '', 'accent')}</div>
+      <div class="card">${UI.table([
+        { h: 'Name', f: r => `<b>${esc(Commissions.payeeName(r.c))}</b><br><small class="muted">${r.c.payee === 'guide' ? 'Guide/driver · ' + guide(r.c.payeeId).vehicle + ' · ' + guide(r.c.payeeId).pct + '%' : 'Staff · fixed by price level'}</small>` },
+        { h: 'Sales', num: 1, f: r => r.n }, { h: 'Sales before VAT', num: 1, f: r => fmt.cur(r.base) }, { h: 'Earned', num: 1, f: r => fmt.cur(r.earned) },
+        { h: 'Reversed', num: 1, f: r => r.rev ? `<span class="text-danger">${fmt.cur(r.rev)}</span>` : '—' }, { h: 'Paid', num: 1, f: r => fmt.cur(r.paid) }, { h: 'Not yet paid', num: 1, f: r => `<b>${fmt.cur(r.unpaid)}</b>` },
+        { h: '', f: r => `<a class="btn btn-sm btn-outline" href="../h-commissions/commission-slip.html?payee=${r.c.payee}&id=${r.c.payeeId}">Slip</a>` }
+      ], rows, { id: 'rT', cls: 'stack-sm', foot: ['Total', T('n'), fmt.cur(T('base')), fmt.cur(T('earned')), fmt.cur(T('rev')), fmt.cur(T('paid')), fmt.cur(T('unpaid')), ''] })}</div>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

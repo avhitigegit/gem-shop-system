@@ -1,0 +1,36 @@
+<!-- Screen: Guide / driver profile | BRD: H1, H4, H5 | Roles: Owner, Salesperson (no amounts), Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide Profile · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="h-commissions/guide-profile.html" data-roles="owner salesperson accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const g = guide(qs('id')) || S.guides[0];
+  const f = { from: daysAgoYmd(30), to: todayYmd() };
+  function render() {
+    const cs = S.commissions.filter(c => c.payee === 'guide' && c.payeeId === g.id && ymd(c.date) >= f.from && ymd(c.date) <= f.to).sort((a, b) => b.date.localeCompare(a.date));
+    const unpaid = cs.filter(c => c.status === 'unpaid');
+    $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="guides.html">H · Guides & drivers</a>', title: esc(g.name), brd: ['H1', 'H5'], sub: esc(g.vehicle) + ' · ' + esc(g.vehicleNo) + ' · ' + esc(g.phone) + ' · commission ' + g.pct + '% · since ' + fmt.date(g.since), actions: `<a class="btn btn-outline" data-roles="owner accountant" href="commission-slip.html?payee=guide&id=${g.id}">Commission slip</a><a class="btn btn-sapphire" data-roles="owner accountant" href="commissions-payable.html?payee=${g.id}">Pay commission</a>` }) +
+      `<div class="grid g4 mb">${UI.kpi('Sales brought', cs.filter(c => c.amount > 0).length, 'in the period')}${UI.kpi('Sales value', fmt.cur(sum(cs.filter(c => c.amount > 0), c => sale(c.saleId).total)), 'incl. VAT')}<div data-roles="owner accountant">${UI.kpi('Commission earned', fmt.cur(sum(cs, c => c.amount)), g.pct + '% of price before VAT')}</div><div data-roles="owner accountant">${UI.kpi('Not yet paid', fmt.cur(sum(unpaid, c => c.amount)), unpaid.length + ' sale(s)')}</div></div>
+      <div class="card"><div class="card-content filters"><div class="field"><label>From</label><input type="date" class="input" id="fr" value="${f.from}"></div><div class="field"><label>To</label><input type="date" class="input" id="to" value="${f.to}"></div></div>
+      ${UI.table([
+        { h: 'Date', f: c => fmt.date(c.date) }, { h: 'Invoice', f: c => `<a class="mono" href="../g-payments/invoice.html?id=${c.saleId}">${c.saleId}</a>` },
+        { h: 'Customer', f: c => esc((cust(sale(c.saleId).customerId) || {}).name) },
+        { h: 'Sale before VAT', num: 1, f: c => fmt.cur(sale(c.saleId).net) },
+        { h: 'Commission', num: 1, roles: 'owner accountant', f: c => `<b class="${c.amount < 0 ? 'text-danger' : ''}">${fmt.cur(c.amount)}</b>` },
+        { h: 'Status', f: c => badge(c.status) + (c.note ? '<br><small class="muted">' + esc(c.note) + '</small>' : '') + (c.paidAt && c.status === 'paid' ? '<br><small class="muted">' + fmt.date(c.paidAt) + ' · ' + esc(c.method || '') + '</small>' : '') }
+      ], cs, { cls: 'stack-sm', empty: 'No sales in this period.' })}</div>`;
+    $('#fr').onchange = e => { f.from = e.target.value; render(); };
+    $('#to').onchange = e => { f.to = e.target.value; render(); };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

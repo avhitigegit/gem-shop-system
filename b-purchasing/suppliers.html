@@ -1,0 +1,48 @@
+<!-- Screen: Supplier list | BRD: B1, B3 | Roles: Owner (edit), Accountant (view) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suppliers · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="b-purchasing/suppliers.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  function render() {
+    const tot = s => sum(S.purchases.filter(p => p.supplierId === s.id), p => p.total);
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'B · Suppliers & purchasing', title: 'Suppliers', brd: ['B1'], sub: 'Where every product came from. Purchases are paid in cash.', actions: '<button class="btn btn-sapphire" data-roles="owner" id="add">+ Add supplier</button><a class="btn btn-outline" data-roles="owner" href="new-purchase.html">New purchase</a>' + UI.exportButtons('#spT', 'Suppliers') }) +
+      `<div class="card">${UI.table([
+        { h: 'Supplier', f: s => `<a href="supplier-detail.html?id=${s.id}"><b>${esc(s.name)}</b></a><br><small class="muted">${s.id} · ${esc(s.contact)}</small>` },
+        { h: 'Phone', f: s => esc(s.phone) }, { h: 'Address', f: s => esc(s.address) },
+        { h: 'NIC / Business reg.', f: s => `<span class="badge badge-outline">${s.idType}</span> <span class="mono">${esc(s.idNo)}</span>` },
+        { h: 'Purchases', num: 1, f: s => S.purchases.filter(p => p.supplierId === s.id).length },
+        { h: 'Total bought', num: 1, f: s => fmt.cur(tot(s)) },
+        { h: '', f: s => `<a class="btn btn-sm btn-outline" href="supplier-detail.html?id=${s.id}">Open</a> <button class="btn btn-sm btn-ghost" data-roles="owner" data-edit="${s.id}">Edit</button>` }
+      ], S.suppliers, { id: 'spT', cls: 'stack-sm' })}</div>`;
+  }
+  function form(s) {
+    const isNew = !s; s = s || { name: '', contact: '', phone: '', address: '', idType: 'NIC', idNo: '', notes: '' };
+    UI.modal({ title: isNew ? 'Add supplier' : 'Edit ' + s.name, body: `<form class="form-grid" novalidate>
+      <div class="field full"><label class="req">Supplier name</label><input class="input" name="sname" required value="${esc(s.name)}"></div>
+      <div class="field"><label>Contact person</label><input class="input" name="contact" value="${esc(s.contact)}"></div>
+      <div class="field"><label class="req">Phone</label><input class="input" name="phone" required value="${esc(s.phone)}"></div>
+      <div class="field full"><label class="req">Address</label><input class="input" name="address" required value="${esc(s.address)}"></div>
+      <div class="field"><label class="req">ID type</label><select name="idType">${UI.opts([{ v: 'NIC', l: 'NIC (individual)' }, { v: 'BR', l: 'Business registration' }], s.idType)}</select></div>
+      <div class="field"><label class="req">NIC / BR number</label><input class="input mono" name="idNo" required value="${esc(s.idNo)}"></div>
+      <div class="field full"><label>Notes</label><input class="input" name="notes" value="${esc(s.notes)}"></div></form>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => {
+        const f = $('form', el); if (!UI.validate(f)) return false;
+        const d = { name: f.sname.value, contact: f.contact.value, phone: f.phone.value, address: f.address.value, idType: f.idType.value, idNo: f.idNo.value, notes: f.notes.value };
+        if (isNew) S.suppliers.push(Object.assign({ id: nextId('supplier', 'SUP-', 2) }, d)); else Object.assign(s, d);
+        Log.add(isNew ? 'Supplier added' : 'Supplier edited', d.name); Store.save(); toast('Saved', d.name, 'success'); render();
+      } }] });
+  }
+  $('#page').addEventListener('click', e => { if (e.target.id === 'add') form(); if (e.target.dataset.edit) form(sup(e.target.dataset.edit)); });
+  render();
+})();
+</script>
+</body>
+</html>
