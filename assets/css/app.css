@@ -557,3 +557,9 @@ body:not(.show-brd) .page-head h1 { font-size: 24px; }
 .nav-chev:focus-visible { outline: 2px solid var(--gold); }
 .nav-big.active .nav-chev { color: #fff; }
 .nav-sub.closed { display: none; }
+
+/* ===== v6: prototype reset items in the user menu ===== */
+.dropdown-panel .dp-sep { height: 1px; background: var(--border); margin: 4px 0; }
+.dropdown-panel .dp-label { padding: 6px 14px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-foreground); }
+.dropdown-panel .dp-item.dp-danger { color: #b91c1c; }
+.dropdown-panel .dp-item small { font-size: 11.5px; }

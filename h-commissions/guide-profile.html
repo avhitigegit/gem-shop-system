@@ -12,6 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const g = guide(qs('id')) || S.guides[0];
+  if (!g) return UI.empty('No guide or driver yet', 'Add a guide or driver first, then open them from the list.', 'h-commissions/guides.html', 'Go to Guides & drivers');
   const f = { from: daysAgoYmd(30), to: todayYmd() };
   function render() {
     const cs = S.commissions.filter(c => c.payee === 'guide' && c.payeeId === g.id && ymd(c.date) >= f.from && ymd(c.date) <= f.to).sort((a, b) => b.date.localeCompare(a.date));

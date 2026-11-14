@@ -11,7 +11,8 @@
 <script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
 <script>
 if (PAGE_ALLOWED) (function () {
-  let p = prod(qs('id')) || prod('GEM-00121');
+  let p = prod(qs('id')) || prod('GEM-00121') || S.products[0];
+  if (!p) return UI.empty('No gem history yet', 'There are no gems in the system yet.', 'c-products/products.html', 'Go to All gems');
   const CLS = { Added: 'gold', Sold: 'green', Returned: 'red', 'Stock correction': 'red', Moved: '', Received: 'green', Reserved: 'gold', 'On hold': 'gold' };
   function render() {
     $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Product history', brd: ['D5'], sub: 'Who added, edited, moved or sold the product, and when. History cannot be edited.' }) +

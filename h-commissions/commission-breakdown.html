@@ -15,6 +15,7 @@ if (PAGE_ALLOWED) (function () {
   const sales = S.sales.filter(inBranch).filter(s => s.status !== 'cancelled').sort((a, b) => b.date.localeCompare(a.date));
   function render() {
     const s = sale(selId) || sales[0];
+    if (!s) return UI.empty('No sales yet', 'Commission per sale appears here after the first sale.', 'h-commissions/commissions-payable.html', 'Go to Pay guides & drivers');
     const g = guide(s.guideId); const slabI = Calc.slabIndex(s.net);
     const cs = S.commissions.filter(c => c.saleId === s.id);
     $('#page').innerHTML = UI.pageHead({ crumbs: 'H · Commissions', title: 'Commission per sale', brd: ['H1', 'H2', 'H3'], sub: 'Commission is calculated on every single sale – a percentage for the guide/driver plus a fixed amount by price level for the salesperson.' }) +

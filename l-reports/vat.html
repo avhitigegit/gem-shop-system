@@ -11,7 +11,7 @@
 <script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
 <script>
 if (PAGE_ALLOWED) (function () {
-  const months = [...new Set(S.sales.map(s => monthKey(s.date)).concat(S.expenses.map(e => monthKey(e.date))))].sort().reverse();
+  const months = Fin.months();
   const f = { month: months[0], branch: branchScope() };
   $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'VAT report', brd: ['L4', 'L6'], sub: 'Every VAT invoice for the month, for the monthly VAT return to the Inland Revenue Department. Standard VAT ' + S.shop.vatRate + '%.', actions: UI.exportButtons('#rT', 'VAT report') }) +
     `<div class="card mb"><div class="card-content filters"><div class="field"><label>Month</label><select data-f="month">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : '') })), f.month)}</select></div><div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div><div class="field"><label>VAT reg. no.</label><input class="input mono" readonly value="${esc(S.shop.vatNo)}"></div></div></div><div id="out"></div>`;

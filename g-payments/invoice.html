@@ -12,6 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const s = sale(qs('id')) || S.sales[S.sales.length - 1];
+  if (!s) return UI.empty('No invoice yet', 'Invoices appear here after the first sale.', 'g-payments/invoices.html', 'Go to Invoices');
   const c = cust(s.customerId) || {};
   const g = guide(s.guideId);
   const canAct = isRole('owner', 'salesperson');

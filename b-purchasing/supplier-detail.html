@@ -12,6 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const s = sup(qs('id')) || S.suppliers[0];
+  if (!s) return UI.empty('No supplier yet', 'Add a supplier first, then open it from the list.', 'b-purchasing/suppliers.html', 'Go to Suppliers');
   const pur = S.purchases.filter(p => p.supplierId === s.id).sort((a, b) => b.date.localeCompare(a.date));
   const items = pur.flatMap(p => p.lines.map(l => prod(l.productId)));
   const rets = S.supplierReturns.filter(r => r.supplierId === s.id);

@@ -286,7 +286,7 @@
   sidebar.innerHTML = `<div class="brand"><img src="${url('assets/img/logo.svg')}" alt=""><div><b>${esc(S.shop.name)}</b><span>GEM SHOP</span></div></div>
     ${isRole(O, SP) && here !== 'f-pos/pos.html' ? `<div style="padding:14px 14px 4px"><a class="btn btn-gold btn-block btn-lg" href="${url('f-pos/pos.html')}">+ New sale</a></div>` : ''}
     <nav class="nav-simple">${navHTML}</nav>
-    <div class="side-foot">Prototype v5 · sample data only</div>`;
+    <div class="side-foot">Prototype v6 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
   /* ⌄ arrow: open / close a section's page list without leaving the page */
   sidebar.addEventListener('click', e => {
     const b = e.target.closest('.nav-chev'); if (!b) return;
@@ -338,7 +338,10 @@
         <a class="dp-item" href="${url('auth/forgot-password.html')}">Change password</a>
         <label class="dp-item" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="brdToggle" ${P.brd ? 'checked' : ''}> Show BRD notes <small class="muted">(for review)</small></label>
         <a class="dp-item" href="${url('index.html')}">All screens (sitemap)</a>
-        <button class="dp-item" id="resetDemo">↺ Reset demo data</button>
+        <div class="dp-sep"></div><div class="dp-label">Prototype only</div>
+        <button class="dp-item" id="resetNormal">↺ Normal reset <small class="muted">(back to sample data)</small></button>
+        <button class="dp-item dp-danger" id="resetSystem">⌫ Reset system <small class="muted">(empty, keep logins)</small></button>
+        <div class="dp-sep"></div>
         <a class="dp-item" href="${url('auth/login.html')}" id="logout">Log out</a>
       </div></div>`;
 
@@ -373,7 +376,8 @@
     location.reload();
   };
   $('#brdToggle').onchange = e => { Prefs.set('brd', e.target.checked); location.reload(); };
-  $('#resetDemo').onclick = () => UI.confirm('Reset demo data?', 'All demo sales, approvals and edits made in this browser will be replaced with fresh sample data.', () => { Store.reset(); location.reload(); }, { yes: 'Reset', danger: true });
+  $('#resetNormal').onclick = DemoReset.normal;
+  $('#resetSystem').onclick = DemoReset.system;
   $('#logout').onclick = () => { Prefs.set('loggedIn', false); };
   const dd = el => { el.firstElementChild.addEventListener('click', e => { e.stopPropagation(); $$('.dropdown.open').forEach(d => d !== el && d.classList.remove('open')); el.classList.toggle('open'); }); };
   dd($('#bellDd')); dd($('#userDd'));

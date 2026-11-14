@@ -3,6 +3,26 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v6 – 14/11/2026 – two reset buttons (prototype only)
+In the user menu (top right, under "Prototype only") and on the sitemap page:
+- **↺ Normal reset** – throws away all changes made in this browser and goes back to the
+  starting sample data (87 gems, 40 sales, 25 customers …).
+- **⌫ Reset system** – an empty shop to try the system from zero. Removes all gems, suppliers,
+  purchases, customers, guides, sales, returns, expenses, cash days, approvals and the activity
+  log. Keeps the **staff logins** and the **shop set-up** (shop details, branches, drop-down lists,
+  commission, exchange rates, email/WhatsApp settings). Numbers start again (first invoice, first gem …).
+- Both ask "Are you sure?" first, also clear an unfinished sale, and open the Home page.
+- The bottom of the menu shows "empty system" or "sample data only".
+
+**Empty shop fixes** (a real new shop would also hit these):
+- Invoice, gem, gem history, shop certificate, quotation, supplier, guide, customer, commission
+  per sale and commission slip pages show "📭 Nothing here yet" with a button to the right list
+  instead of a blank/broken page.
+- Accountant home, VAT for the month, Every VAT invoice, Profit & Loss, Tax pack and Close the month
+  always show the current month, even before the first sale.
+- Customers: "Top country" shows "—" when there are no customers.
+- Checked: 77 pages × 4 roles, with sample data and with an empty system, no errors.
+
 ## v5 – 14/11/2026 – menu keeps its place, ⌄ arrows to open / close
 - The left menu no longer jumps back to the top when you press a main item (e.g. Reports);
   it stays scrolled where it was.

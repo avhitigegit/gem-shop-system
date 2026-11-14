@@ -97,7 +97,39 @@
   const Store = {
     save() { try { localStorage.setItem(LS_STATE, JSON.stringify(S)); } catch (e) { toast('Could not save', 'Browser storage is full or blocked.', 'error'); } },
     refresh() { try { const raw = localStorage.getItem(LS_STATE); if (raw) { const n = JSON.parse(raw); Object.keys(S).forEach(k => delete S[k]); Object.assign(S, n); } } catch (e) { } },
-    reset() { localStorage.removeItem(LS_STATE); S = loadState(); window.S = S; }
+    reset() { Store.clearExtras(); localStorage.removeItem(LS_STATE); S = loadState(); window.S = S; },
+    /* PROTOTYPE ONLY – "Reset system": an empty shop. Keeps the logins and the shop set-up
+       (shop details, branches, drop-down lists, commission, exchange rates, email/WhatsApp settings);
+       removes every gem, supplier, guide, customer, sale, expense, approval, log line … */
+    empty() {
+      const st = window.buildSeed();
+      const KEEP = ['version', 'shop', 'branches', 'users', 'lists', 'commissionRules', 'rates', 'messaging', 'seq'];
+      Object.keys(st).forEach(k => {
+        if (KEEP.includes(k)) return;
+        const v = st[k]; if (Array.isArray(v)) st[k] = []; else if (v && typeof v === 'object') st[k] = {};
+      });
+      Object.keys(st.seq).forEach(k => { st.seq[k] = 0; });
+      st.seq.user = st.users.length;
+      st.rateHistory = [{ date: todayYmd(), USD: st.rates.USD, EUR: st.rates.EUR, by: st.users[0].id }];
+      st.createdAt = new Date().toISOString(); st.emptySystem = true;
+      Store.clearExtras();
+      try { localStorage.setItem(LS_STATE, JSON.stringify(st)); } catch (e) { }
+      S = st; window.S = S;
+    },
+    /* things kept outside the main data: the unfinished sale and saved tax packs */
+    clearExtras() { ['gemshop.pos.draft', 'gemshop.taxpacks'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } }); }
+  };
+  /* PROTOTYPE ONLY – the two reset buttons (user menu and sitemap) */
+  const DemoReset = {
+    home: () => url(P.role === 'accountant' ? 'n-accountant/dashboard.html' : 'dashboard/index.html'),
+    normal() {
+      UI.confirm('Normal reset?', 'All changes made in this browser are thrown away and the prototype goes back to the starting sample data (gems, sales, customers …). Your login stays.',
+        () => { Store.reset(); location.href = DemoReset.home(); }, { yes: 'Reset to sample data' });
+    },
+    system() {
+      UI.confirm('Reset system – start empty?', 'Removes <b>all</b> data: gems, suppliers, purchases, customers, guides, sales, returns, expenses, cash days, approvals and the activity log. Only the staff logins and the shop set-up (shop details, branches, drop-down lists, commission, exchange rates) are kept. Use <b>Normal reset</b> to get the sample data back.',
+        () => { Store.empty(); location.href = DemoReset.home(); }, { yes: 'Clear all data', danger: true });
+    }
   };
 
   let P = { role: 'owner', branch: 'ella', currency: 'LKR', loggedIn: true };
@@ -248,6 +280,10 @@
   function confirmDlg(title, text, onYes, opts) {
     opts = opts || {};
     return modal({ title, size: 'sm', body: `<p>${text}</p>`, actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: opts.yes || 'Confirm', cls: opts.danger ? 'btn-destructive' : 'btn-sapphire', onClick: onYes }] });
+  }
+  /* shown when a detail page has nothing to show (e.g. no sales yet after "Reset system") */
+  function emptyPage(title, text, href, label) {
+    const pg = $('#page'); if (pg) pg.innerHTML = `<div class="card" style="max-width:560px;margin:40px auto"><div class="card-content center" style="padding:40px 24px"><div style="font-size:42px;line-height:1">📭</div><h2 style="margin:12px 0 6px">${esc(title)}</h2><p class="muted" style="margin:0 0 18px">${esc(text)}</p>${href ? `<a class="btn btn-sapphire" href="${url(href)}">${esc(label)}</a>` : ''}</div></div>`;
   }
   /* dialog that requires a reason (D7, E1, G6, N6, B4) */
   function reasonDlg(title, desc, onSubmit, opts) {
@@ -596,11 +632,11 @@
   window.S = S;
   Object.assign(window, {
     ROOT, esc, $, $$, qs, url, r2, ymd, todayYmd, daysAgoYmd, monthKey, sum, groupBy, initials,
-    Calc, Store, P, Prefs, ROLES, currentUser, isRole, branchScope, inBranch, activeBranch,
+    Calc, Store, DemoReset, P, Prefs, ROLES, currentUser, isRole, branchScope, inBranch, activeBranch,
     find, prod, cust, guide, user, sup, sale, branchName, nextId, fx, fmt, gemSVG, gemPic, GEM_COLORS,
     badge, certBadge, STATUS, Log, Alerts, Hist, isLocked, guardLocked, Approvals, APPROVAL_TYPES, Commissions, Sales,
     barcodeSVG, qrSVG, onStateChange, poll, toast,
-    UI: { toast, modal, confirm: confirmDlg, reason: reasonDlg, validate, table, pageHead, kpi, ruleNote, prodCell, opts, link, bindUpload, demoUpload, payment: paymentDialog, send: sendDialog, exportExcel, exportPDF, exportButtons, accessDenied }
+    UI: { toast, modal, confirm: confirmDlg, empty: emptyPage, reason: reasonDlg, validate, table, pageHead, kpi, ruleNote, prodCell, opts, link, bindUpload, demoUpload, payment: paymentDialog, send: sendDialog, exportExcel, exportPDF, exportButtons, accessDenied }
   });
   // Calc must exist before buildSeed() runs on first load; S is created above after Calc.
 })();
@@ -650,7 +686,7 @@
 /* ---------------- monthly finance figures (N3, N4, L4) ---------------- */
 (function () {
   window.Fin = {
-    months() { return [...new Set(S.sales.map(s => monthKey(s.date)).concat(S.expenses.map(e => monthKey(e.date))))].sort().reverse(); },
+    months() { return [...new Set(S.sales.map(s => monthKey(s.date)).concat(S.expenses.map(e => monthKey(e.date)), [monthKey(todayYmd())]))].sort().reverse(); },
     month(mk, b) {
       const inB = x => !b || b === 'all' || x.branch === b;
       const sales = S.sales.filter(s => monthKey(s.date) === mk && s.status !== 'cancelled' && inB(s));

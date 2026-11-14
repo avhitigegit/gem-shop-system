@@ -14,6 +14,7 @@ if (PAGE_ALLOWED) (function () {
   let cs, title, pay = find('commissionPayments', qs('pay'));
   if (pay) { cs = pay.ids.map(id => find('commissions', id)); title = pay.payee; }
   else {
+    if (!qs('id') && !S.guides.length) return UI.empty('No commission slip yet', 'Add a guide or driver and make a sale first.', 'h-commissions/commissions-payable.html', 'Go to Pay guides & drivers');
     const id = qs('id') || S.guides[0].id, payee = qs('payee') || 'guide';
     cs = S.commissions.filter(c => c.payee === payee && c.payeeId === id && c.date >= daysAgoYmd(30));
     const c0 = { payee, payeeId: id }; title = Commissions.payeeName(c0);

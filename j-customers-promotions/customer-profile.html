@@ -12,6 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const c = cust(qs('id')) || S.customers[0];
+  if (!c) return UI.empty('No customer yet', 'Customers are added during a sale or from the Customers list.', 'j-customers-promotions/customers.html', 'Go to Customers');
   function render() {
     const ss = S.sales.filter(s => s.customerId === c.id).sort((a, b) => b.date.localeCompare(a.date));
     const qs_ = S.quotes.filter(q => q.customerId === c.id);

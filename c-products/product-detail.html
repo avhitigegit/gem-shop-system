@@ -11,7 +11,8 @@
 <script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
 <script>
 if (PAGE_ALLOWED) (function () {
-  const p = prod(qs('id')) || prod('GEM-00125');
+  const p = prod(qs('id')) || prod('GEM-00125') || S.products[0];
+  if (!p) return UI.empty('No gem to show', 'There are no gems in the system yet. Add a gem first.', 'c-products/products.html', 'Go to All gems');
   const s = p.saleId ? sale(p.saleId) : null;
   const angles = [['Loose gem', 'Top view'], [p.type, 'Product'], ['Loose gem', 'Side view']];
   let sel = 1;

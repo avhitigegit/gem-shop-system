@@ -13,6 +13,7 @@
 if (PAGE_ALLOWED) (function () {
   const shopItems = S.products.filter(p => p.cert.type === 'shop' && inBranch(p));
   let p = prod(qs('id')) || shopItems.find(x => x.status !== 'sold') || shopItems[0];
+  if (!p) return UI.empty('No gem for a shop certificate', 'Add a gem with “Shop certificate” chosen, then print it here.', 'c-products/products.html', 'Go to All gems');
   function render() {
     $('#page').innerHTML = UI.docToolbar('products.html', 'Products', `<select id="pp" style="width:auto">${UI.opts(shopItems.map(x => ({ v: x.id, l: x.id + ' · ' + x.name })), p.id)}</select>`) +
       `${p.cert.type !== 'shop' ? `<div class="doc-toolbar"><div class="alert warning" style="width:100%">${p.id} has a ${p.cert.type === 'lab' ? 'lab certificate' : 'no certificate'} setting. Shop certificates are normally for non-sapphire gems (rule 6).</div></div>` : ''}
