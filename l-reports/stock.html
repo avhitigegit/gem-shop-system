@@ -13,7 +13,7 @@
 if (PAGE_ALLOWED) (function () {
   const f = { branch: branchScope(), gem: '', tab: qs('tab') || 'all', days: 60 };
   const age = p => Math.round((Date.now() - new Date(p.addedAt)) / 864e5);
-  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Stock report', brd: ['L3', 'L6'], sub: 'Stock with photos and value; slow-moving stock (items not sold for a long time).', actions: UI.exportButtons('#rT', 'Stock report') }) +
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Stock report', brd: ['L3', 'L6'], sub: 'Stock with photos and value; slow-moving stock (items not sold for a long time).', actions: '<a class="btn btn-outline" href="../d-stock/stock-value.html">Value by gem type</a>' + UI.exportButtons('#rT', 'Stock report') }) +
     `<div class="card mb"><div class="card-content filters"><div class="tabs" id="tabs"><button data-t="all">All stock</button><button data-t="slow">Slow-moving</button></div>
       <div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div>
       <div class="field"><label>Gem type</label><select data-f="gem">${UI.opts(S.lists.gemTypes, '', 'All')}</select></div>

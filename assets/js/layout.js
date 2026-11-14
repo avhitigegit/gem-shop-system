@@ -76,12 +76,9 @@
           ['f-pos/reservations.html', 'Reserved & quotes', '📌', 'Gems kept for customers', [O, SP]],
           ['e-returns/returns.html', 'Returns', '↩️', 'All refunds and exchanges', [O, SP]],
           ['e-returns/credit-note.html', 'Credit notes', '📄', 'Money given back', [O, SP, AC]]
-        ] },
-        { name: 'Less often', show: 'links', items: [
-          ['g-payments/payment.html', 'Payment screen (practice)', '💳', 'Try cash, card and split payment', [O, SP]]
         ] }
       ],
-      hidden: [['g-payments/invoice.html', 'g-payments/invoices.html', 'Invoice'], ['f-pos/quotation-print.html', 'f-pos/reservations.html', 'Quotation']] },
+      hidden: [['g-payments/invoice.html', 'g-payments/invoices.html', 'Invoice'], ['f-pos/quotation-print.html', 'f-pos/reservations.html', 'Quotation'], ['g-payments/payment.html', 'f-pos/pos.html', 'Payment (practice)']] },
 
     { key: 'stock', icon: '📦', title: 'Gems & stock', roles: [O, SP, ST, AC], hub: 'hub/stock.html',
       intro: 'Buy gems, add them with a photo, print tags and keep the stock right.',
@@ -91,7 +88,7 @@
           ['c-products/product-form.html', 'Add a gem', '➕', 'Photo, details and prices', [O]],
           ['c-products/tag-print.html', 'Print tags', '🏷', 'QR / barcode labels', [O, ST]],
           ['d-stock/stock-check.html', 'Stock check', '📋', 'Scan every tag on the shelf', [O, ST]],
-          ['c-products/shop-certificate.html', 'Print shop certificate', '📜', 'For non-sapphire gems', [SP]]
+          ['c-products/shop-certificate.html', 'Print shop certificate', '📜', 'For gems without a lab certificate', [O, SP]]
         ] },
         { name: 'Look up', show: 'cards', side: true, items: [
           ['c-products/products.html', 'All gems', '🔍', 'Search by code, name or gem', [O, SP, ST]],
@@ -99,16 +96,13 @@
           ['b-purchasing/suppliers.html', 'Suppliers', '🤝', 'Who we buy from', [O, AC]],
           ['b-purchasing/purchase-history.html', 'Purchases', '🧾', 'Everything bought', [O, AC]]
         ] },
-        { name: 'Less often', show: 'links', items: [
-          ['d-stock/transfers.html', 'Send / receive between branches', '🚚', '', [O, ST]],
+        { name: 'Other tasks', show: 'cards', items: [
+          ['d-stock/transfers.html', 'Send / receive between branches', '🚚', 'Move gems to the other branch', [O, ST]],
           ['d-stock/stock-correction.html', 'Fix a stock mistake', '✎', 'Owner approves', [O, ST]],
-          ['b-purchasing/supplier-returns.html', 'Return a gem to the supplier', '↩️', '', [O]],
-          ['c-products/shop-certificate.html', 'Print shop certificate', '📜', '', [O]],
-          ['d-stock/stock-value.html', 'Stock value', '💰', '', [O]],
-          ['d-stock/product-history.html', 'History of one gem', '🕘', '', [O, ST]]
+          ['b-purchasing/supplier-returns.html', 'Return a gem to the supplier', '↩️', 'Wrong or faulty gem', [O]]
         ] }
       ],
-      hidden: [['c-products/product-detail.html', 'c-products/products.html', 'Gem details'], ['b-purchasing/supplier-detail.html', 'b-purchasing/suppliers.html', 'Supplier']] },
+      hidden: [['c-products/product-detail.html', 'c-products/products.html', 'Gem details'], ['b-purchasing/supplier-detail.html', 'b-purchasing/suppliers.html', 'Supplier'], ['d-stock/product-history.html', 'c-products/products.html', 'Gem history']] },
 
     { key: 'people', icon: '👥', title: 'Customers & guides', roles: [O, SP, AC], hub: 'hub/people.html',
       intro: 'Customers, the guides and drivers who bring them, and their commission.',
@@ -124,8 +118,8 @@
           ['h-commissions/commission-breakdown.html', 'Commission per sale', '🧮', 'How each amount was worked out', [O, AC]],
           ['j-customers-promotions/campaign-report.html', 'Offer results', '📈', 'Opened, clicked, sold', [O]]
         ] },
-        { name: 'Less often', show: 'links', items: [
-          ['j-customers-promotions/message-settings.html', 'Email & WhatsApp settings', '⚙️', '', [O]]
+        { name: 'Other tasks', show: 'cards', items: [
+          ['j-customers-promotions/message-settings.html', 'Email & WhatsApp settings', '⚙️', 'Turn messages on or off', [O]]
         ] }
       ],
       hidden: [['j-customers-promotions/customer-profile.html', 'j-customers-promotions/customers.html', 'Customer'], ['h-commissions/guide-profile.html', 'h-commissions/guides.html', 'Guide / driver'], ['h-commissions/commission-slip.html', 'h-commissions/commissions-payable.html', 'Commission slip']] },
@@ -143,8 +137,8 @@
           ['m-expenses/expenses.html', 'Expenses', '📒', 'All shop expenses', [O, AC]],
           ['m-expenses/recurring.html', 'Monthly bills', '🔁', 'Rent, phone, salaries', [O, AC]]
         ] },
-        { name: 'Less often', show: 'links', items: [
-          ['m-expenses/categories.html', 'Expense types', '🏷', '', [O]]
+        { name: 'Other tasks', show: 'cards', items: [
+          ['m-expenses/categories.html', 'Expense types', '🏷', 'Rent, salaries, transport…', [O]]
         ] }
       ], hidden: [] },
 
@@ -163,13 +157,12 @@
           ['n-accountant/tax-pack.html', 'Tax pack', '📦', 'Download everything for tax', [O, AC]],
           ['n-accountant/month-closing.html', 'Close the month', '🔒', 'Lock it so nothing changes', [O, AC]]
         ] },
-        { name: 'More reports', show: 'links', items: [
-          ['l-reports/stock.html', 'Stock & slow-moving gems', '📦', '', [O]],
-          ['l-reports/commissions.html', 'Commissions', '🚐', '', [O, AC]],
-          ['l-reports/purchases.html', 'Purchases by supplier', '🛒', '', [O, AC]],
-          ['l-reports/vat.html', 'VAT detail', '🏛', '', [O, AC]]
+        { name: 'More reports', show: 'cards', items: [
+          ['l-reports/stock.html', 'Stock & value', '📦', 'Value, photos, slow-moving gems', [O]],
+          ['l-reports/commissions.html', 'Commissions', '🚐', 'By guide and by staff', [O, AC]],
+          ['l-reports/purchases.html', 'Purchases by supplier', '🛒', 'Bought and sold per supplier', [O, AC]]
         ] }
-      ], hidden: [] },
+      ], hidden: [['d-stock/stock-value.html', 'l-reports/stock.html', 'Value by gem type'], ['l-reports/vat.html', 'n-accountant/vat-summary.html', 'Every VAT invoice']] },
 
     { key: 'approvals', icon: '✅', title: 'Approvals', roles: ALL, count: true,
       groups: [
@@ -188,11 +181,9 @@
           ['a-setup/shop-vat.html', 'Shop details', '🏪', 'Name, VAT number, gem licence', [O]],
           ['a-setup/users.html', 'Staff logins', '🔑', 'Who can log in and what they see', [O]],
           ['a-setup/currencies.html', 'Exchange rates', '💱', 'USD and EUR rate of the day', [O]],
-          ['a-setup/commission-rules.html', 'Commission', '🚐', 'Guide % and staff levels', [O]]
-        ] },
-        { name: 'Less often', show: 'links', items: [
-          ['a-setup/branches.html', 'Branches', '🏬', '', [O]],
-          ['a-setup/lists.html', 'Drop-down lists', '📃', 'Gem types, colours, shapes…', [O]]
+          ['a-setup/commission-rules.html', 'Commission', '🚐', 'Guide % and staff levels', [O]],
+          ['a-setup/branches.html', 'Branches', '🏬', 'Ella now, Branch 2 from January 2027', [O]],
+          ['a-setup/lists.html', 'Drop-down lists', '📃', 'Gem types, colours, shapes, labs…', [O]]
         ] }
       ], hidden: [] }
   ];
@@ -268,14 +259,13 @@
 
   /* ---------- sidebar ---------- */
   const subList = sec => {
-    const items = sec.groups.filter(g => g.side).flatMap(g => visible(g.items));
     const seen = new Set();
-    const list = items.filter(it => { if (seen.has(it[0])) return false; seen.add(it[0]); return true; });
-    // also show the current page if it is a "less often" page
-    if (hereItem && !list.some(it => it[0] === hereItem[0]) && hereItem[4].includes(P.role)) list.push(hereItem);
+    const list = [];
+    sec.groups.forEach(g => { const v = visible(g.items).filter(it => !seen.has(it[0])); v.forEach(it => seen.add(it[0])); if (v.length && list.length) list.push(null); list.push(...v); });
     let activeDone = false;
     const activeKey = hereItem ? hereItem[0] : (hereHidden && hereHidden[1]);
     const lis = list.map(it => {
+      if (!it) return '<span class="nav-sub-sep"></span>';
       const act = !activeDone && activeKey && it[0] === activeKey; if (act) activeDone = true;
       return `<a href="${url(it[0])}" class="nav-sub-i ${act ? 'active' : ''}"><span>${it[2]}</span>${esc(it[1])}</a>`;
     }).join('');
@@ -289,7 +279,7 @@
   sidebar.innerHTML = `<div class="brand"><img src="${url('assets/img/logo.svg')}" alt=""><div><b>${esc(S.shop.name)}</b><span>GEM SHOP</span></div></div>
     ${isRole(O, SP) && here !== 'f-pos/pos.html' ? `<div style="padding:14px 14px 4px"><a class="btn btn-gold btn-block btn-lg" href="${url('f-pos/pos.html')}">+ New sale</a></div>` : ''}
     <nav class="nav-simple">${navHTML}</nav>
-    <div class="side-foot">Prototype · sample data only</div>`;
+    <div class="side-foot">Prototype v4 · sample data only</div>`;
 
   /* ---------- "where am I" bar (replaces the old tab strip) ---------- */
   let wherebar = null;
@@ -377,6 +367,15 @@
       (pend.slice(0, 6).map(a => `<a class="dp-item" href="${url('k-owner-control/approvals.html')}#${a.id}"><b style="font-size:12px">${esc(APPROVAL_TYPES[a.type] || a.type)}</b><br><span class="muted" style="font-size:12px">${esc(a.title)}</span><br><small class="muted">${fmt.ago(a.at)} · ${esc(user(a.requestedBy).name)}</small></a>`).join('') || '<div class="dp-item muted">Nothing waiting. 🎉</div>') +
       `<a class="dp-item bold" href="${url('k-owner-control/approvals.html')}">${owner ? 'Open approvals →' : 'See request status →'}</a>`;
   }
+
+  /* header buttons that only repeat a page already in the menu are hidden – one way to each page.
+     Main action buttons (blue / green / gold) stay. */
+  const menuHrefs = new Set($$('.nav-sub-i', sidebar).map(a => a.href.split(/[?#]/)[0]));
+  const dedupe = () => $$('.page-head .actions a[href]').forEach(a => {
+    if (/btn-(sapphire|success|gold)/.test(a.className) || a.href.includes('?')) return;
+    if (menuHrefs.has(a.href.split(/[?#]/)[0])) a.style.display = 'none';
+  });
+  dedupe(); new MutationObserver(dedupe).observe(content, { childList: true, subtree: true });
 
   renderBell();
   setInterval(() => { Store.refresh(); renderBell(); }, 4000);

@@ -178,7 +178,7 @@ if (PAGE_ALLOWED) (function () {
           <div class="field"><label class="req">Country</label><select data-c="country">${UI.opts(countries, c.country, 'Select country…')}</select></div>
           <div class="field"><label>Email</label><input class="input" type="email" data-c="email" value="${esc(c.email)}" placeholder="for the VAT invoice PDF"></div>
           <div class="field"><label>WhatsApp number</label><input class="input" data-c="whatsapp" value="${esc(c.whatsapp)}" placeholder="+49 …"></div>
-          <label class="check"><input type="checkbox" data-c="consent" ${c.consent ? 'checked' : ''}><span>Customer agrees to receive promotions by email / WhatsApp (J2, PDPA). They can unsubscribe at any time.</span></label>
+          <label class="check"><input type="checkbox" data-c="consent" ${c.consent ? 'checked' : ''}><span>Customer agrees to receive promotions by email / WhatsApp (J2) – PDPA. They can unsubscribe at any time.</span></label>
         </div>`;
     if (D.custMode === 'existing') {
       const info = () => { const x = cust(D.customerId); $('#custInfo').innerHTML = x ? `<div class="muted" style="font-size:12px">${esc(x.email)} · ${esc(x.whatsapp)}<br>Promotions: ${x.consent ? '<span class="badge badge-success">Consent given</span>' : '<span class="badge badge-default">No consent</span>'} · ${S.sales.filter(s => s.customerId === x.id).length} previous purchases</div>` : ''; };
