@@ -16,7 +16,7 @@ if (PAGE_ALLOWED) (function () {
     $('#page').innerHTML = UI.pageHead({ crumbs: 'E · Returns', title: 'Credit notes', brd: ['E2'], sub: 'Created automatically when the owner approves a return.', actions: UI.exportButtons('#cnT', 'Credit notes') }) + `<div class="card">${UI.table([
       { h: 'Credit note', f: c => `<a class="mono" href="?id=${c.id}">${c.id}</a>` }, { h: 'Date', f: c => fmt.date(c.date) },
       { h: 'Product', f: c => UI.prodCell(prod(c.productId)) }, { h: 'Invoice', f: c => `<a class="mono" href="../g-payments/invoice.html?id=${c.saleId}">${c.saleId}</a>` },
-      { h: 'Amount', num: 1, f: c => fmt.cur(c.amount) }, { h: 'VAT', num: 1, f: c => fmt.cur(c.vat) }, { h: 'Commission', f: c => c.commissionReversed ? '<span class="badge badge-danger">Reversed</span>' : '—' }
+      { h: 'Amount', num: 1, f: c => fmt.cur(c.amount) }, { h: 'Commission', f: c => c.commissionReversed ? '<span class="badge badge-danger">Reversed</span>' : '—' }
     ], S.creditNotes, { id: 'cnT', cls: 'stack-sm', empty: 'No credit notes yet.' })}</div>`;
     return;
   }
@@ -27,12 +27,12 @@ if (PAGE_ALLOWED) (function () {
   $('#page').innerHTML = UI.docToolbar('credit-note.html', 'Credit notes', '<button class="btn btn-outline" id="sendCn">✉ Send to customer</button>') + `
     <div class="doc">${UI.docHead('CREDIT NOTE', `<div style="font-size:12px;margin-top:6px"><b>No:</b> <span class="mono">${c.id}</span><br><b>Date:</b> ${fmt.dt(c.date)}<br><b>Against invoice:</b> <span class="mono">${s.id}</span> (${fmt.date(s.date)})</div>`)}
       <p><b>Customer:</b> ${esc(cu.name)}, ${esc(cu.country)}</p>
-      <table><thead><tr><th>Photo</th><th>Returned product</th><th>Reason</th><th style="text-align:right">Excl. VAT</th><th style="text-align:right">VAT</th><th style="text-align:right">Credit</th></tr></thead><tbody>
-        <tr><td style="width:70px">${gemPic(p, 56, 60)}</td><td><b>${esc(p.name)}</b><br><span class="mono" style="font-size:11px">${p.id}</span><br><span style="font-size:12px">${fmt.ct(p.carat)} · ${esc(p.treatment)}</span></td><td style="font-size:12px">${esc(r.kind === 'exchange' ? 'Exchange' : 'Refund')}: ${esc(r.reason || '')}</td><td class="right">${fmt.lkr(t.net)}</td><td class="right">${fmt.lkr(t.vat)}</td><td class="right"><b>${fmt.lkr(t.total)}</b></td></tr>
+      <table><thead><tr><th>Photo</th><th>Returned product</th><th>Reason</th><th style="text-align:right">Credit</th></tr></thead><tbody>
+        <tr><td style="width:70px">${gemPic(p, 56, 60)}</td><td><b>${esc(p.name)}</b><br><span class="mono" style="font-size:11px">${p.id}</span><br><span style="font-size:12px">${fmt.ct(p.carat)} · ${esc(p.treatment)}</span></td><td style="font-size:12px">${esc(r.kind === 'exchange' ? 'Exchange' : 'Refund')}: ${esc(r.reason || '')}</td><td class="right"><b>${fmt.lkr(t.total)}</b></td></tr>
       </tbody></table>
       <table class="totals"><tr class="grand"><td>Total credit</td><td class="right">${fmt.lkr(c.amount)}</td></tr></table>
       <div class="mt" style="font-size:12px"><b>Approved by:</b> ${esc(user(c.by).name)} (owner) · <b>Stock:</b> product returned to stock · <b>Commissions reversed:</b> ${revs.map(x => esc(Commissions.payeeName(x)) + ' ' + fmt.lkr(x.amount)).join(', ') || 'yes'}</div>
-      <div class="foot">This credit note reduces the VAT on the original invoice ${s.id} for the VAT return. The original invoice is kept on record (rule 4).</div></div>`;
+      <div class="foot">This credit note is against the original invoice ${s.id}. The original invoice is kept on record (rule 4).</div></div>`;
   $('#sendCn').onclick = () => UI.send('credit note ' + c.id, cu);
 })();
 </script>

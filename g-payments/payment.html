@@ -13,7 +13,7 @@
 if (PAGE_ALLOWED) (function () {
   $('#page').innerHTML = UI.pageHead({ crumbs: 'G · Payments', title: 'Payment dialog', brd: ['G1', 'G2'], sub: 'The same dialog opens from the POS when a sale is completed. Try it here with any amount – nothing is saved.' }) +
     `<div class="grid g2"><div class="card"><div class="card-content stack">
-      <div class="field"><label class="req">Amount to pay (LKR, incl. VAT)</label><input class="input input-lg" id="amt" type="number" min="1" value="450000"></div>
+      <div class="field"><label class="req">Amount to pay (LKR)</label><input class="input input-lg" id="amt" type="number" min="1" value="450000"></div>
       <div id="tri" class="muted"></div>
       <button class="btn btn-lg btn-success" id="open">Open payment dialog</button>
       ${UI.ruleNote(10, 'Prices and payments use LKR, USD and EUR only. USD and EUR cash is converted to LKR at the day\'s rate set by the owner (A4).')}

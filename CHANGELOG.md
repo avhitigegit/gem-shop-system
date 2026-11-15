@@ -3,6 +3,19 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v8 – 15/11/2026 – no VAT anywhere (client request)
+The owner's prices already include VAT and VAT is not shown to customers.
+- Invoice ("INVOICE", not "TAX INVOICE"), quotation, reservation, credit note, payment and
+  New sale: only the price and the total. No "before VAT", no VAT line, no VAT number.
+- Removed pages: Monthly VAT summary and VAT report (old links go to Profit & Loss / Sales report).
+  Month end steps: Check expenses → Profit & Loss → Tax pack → Close the month.
+- Invoices list, Sales report, Accountant home, Tax pack, Month closing, Profit & Loss:
+  VAT columns and totals removed.
+- Expenses and repeating expenses: no VAT field; only the bill amount.
+- Shop details and sign-up: VAT number, VAT rate and "prices include VAT" removed.
+- Commission is now worked out on the full agreed price (before, the 18% VAT was taken off first).
+- Saved demo data uses a new storage key, so the sample data is rebuilt once without VAT.
+
 ## v7 – 15/11/2026 – one way to each job (duplicates removed after the demo)
 **Same button twice on one screen**
 - A1–A3 Cash & expenses, Reports and Gems & stock home pages: the step bar is removed (the big

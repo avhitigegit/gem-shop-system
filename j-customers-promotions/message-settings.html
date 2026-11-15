@@ -16,7 +16,7 @@ if (PAGE_ALLOWED) (function () {
     $('#page').innerHTML = UI.pageHead({ crumbs: 'J · Customers & promotions', title: 'Message settings', brd: ['J5', 'J7'], sub: 'The owner can turn email and WhatsApp messages on or off at any time.' }) + `
     <div class="grid g2">
       <div class="stack">
-        <form class="card" id="smtp" novalidate><div class="card-header"><div><h3>✉ Email – shop's own SMTP</h3><p>VAT invoices, quotations, password reset, reports to the owner (§6.1)</p></div><label class="switch" title="Email on/off (J7)"><input type="checkbox" id="emailOn" ${M.emailOn ? 'checked' : ''}><span></span></label></div>
+        <form class="card" id="smtp" novalidate><div class="card-header"><div><h3>✉ Email – shop's own SMTP</h3><p>Invoices, quotations, password reset, reports to the owner (§6.1)</p></div><label class="switch" title="Email on/off (J7)"><input type="checkbox" id="emailOn" ${M.emailOn ? 'checked' : ''}><span></span></label></div>
           <div class="card-content form-grid">
             <div class="field"><label class="req">SMTP host</label><input class="input" name="host" required value="${esc(M.smtp.host)}"></div>
             <div class="field"><label class="req">Port</label><input class="input" type="number" name="port" required value="${M.smtp.port}"></div>
@@ -28,7 +28,7 @@ if (PAGE_ALLOWED) (function () {
           <div class="card-footer"><button type="button" class="btn btn-outline" id="testMail">Send test email</button><button class="btn btn-sapphire" type="submit">Save SMTP</button></div></form>
         <div class="card"><div class="card-header"><div><h3>✉ Campaign email – Amazon SES</h3><p>Bulk promotions (J3). Gmail does not allow bulk marketing (§6.1).</p></div>${badge(M.ses.enabled ? 'active' : 'draft', M.ses.enabled ? 'Connected' : 'Off')}</div><div class="card-content"><dl class="dl"><dt>Sending domain</dt><dd>${esc(M.ses.domain)}</dd><dt>Region</dt><dd>${esc(M.ses.region)} (Mumbai)</dd><dt>SPF / DKIM</dt><dd>${M.ses.spf ? '✓' : '✗'} SPF · ${M.ses.dkim ? '✓' : '✗'} DKIM</dd><dt>Unsubscribe link</dt><dd>✓ Added to every campaign (J2)</dd></dl></div></div>
         <div class="card"><div class="card-header"><h3>Automatic messages (J5)</h3></div><div class="card-content stack" style="gap:12px">
-          ${[['invoiceEmail', 'Email the VAT invoice PDF after every purchase'], ['invoiceWhatsapp', 'WhatsApp the VAT invoice PDF after every purchase (needs Premium)'], ['thankYou', 'Send a thank-you message the day after purchase'], ['ownerClosing', 'Send the day-end closing report to the owner (I4)']].map(x => `<label class="row between" style="flex-wrap:nowrap"><span>${x[1]}</span><label class="switch"><input type="checkbox" data-auto="${x[0]}" ${M.auto[x[0]] ? 'checked' : ''}><span></span></label></label>`).join('')}
+          ${[['invoiceEmail', 'Email the invoice PDF after every purchase'], ['invoiceWhatsapp', 'WhatsApp the invoice PDF after every purchase (needs Premium)'], ['thankYou', 'Send a thank-you message the day after purchase'], ['ownerClosing', 'Send the day-end closing report to the owner (I4)']].map(x => `<label class="row between" style="flex-wrap:nowrap"><span>${x[1]}</span><label class="switch"><input type="checkbox" data-auto="${x[0]}" ${M.auto[x[0]] ? 'checked' : ''}><span></span></label></label>`).join('')}
         </div></div>
       </div>
       <form class="card" id="waF" novalidate style="align-self:start"><div class="card-header"><div><h3>💬 WhatsApp Business – Premium</h3><p>Optional. The shop owns the account and pays Meta directly (§6.2).</p></div><label class="switch" title="WhatsApp on/off (J7)"><input type="checkbox" id="waOn" ${M.wa.enabled ? 'checked' : ''}><span></span></label></div>
@@ -42,7 +42,7 @@ if (PAGE_ALLOWED) (function () {
           </fieldset>
           <div class="sep"></div>
           <div class="label">Message types</div>
-          <ul class="list" style="font-size:12px"><li><span class="badge badge-blue">Utility</span> VAT invoice · quotation · thank-you message (~US$0.005 each)</li><li><span class="badge badge-gold">Marketing</span> promotions &amp; new arrivals – Meta-approved templates, consent only</li><li><span class="badge badge-outline">Owner alerts</span> daily closing summary</li><li class="muted">Not used: purchase order, payment reminder, delivery notification (cash purchases, no credit, no delivery)</li></ul>
+          <ul class="list" style="font-size:12px"><li><span class="badge badge-blue">Utility</span> Invoice · quotation · thank-you message (~US$0.005 each)</li><li><span class="badge badge-gold">Marketing</span> promotions &amp; new arrivals – Meta-approved templates, consent only</li><li><span class="badge badge-outline">Owner alerts</span> daily closing summary</li><li class="muted">Not used: purchase order, payment reminder, delivery notification (cash purchases, no credit, no delivery)</li></ul>
         </div></form>
     </div>`;
     $('#emailOn').onchange = e => { M.emailOn = e.target.checked; Log.add('Email messages ' + (M.emailOn ? 'on' : 'off'), ''); Store.save(); toast('Email messages ' + (M.emailOn ? 'turned ON' : 'turned OFF'), 'J7', M.emailOn ? 'success' : 'warning'); };

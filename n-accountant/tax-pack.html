@@ -12,7 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const months = Fin.months();
-  const PARTS = [['sales', 'Sales & VAT invoices', 'L1, L4'], ['purchases', 'Purchases by supplier (+ bill photos)', 'B3, L5'], ['expenses', 'Expenses (+ bill photos)', 'M2, M7'], ['vat', 'Monthly VAT summary', 'N3'], ['pl', 'Profit & Loss', 'N4'], ['comm', 'Commissions', 'H5'], ['closing', 'Daily closings', 'L5'], ['cn', 'Credit notes', 'E2']];
+  const PARTS = [['sales', 'Sales & invoices', 'L1'], ['purchases', 'Purchases by supplier (+ bill photos)', 'B3, L5'], ['expenses', 'Expenses (+ bill photos)', 'M2, M7'], ['pl', 'Profit & Loss', 'N4'], ['comm', 'Commissions', 'H5'], ['closing', 'Daily closings', 'L5'], ['cn', 'Credit notes', 'E2']];
   $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant & tax', title: 'Tax pack download', brd: ['N5'], sub: 'Download all of the above for any period (Excel / PDF), with bill photos.' }) +
     `<div class="grid g-2-1"><form class="card" id="f" novalidate><div class="card-content form-grid">
       <div class="field"><label class="req">From month</label><select name="from">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) })), months[months.length - 1])}</select></div>
@@ -30,13 +30,13 @@ if (PAGE_ALLOWED) (function () {
   function preview() {
     const ms = range(); const rows = ms.map(m => Fin.month(m, F.branch.value));
     const nBills = S.expenses.filter(e => ms.includes(monthKey(e.date)) && e.billPhoto).length + S.purchases.filter(p => ms.includes(monthKey(p.date))).length;
-    $('#pv').innerHTML = `<dl class="dl" style="grid-template-columns:1fr auto"><dt>Period</dt><dd class="right">${fmt.month(ms[0])} – ${fmt.month(ms[ms.length - 1])}</dd><dt>Invoices</dt><dd class="right">${sum(rows, r => r.invoices)}</dd><dt>Sales before VAT</dt><dd class="right">${fmt.lkr(sum(rows, r => r.salesNet))}</dd><dt>VAT to pay</dt><dd class="right">${fmt.lkr(sum(rows, r => r.vatToPay))}</dd><dt>Net profit</dt><dd class="right">${fmt.lkr(sum(rows, r => r.net))}</dd><dt>Bill photos</dt><dd class="right">${nBills}</dd></dl>`;
+    $('#pv').innerHTML = `<dl class="dl" style="grid-template-columns:1fr auto"><dt>Period</dt><dd class="right">${fmt.month(ms[0])} – ${fmt.month(ms[ms.length - 1])}</dd><dt>Invoices</dt><dd class="right">${sum(rows, r => r.invoices)}</dd><dt>Sales</dt><dd class="right">${fmt.lkr(sum(rows, r => r.salesNet))}</dd><dt>Net profit</dt><dd class="right">${fmt.lkr(sum(rows, r => r.net))}</dd><dt>Bill photos</dt><dd class="right">${nBills}</dd></dl>`;
     $('#hist').innerHTML = hist.length ? `<ul class="list">${hist.map(h => `<li>📦 <div style="flex:1"><b>${esc(h.name)}</b><br><small class="muted">${fmt.dt(h.at)} · ${esc(h.fmt)}</small></div><button class="btn btn-sm btn-outline" onclick="toast('Download started','${esc(h.name)} (demo)','success')">Download</button></li>`).join('')}</ul>` : '<div class="muted">None yet.</div>';
   }
   F.addEventListener('change', preview); preview();
   $('#csv').onclick = () => {
     const ms = range(); const rows = ms.map(m => Fin.month(m, F.branch.value));
-    const t = document.createElement('table'); t.innerHTML = '<tr><th>Month</th><th>Invoices</th><th>Sales before VAT</th><th>Output VAT</th><th>Input VAT</th><th>VAT to pay</th><th>Cost of sales</th><th>Commissions</th><th>Expenses</th><th>Net profit</th></tr>' + rows.map(r => `<tr><td>${fmt.month(r.mk)}</td><td>${r.invoices}</td><td>${r2(r.salesNet)}</td><td>${r2(r.outVat)}</td><td>${r2(r.inVat)}</td><td>${r2(r.vatToPay)}</td><td>${r2(r.cogs)}</td><td>${r2(r.comm)}</td><td>${r2(r.expenses)}</td><td>${r2(r.net)}</td></tr>`).join('');
+    const t = document.createElement('table'); t.innerHTML = '<tr><th>Month</th><th>Invoices</th><th>Sales</th><th>Cost of sales</th><th>Commissions</th><th>Expenses</th><th>Net profit</th></tr>' + rows.map(r => `<tr><td>${fmt.month(r.mk)}</td><td>${r.invoices}</td><td>${r2(r.salesNet)}</td><td>${r2(r.cogs)}</td><td>${r2(r.comm)}</td><td>${r2(r.expenses)}</td><td>${r2(r.net)}</td></tr>`).join('');
     t.style.position = 'absolute'; t.style.left = '-9999px'; document.body.appendChild(t); UI.exportExcel(t, 'Tax pack summary'); t.remove();
   };
   F.onsubmit = e => {

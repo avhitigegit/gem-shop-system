@@ -24,7 +24,7 @@ if (PAGE_ALLOWED) (function () {
   $('#page').innerHTML = UI.docToolbar('commissions-payable.html', 'Commissions payable') + `
     <div class="doc" style="max-width:640px">${UI.docHead('COMMISSION SLIP', `<div style="font-size:12px;margin-top:6px"><b>Slip:</b> <span class="mono">${pay ? pay.id : 'STATEMENT'}</span><br><b>Date:</b> ${fmt.date(pay ? pay.at : new Date().toISOString())}${pay ? '<br><b>Paid by:</b> ' + esc(pay.method) : ''}</div>`)}
       <p><b>Paid to:</b> ${esc(title)}${g ? ` · ${esc(g.vehicle)} ${esc(g.vehicleNo)} · ${esc(g.phone)} · ${g.pct}%` : ''}</p>
-      <table><thead><tr><th>Date</th><th>Invoice</th><th style="text-align:right">Sale before VAT</th><th style="text-align:right">Commission</th><th>Status</th></tr></thead><tbody>
+      <table><thead><tr><th>Date</th><th>Invoice</th><th style="text-align:right">Sale amount</th><th style="text-align:right">Commission</th><th>Status</th></tr></thead><tbody>
       ${cs.map(c => `<tr><td>${fmt.date(c.date)}</td><td class="mono">${c.saleId}</td><td class="right">${fmt.lkr(sale(c.saleId).net)}</td><td class="right">${fmt.lkr(c.amount)}</td><td>${(STATUS[c.status] || [c.status])[0]}</td></tr>`).join('')}
       </tbody></table>
       <table class="totals"><tr class="grand"><td>Total</td><td class="right">${fmt.lkr(total)}</td></tr></table>

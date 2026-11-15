@@ -1,40 +1,5 @@
-<!-- Screen: VAT report (for monthly VAT returns) | BRD: L4, G3, M3, N3, L6 | Roles: Owner, Accountant -->
+<!-- v8: VAT is not shown in this shop's system (prices already include it). This page is removed. -->
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VAT Report · Gem Shop</title>
-<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
-</head>
-<body data-root="../" data-page="l-reports/vat.html" data-roles="owner accountant">
-<div id="page"></div>
-<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
-<script>
-if (PAGE_ALLOWED) (function () {
-  const months = Fin.months();
-  const f = { month: months[0], branch: branchScope() };
-  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'VAT report', brd: ['L4', 'L6'], sub: 'Every VAT invoice for the month, for the monthly VAT return to the Inland Revenue Department. Standard VAT ' + S.shop.vatRate + '%.', actions: UI.exportButtons('#rT', 'VAT report') }) +
-    `<div class="card mb"><div class="card-content filters"><div class="field"><label>Month</label><select data-f="month">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : '') })), f.month)}</select></div><div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div><div class="field"><label>VAT reg. no.</label><input class="input mono" readonly value="${esc(S.shop.vatNo)}"></div></div></div><div id="out"></div>`;
-  function render() {
-    const inB = x => f.branch === 'all' || x.branch === f.branch;
-    const sales = S.sales.filter(s => monthKey(s.date) === f.month && inB(s)).sort((a, b) => a.id.localeCompare(b.id));
-    const cns = S.creditNotes.filter(c => monthKey(c.date) === f.month && inB(sale(c.saleId)));
-    const ok = sales.filter(s => s.status !== 'cancelled');
-    const outNet = sum(ok, s => s.net), outVat = sum(ok, s => s.vat), cnVat = sum(cns, c => c.vat);
-    const inVat = sum(S.expenses.filter(e => e.status === 'approved' && monthKey(e.date) === f.month && inB(e)), e => e.vat);
-    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Taxable sales', fmt.lkr(outNet), ok.length + ' invoices')}${UI.kpi('Output VAT', fmt.lkr(outVat - cnVat), 'less credit notes ' + fmt.lkr(cnVat))}${UI.kpi('Input VAT (bills)', fmt.lkr(inVat), 'from supplier VAT bills (M3)')}${UI.kpi('VAT to pay', fmt.lkr(outVat - cnVat - inVat), fmt.month(f.month), 'accent')}</div>
-      <div class="card">${UI.table([
-        { h: 'Invoice', f: s => `<a class="mono" href="../g-payments/invoice.html?id=${s.id}">${s.id}</a>` }, { h: 'Date', f: s => fmt.date(s.date) },
-        { h: 'Customer', f: s => esc((cust(s.customerId) || {}).name) + ' <small class="muted">' + esc((cust(s.customerId) || {}).country) + '</small>' },
-        { h: 'Taxable amount', num: 1, f: s => s.status === 'cancelled' ? '<s>' + fmt.lkr(s.net) + '</s>' : fmt.lkr(s.net) }, { h: 'VAT ' + S.shop.vatRate + '%', num: 1, f: s => s.status === 'cancelled' ? '<s>' + fmt.lkr(s.vat) + '</s>' : fmt.lkr(s.vat) },
-        { h: 'Total', num: 1, f: s => fmt.lkr(s.total) }, { h: 'Status', f: s => badge(s.status) }
-      ], sales, { id: 'rT', cls: 'stack-sm', empty: 'No invoices this month.', foot: ['Total', '', '', fmt.lkr(outNet), fmt.lkr(outVat), fmt.lkr(sum(ok, s => s.total)), ''] })}</div>
-      ${cns.length ? `<div class="card mt"><div class="card-header"><h3>Credit notes (reduce output VAT)</h3></div>${UI.table([{ h: 'Credit note', f: c => c.id }, { h: 'Invoice', f: c => c.saleId }, { h: 'Date', f: c => fmt.date(c.date) }, { h: 'Amount', num: 1, f: c => fmt.lkr(c.amount) }, { h: 'VAT', num: 1, f: c => '− ' + fmt.lkr(c.vat) }], cns)}</div>` : ''}
-      <p class="muted mt-s" style="font-size:12px">Invoice numbers run without gaps; cancelled invoices are listed but not counted (rule 4).</p>`;
-  }
-  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
-  render();
-})();
-</script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><title>VAT report · Gem Shop</title>
+<meta http-equiv="refresh" content="0; url=sales.html"><script>location.replace('sales.html');</script></head>
+<body><p><a href="sales.html">This page is removed – open the Sales report</a></p></body></html>

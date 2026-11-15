@@ -146,7 +146,6 @@
           ['m-expenses/expense-report.html', 'Expenses', '🧾', 'By type and month', [O, AC]]
         ] },
         { name: 'Month end (with the accountant)', show: 'cards', side: true, items: [
-          ['n-accountant/vat-summary.html', 'VAT for the month', '🏛', 'VAT to pay', [O, AC]],
           ['n-accountant/profit-loss.html', 'Profit & Loss', '📑', 'Income minus all costs', [O, AC]],
           ['n-accountant/tax-pack.html', 'Tax pack', '📦', 'Download everything for tax', [O, AC]],
           ['n-accountant/month-closing.html', 'Close the month', '🔒', 'Lock it so nothing changes', [O, AC]]
@@ -156,7 +155,7 @@
           ['l-reports/commissions.html', 'Commissions', '🚐', 'By guide and by staff', [O, AC]],
           ['l-reports/purchases.html', 'Purchases by supplier', '🛒', 'Bought and sold per supplier', [O, AC]]
         ] }
-      ], hidden: [['d-stock/stock-value.html', 'l-reports/stock.html', 'Value by gem type'], ['l-reports/vat.html', 'n-accountant/vat-summary.html', 'Every VAT invoice']] },
+      ], hidden: [['d-stock/stock-value.html', 'l-reports/stock.html', 'Value by gem type']] },
 
     { key: 'approvals', icon: '✅', title: 'Approvals', roles: ALL, count: true,
       groups: [
@@ -172,7 +171,7 @@
       intro: 'Set up the shop once. Change these only when something changes.',
       groups: [
         { name: 'Shop set-up', show: 'cards', side: true, items: [
-          ['a-setup/shop-vat.html', 'Shop details', '🏪', 'Name, VAT number, gem licence', [O]],
+          ['a-setup/shop-vat.html', 'Shop details', '🏪', 'Name, address, gem licence', [O]],
           ['a-setup/users.html', 'Staff logins', '🔑', 'Who can log in and what they see', [O]],
           ['a-setup/currencies.html', 'Exchange rates', '💱', 'USD and EUR rate of the day', [O]],
           ['a-setup/commission-rules.html', 'Commission', '🚐', 'Guide % and staff levels', [O]],
@@ -205,7 +204,6 @@
       title: 'Month end',
       steps: [
         { page: 'm-expenses/expenses.html', label: 'Check expenses', bar: false, status: () => ({ note: 'Bills & photos' }) },
-        { page: 'n-accountant/vat-summary.html', label: 'VAT', status: () => ({ note: 'VAT to pay' }) },
         { page: 'n-accountant/profit-loss.html', label: 'Profit & Loss', status: () => ({ note: 'The month result' }) },
         { page: 'n-accountant/tax-pack.html', label: 'Tax pack', status: () => ({ note: 'Download' }) },
         { page: 'n-accountant/month-closing.html', label: 'Close the month', status: () => { const lm = new Date(); lm.setDate(1); lm.setMonth(lm.getMonth() - 1); const mk = lm.getFullYear() + '-' + String(lm.getMonth() + 1).padStart(2, '0'); const m = S.months[mk]; return m && m.status === 'closed' ? { done: true, note: fmt.month(mk) + ' locked' } : { note: fmt.month(mk) + ' still open' }; } }
@@ -280,7 +278,7 @@
   sidebar.innerHTML = `<div class="brand"><img src="${url('assets/img/logo.svg')}" alt=""><div><b>${esc(S.shop.name)}</b><span>GEM SHOP</span></div></div>
     ${isRole(O, SP) && here !== 'f-pos/pos.html' ? `<div style="padding:14px 14px 4px"><a class="btn btn-gold btn-block btn-lg" href="${url('f-pos/pos.html')}">+ New sale</a></div>` : ''}
     <nav class="nav-simple">${navHTML}</nav>
-    <div class="side-foot">Prototype v7 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
+    <div class="side-foot">Prototype v8 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
   /* ⌄ arrow: open / close a section's page list without leaving the page */
   sidebar.addEventListener('click', e => {
     const b = e.target.closest('.nav-chev'); if (!b) return;

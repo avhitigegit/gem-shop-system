@@ -40,7 +40,7 @@
         <div class="card-content"><select id="guide"></select><div class="hint muted mt-s" id="guideHint" style="font-size:12px"></div></div>
       </div>
       <div class="card">
-        <div class="card-header"><h2><span class="step-n" id="sn4">4</span>Total &amp; payment</h2><span class="muted" style="font-size:12px" id="vatMode"></span></div>
+        <div class="card-header"><h2><span class="step-n" id="sn4">4</span>Total &amp; payment</h2></div>
         <div class="card-content" id="totals"></div>
         <div class="card-footer" style="flex-direction:column;align-items:stretch">
           <button class="btn btn-lg btn-success btn-block" id="payBtn">Complete sale &amp; take payment</button>
@@ -67,7 +67,6 @@ if (PAGE_ALLOWED) (function () {
     actions: `<a class="btn btn-outline" href="reservations.html">Reservations &amp; quotations</a><a class="btn btn-outline" href="../g-payments/invoices.html">Invoices</a>`
   });
   $('#rules').innerHTML = `<div class="stack" style="gap:8px">${UI.ruleNote(2, 'A product cannot be sold below its minimum price without the owner\'s approval.')}${UI.ruleNote(3, 'Each product is unique. Once sold it cannot be sold again unless it is returned.')}${UI.ruleNote(10, 'Prices and payments use LKR, USD and EUR only.')}</div>`;
-  $('#vatMode').textContent = S.shop.vatInclusive ? 'Prices include VAT ' + S.shop.vatRate + '%' : 'VAT ' + S.shop.vatRate + '% added';
 
   /* ---------- opened for "keep a gem" / "give a quote" from Sell ---------- */
   const INTENT = qs('intent');
@@ -86,7 +85,7 @@ if (PAGE_ALLOWED) (function () {
       ['Customer', custReady() ? (D.custMode === 'existing' ? (cust(D.customerId) || {}).name : D.newCust.name) : 'Name & country', custReady()],
       ['Guide / driver', D.guideId ? (guide(D.guideId) || {}).name : 'Walk-in if none', D.items.length > 0 && custReady()],
       [h && h.status === 'pending' ? 'Owner approval' : 'Take payment', h && h.status === 'pending' ? 'Waiting…' : h && h.status === 'approved' ? 'Approved ✓' : 'Cash, card or both', false],
-      ['VAT invoice', 'Print or send', false]
+      ['Invoice', 'Print or send', false]
     ];
     const next = st.findIndex(x => !x[2]);
     if ($('#saleSteps')) $('#saleSteps').innerHTML = `<nav class="flowbar no-print"><span class="fb-title">This sale</span><ol>${st.map((x, i) => `<li class="${x[2] ? 'done' : ''} ${i === next ? 'here' : ''}"><a href="#" data-jump="${i}"><span class="fb-n">${x[2] ? '✓' : i + 1}</span><span class="fb-t"><b>${esc(x[0])}</b><small>${esc(x[1] || '')}</small></span></a></li>`).join('')}</ol></nav>`;
@@ -175,7 +174,7 @@ if (PAGE_ALLOWED) (function () {
       : `<div class="stack" style="gap:10px">
           <div class="field"><label class="req">Name</label><input class="input" data-c="name" value="${esc(c.name)}" placeholder="e.g. Anna Müller"></div>
           <div class="field"><label class="req">Country</label><select data-c="country">${UI.opts(countries, c.country, 'Select country…')}</select></div>
-          <div class="field"><label>Email</label><input class="input" type="email" data-c="email" value="${esc(c.email)}" placeholder="for the VAT invoice PDF"></div>
+          <div class="field"><label>Email</label><input class="input" type="email" data-c="email" value="${esc(c.email)}" placeholder="for the invoice PDF"></div>
           <div class="field"><label>WhatsApp number</label><input class="input" data-c="whatsapp" value="${esc(c.whatsapp)}" placeholder="+49 …"></div>
           <label class="check"><input type="checkbox" data-c="consent" ${c.consent ? 'checked' : ''}><span>Customer agrees to receive promotions by email / WhatsApp (J2) – PDPA. They can unsubscribe at any time.</span></label>
         </div>`;
@@ -228,14 +227,12 @@ if (PAGE_ALLOWED) (function () {
   function renderTotals() {
     const t = Calc.saleTotals(D.items, D.guideId);
     const g = guide(D.guideId);
-    $('#guideHint').innerHTML = g ? `${esc(g.vehicle)} ${esc(g.vehicleNo)} · ${esc(g.phone)} · commission ${g.pct}% of the price before VAT (H1)` : 'Walk-in: no guide commission. Staff commission still applies (H2).';
+    $('#guideHint').innerHTML = g ? `${esc(g.vehicle)} ${esc(g.vehicleNo)} · ${esc(g.phone)} · commission ${g.pct}% of the price (H1)` : 'Walk-in: no guide commission. Staff commission still applies (H2).';
     const below = D.items.some(i => i.agreed < i.minPrice);
     $('#totals').innerHTML = `
       <div class="dl" style="grid-template-columns:1fr auto">
         <dt>Items</dt><dd class="right">${D.items.length}</dd>
         <dt>Agreed total</dt><dd class="right">${fmt.lkr(t.subtotal)}</dd>
-        <dt>Before VAT</dt><dd class="right">${fmt.lkr(t.net)}</dd>
-        <dt>VAT ${S.shop.vatRate}%</dt><dd class="right">${fmt.lkr(t.vat)}</dd>
       </div>
       <div class="sep"></div>
       <div class="row between"><b>Total to pay</b><b style="font-size:20px;color:var(--navy)">${fmt.lkr(t.total)}</b></div>
@@ -276,7 +273,7 @@ if (PAGE_ALLOWED) (function () {
 
   /* ---------- customer resolve ---------- */
   function resolveCustomer(createIfNew) {
-    if (D.custMode === 'existing') { if (!D.customerId) { toast('Select the customer', 'Customer details are needed for the VAT invoice (F5).', 'error'); return null; } return cust(D.customerId); }
+    if (D.custMode === 'existing') { if (!D.customerId) { toast('Select the customer', 'Customer details are needed for the invoice (F5).', 'error'); return null; } return cust(D.customerId); }
     const c = D.newCust;
     if (!c.name.trim() || !c.country) { $$('#custBox [data-c="name"], #custBox [data-c="country"]').forEach(i => !i.value && i.closest('.field').classList.add('invalid')); toast('Customer name and country are required', 'F5', 'error'); return null; }
     if (c.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) { toast('Email address looks wrong', c.email, 'error'); return null; }
@@ -318,7 +315,7 @@ if (PAGE_ALLOWED) (function () {
         body: `<div class="dl"><dt>Invoice</dt><dd class="mono">${s.id}</dd><dt>Customer</dt><dd>${esc(c.name)} (${esc(c.country)})</dd><dt>Paid</dt><dd>${s.payments.map(p => p.method === 'card' ? 'Card ' + fmt.lkr(p.lkr) : 'Cash ' + fmt.money(p.amount, p.currency)).join(' + ')}</dd><dt>Change due</dt><dd class="text-gold bold">${fmt.lkr(s.change)}</dd><dt>Commissions</dt><dd>Guide ${fmt.lkr(s.guideComm)} · Staff ${fmt.lkr(s.staffComm)}</dd></div>
           ${autoE || autoW ? `<div class="alert success mt">Invoice PDF sent automatically by ${[autoE && 'email', autoW && 'WhatsApp'].filter(Boolean).join(' and ')} (J5). Thank-you message queued.</div>` : ''}
           <div class="alert info mt">The owner received an instant sale alert (K2).</div>`,
-        actions: [{ label: 'New sale', cls: 'btn-outline', onClick: () => setTimeout(() => scan.focus(), 50) }, { label: 'Send invoice', cls: 'btn-outline', onClick: () => { UI.send('VAT invoice ' + s.id, c, r => { s.sentEmail = s.sentEmail || r.email; s.sentWhatsapp = s.sentWhatsapp || r.whatsapp; Store.save(); }); } }, { label: 'Print VAT invoice', cls: 'btn-sapphire', onClick: () => { location.href = '../g-payments/invoice.html?id=' + s.id; } }]
+        actions: [{ label: 'New sale', cls: 'btn-outline', onClick: () => setTimeout(() => scan.focus(), 50) }, { label: 'Send invoice', cls: 'btn-outline', onClick: () => { UI.send('Invoice ' + s.id, c, r => { s.sentEmail = s.sentEmail || r.email; s.sentWhatsapp = s.sentWhatsapp || r.whatsapp; Store.save(); }); } }, { label: 'Print invoice', cls: 'btn-sapphire', onClick: () => { location.href = '../g-payments/invoice.html?id=' + s.id; } }]
       });
     });
   };

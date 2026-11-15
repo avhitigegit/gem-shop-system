@@ -44,7 +44,7 @@ if (PAGE_ALLOWED) (function () {
           <dt>Selling price</dt><dd><b style="font-size:18px">${fmt.lkr(p.price)}</b><br><small class="muted">USD ${fmt.num(fx.from(p.price, 'USD'))} · EUR ${fmt.num(fx.from(p.price, 'EUR'))}</small></dd>
           <dt data-roles="owner">Minimum price</dt><dd data-roles="owner">${fmt.lkr(p.min)}</dd>
           <dt data-roles="owner">Cost price</dt><dd data-roles="owner">${fmt.lkr(p.cost)} <span class="badge badge-gold">owner only</span></dd>
-          <dt data-roles="owner">Margin (before VAT)</dt><dd data-roles="owner">${fmt.lkr(Calc.split(p.price).net - p.cost)}</dd>
+          <dt data-roles="owner">Margin</dt><dd data-roles="owner">${fmt.lkr(Calc.split(p.price).net - p.cost)}</dd>
           ${s ? `<dt>Sold for</dt><dd>${fmt.lkr(s.items.find(i => i.productId === p.id).agreed)} · ${fmt.date(s.date)}</dd>` : ''}
         </dl><div class="muted mt-s" data-roles="salesperson staff" style="font-size:12px">Cost and minimum prices are visible to the owner only.</div></div></div>
       </div>

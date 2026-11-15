@@ -12,7 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const f = { from: daysAgoYmd(29), to: todayYmd(), branch: branchScope(), gem: '' };
-  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Profit report', brd: ['L2', 'L6'], sub: 'Selling price (before VAT) minus cost and commissions, per product and in total.', actions: UI.exportButtons('#rT', 'Profit report') }) +
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Profit report', brd: ['L2', 'L6'], sub: 'Selling price minus cost and commissions, per product and in total.', actions: UI.exportButtons('#rT', 'Profit report') }) +
     `<div class="card mb"><div class="card-content filters"><div class="field"><label>From</label><input class="input" type="date" data-f="from" value="${f.from}"></div><div class="field"><label>To</label><input class="input" type="date" data-f="to" value="${f.to}"></div>
     <div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div><div class="field"><label>Gem type</label><select data-f="gem">${UI.opts(S.lists.gemTypes, '', 'All')}</select></div></div></div><div id="out"></div>`;
   function render() {
@@ -22,10 +22,10 @@ if (PAGE_ALLOWED) (function () {
       return active.map(i => { const p = prod(i.productId); const n = Calc.split(i.agreed).net; const c = net ? comm * n / net : 0; return { s, p, i, net: n, cost: p.cost, comm: c, profit: n - p.cost - c }; });
     }).filter(r => !f.gem || r.p.gem === f.gem).sort((a, b) => b.s.date.localeCompare(a.s.date));
     const T = k => sum(rows, r => r[k]);
-    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Sales before VAT', fmt.cur(T('net')), rows.length + ' products sold')}${UI.kpi('Cost of products sold', fmt.cur(T('cost')), '')}${UI.kpi('Commissions', fmt.cur(T('comm')), 'guides + staff')}${UI.kpi('Gross profit', fmt.cur(T('profit')), fmt.pct(T('profit') / Math.max(1, T('net')) * 100) + ' margin', 'accent')}</div>
+    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Sales', fmt.cur(T('net')), rows.length + ' products sold')}${UI.kpi('Cost of products sold', fmt.cur(T('cost')), '')}${UI.kpi('Commissions', fmt.cur(T('comm')), 'guides + staff')}${UI.kpi('Gross profit', fmt.cur(T('profit')), fmt.pct(T('profit') / Math.max(1, T('net')) * 100) + ' margin', 'accent')}</div>
       <div class="card">${UI.table([
         { h: 'Product', f: r => UI.prodCell(r.p) }, { h: 'Sold', f: r => fmt.date(r.s.date) + '<br><a class="mono" style="font-size:11px" href="../g-payments/invoice.html?id=' + r.s.id + '">' + r.s.id + '</a>' },
-        { h: 'Price before VAT', num: 1, f: r => fmt.cur(r.net) }, { h: 'Cost', num: 1, f: r => fmt.cur(r.cost) }, { h: 'Commission', num: 1, f: r => fmt.cur(r.comm) },
+        { h: 'Selling price', num: 1, f: r => fmt.cur(r.net) }, { h: 'Cost', num: 1, f: r => fmt.cur(r.cost) }, { h: 'Commission', num: 1, f: r => fmt.cur(r.comm) },
         { h: 'Profit', num: 1, f: r => `<b class="${r.profit < 0 ? 'text-danger' : 'text-success'}">${fmt.cur(r.profit)}</b>` },
         { h: 'Margin', num: 1, f: r => fmt.pct(r.profit / Math.max(1, r.net) * 100) + (r.i.agreed < r.i.minPrice ? '<br><span class="badge badge-warning">below min</span>' : '') }
       ], rows, { id: 'rT', cls: 'stack-sm', foot: ['Total', '', fmt.cur(T('net')), fmt.cur(T('cost')), fmt.cur(T('comm')), fmt.cur(T('profit')), fmt.pct(T('profit') / Math.max(1, T('net')) * 100)] })}</div>

@@ -1,40 +1,5 @@
-<!-- Screen: Monthly VAT summary | BRD: N3, L4, M3, A3 | Roles: Accountant, Owner -->
+<!-- v8: VAT is not shown in this shop's system (prices already include it). This page is removed. -->
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monthly VAT Summary · Gem Shop</title>
-<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
-</head>
-<body data-root="../" data-page="n-accountant/vat-summary.html" data-roles="accountant owner">
-<div id="page"></div>
-<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
-<script>
-if (PAGE_ALLOWED) (function () {
-  const f = { branch: 'all' };
-  $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant & tax', title: 'Monthly VAT summary', brd: ['N3'], sub: 'VAT collected on sales, VAT paid on bills, and the VAT to pay to the Inland Revenue Department. VAT reg. ' + esc(S.shop.vatNo) + '.', actions: UI.exportButtons('#vsT', 'VAT summary') }) +
-    `<div class="card mb"><div class="card-content filters"><div class="field"><label>Branch</label><select id="br">${UI.opts([{ v: 'all', l: 'All branches (one VAT return)' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div></div></div><div id="out"></div>`;
-  function render() {
-    const rows = Fin.months().map(m => Fin.month(m, f.branch));
-    const c = rows[0];
-    $('#out').innerHTML = `<div class="grid g-1-2"><div class="card"><div class="card-header"><h3>${fmt.month(c.mk)}</h3>${isLocked(c.mk + '-01') ? badge('closed') : badge('open')}</div><div class="card-content"><table class="table"><tbody>
-        <tr><td>Taxable sales (before VAT)</td><td class="num">${fmt.lkr(c.grossNet)}</td></tr>
-        <tr><td>VAT collected on sales (${S.shop.vatRate}%)</td><td class="num">${fmt.lkr(c.outVat + c.cnVat)}</td></tr>
-        <tr><td>Less VAT on credit notes</td><td class="num">− ${fmt.lkr(c.cnVat)}</td></tr>
-        <tr><td><b>Output VAT</b></td><td class="num"><b>${fmt.lkr(c.outVat)}</b></td></tr>
-        <tr><td>VAT paid on suppliers' VAT bills (M3)</td><td class="num">− ${fmt.lkr(c.inVat)}</td></tr>
-      </tbody><tfoot><tr><td>VAT to pay</td><td class="num" style="font-size:18px">${fmt.lkr(c.vatToPay)}</td></tr></tfoot></table>
-      <div class="row mt"><a class="btn btn-outline btn-sm" href="../l-reports/vat.html">Invoice list (L4)</a><a class="btn btn-outline btn-sm" href="../m-expenses/expenses.html">Bills with VAT</a></div></div></div>
-      <div class="card"><div class="card-header"><h3>All months</h3></div>${UI.table([
-        { h: 'Month', f: m => `<b>${fmt.month(m.mk)}</b> ${isLocked(m.mk + '-01') ? '🔒' : ''}` }, { h: 'Invoices', num: 1, f: m => m.invoices },
-        { h: 'Taxable sales', num: 1, f: m => fmt.cur(m.grossNet) }, { h: 'Output VAT', num: 1, f: m => fmt.cur(m.outVat) }, { h: 'Input VAT', num: 1, f: m => fmt.cur(m.inVat) },
-        { h: 'VAT to pay', num: 1, f: m => `<b>${fmt.cur(m.vatToPay)}</b>` }
-      ], rows, { id: 'vsT', cls: 'stack-sm', foot: ['Total', sum(rows, m => m.invoices), fmt.cur(sum(rows, m => m.grossNet)), fmt.cur(sum(rows, m => m.outVat)), fmt.cur(sum(rows, m => m.inVat)), fmt.cur(sum(rows, m => m.vatToPay))] })}
-      <div class="card-content"><p class="muted" style="font-size:12px">VAT rate is kept in settings, not in code (tech stack §7). Amounts are stored as exact decimals in the real build.</p></div></div></div>`;
-  }
-  $('#br').onchange = e => { f.branch = e.target.value; render(); };
-  render();
-})();
-</script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><title>Monthly VAT summary · Gem Shop</title>
+<meta http-equiv="refresh" content="0; url=profit-loss.html"><script>location.replace('profit-loss.html');</script></head>
+<body><p><a href="profit-loss.html">This page is removed – open Profit &amp; Loss</a></p></body></html>

@@ -29,16 +29,16 @@ if (PAGE_ALLOWED) (function () {
       { h: 'Paid to', f: e => esc(e.paidTo) + (e.note ? '<br><small class="muted">' + esc(e.note) + '</small>' : '') },
       { h: 'Method', f: e => esc(e.method) }, { h: 'Branch', f: e => esc(branchName(e.branch)) },
       { h: 'Bill', f: e => e.billPhoto ? `<button class="btn btn-sm btn-ghost" data-bill="${e.id}">📎</button>` : '<span class="badge badge-danger">missing</span>' },
-      { h: 'Amount', num: 1, f: e => `<b>${fmt.cur(e.amount)}</b>` }, { h: 'VAT on bill', num: 1, f: e => e.vat ? fmt.cur(e.vat) : '—' },
+      { h: 'Amount', num: 1, f: e => `<b>${fmt.cur(e.amount)}</b>` },
       { h: 'Status', f: e => badge(e.status, e.status === 'pending' ? 'Waiting for owner' : null) },
       { h: '', f: e => isLocked(e.date) ? '<span class="badge badge-navy" title="Month closed">🔒</span>' : `<a class="btn btn-sm btn-outline" href="add-expense.html?id=${e.id}">Correct</a>` }
-    ], rows, { id: 'exT', cls: 'stack-sm', empty: 'No expenses for these filters.', foot: [rows.length + ' expenses', '', '', '', '', '', fmt.cur(sum(rows.filter(e => e.status !== 'rejected'), e => e.amount)), fmt.cur(sum(rows.filter(e => e.status !== 'rejected'), e => e.vat)), '', ''] });
+    ], rows, { id: 'exT', cls: 'stack-sm', empty: 'No expenses for these filters.', foot: [rows.length + ' expenses', '', '', '', '', '', fmt.cur(sum(rows.filter(e => e.status !== 'rejected'), e => e.amount)), '', ''] });
   }
   $('#mo').onchange = e => { f.month = e.target.value; render(); };
   $('#ca').onchange = e => { f.cat = e.target.value; render(); };
   $('#me').onchange = e => { f.method = e.target.value; render(); };
   $('#st').onchange = e => { f.status = e.target.value; render(); };
-  $('#list').addEventListener('click', e => { const id = e.target.dataset.bill; if (!id) return; const x = find('expenses', id); UI.modal({ title: 'Bill photo – ' + id, body: `<div style="background:#fffdf5;border:1px solid #e5e7eb;padding:18px;font-family:'Courier New',monospace;font-size:12px;transform:rotate(-1deg)"><b>${esc(x.paidTo.toUpperCase())}</b><br>${fmt.date(x.date)}<hr>${esc(x.category)}<span style="float:right">${fmt.num(x.amount - x.vat)}</span><br>${x.vat ? 'VAT 18%<span style="float:right">' + fmt.num(x.vat) + '</span><br>' : ''}<hr><b>TOTAL<span style="float:right">${fmt.num(x.amount)}</span></b></div><p class="muted mt-s" style="font-size:11px">${esc(x.billPhoto)} (demo)</p>` }); });
+  $('#list').addEventListener('click', e => { const id = e.target.dataset.bill; if (!id) return; const x = find('expenses', id); UI.modal({ title: 'Bill photo – ' + id, body: `<div style="background:#fffdf5;border:1px solid #e5e7eb;padding:18px;font-family:'Courier New',monospace;font-size:12px;transform:rotate(-1deg)"><b>${esc(x.paidTo.toUpperCase())}</b><br>${fmt.date(x.date)}<hr>${esc(x.category)}<span style="float:right">${fmt.num(x.amount)}</span><br><hr><b>TOTAL<span style="float:right">${fmt.num(x.amount)}</span></b></div><p class="muted mt-s" style="font-size:11px">${esc(x.billPhoto)} (demo)</p>` }); });
   render();
 })();
 </script>

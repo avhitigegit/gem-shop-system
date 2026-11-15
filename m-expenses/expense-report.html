@@ -20,7 +20,7 @@ if (PAGE_ALLOWED) (function () {
     const cats = S.lists.expenseCategories.filter(c => ex.some(e => e.category === c));
     const cell = (c, m) => sum(ex.filter(e => e.category === c && monthKey(e.date) === m), e => e.amount);
     const max = Math.max(1, ...months.map(m => sum(ex.filter(e => monthKey(e.date) === m), e => e.amount)));
-    $('#out').innerHTML = `<div class="grid g3 mb">${months.map(m => { const t = sum(ex.filter(e => monthKey(e.date) === m), e => e.amount); return UI.kpi(fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : ''), fmt.cur(t), 'VAT on bills ' + fmt.cur(sum(ex.filter(e => monthKey(e.date) === m), e => e.vat)) + `<div class="bar gold mt-s"><i style="width:${t / max * 100}%"></i></div>`); }).join('')}</div>
+    $('#out').innerHTML = `<div class="grid g3 mb">${months.map(m => { const t = sum(ex.filter(e => monthKey(e.date) === m), e => e.amount); return UI.kpi(fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : ''), fmt.cur(t), `<div class="bar gold mt-s"><i style="width:${t / max * 100}%"></i></div>`); }).join('')}</div>
       <div class="card"><div class="card-header"><h3>By category and month</h3></div>${UI.table(
         [{ h: 'Category', f: c => `<b>${esc(c)}</b>` }].concat(months.map(m => ({ h: fmt.month(m), num: 1, f: c => cell(c, m) ? fmt.cur(cell(c, m)) : '—' }))).concat([{ h: 'Total', num: 1, f: c => `<b>${fmt.cur(sum(months, m => cell(c, m)))}</b>` }]),
         cats, { id: 'erT', foot: ['Total'].concat(months.map(m => fmt.cur(sum(cats, c => cell(c, m))))).concat([fmt.cur(sum(ex, e => e.amount))]) })}</div>

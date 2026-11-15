@@ -21,7 +21,7 @@ if (PAGE_ALLOWED) (function () {
     $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Commission earned', fmt.cur(T('earned')), '')}${UI.kpi('Reversed (returns)', fmt.cur(T('rev')), 'E2')}${UI.kpi('Paid', fmt.cur(T('paid')), '')}${UI.kpi('Not yet paid', fmt.cur(T('unpaid')), '', 'accent')}</div>
       <div class="card">${UI.table([
         { h: 'Name', f: r => `<b>${esc(Commissions.payeeName(r.c))}</b><br><small class="muted">${r.c.payee === 'guide' ? 'Guide/driver · ' + guide(r.c.payeeId).vehicle + ' · ' + guide(r.c.payeeId).pct + '%' : 'Staff · fixed by price level'}</small>` },
-        { h: 'Sales', num: 1, f: r => r.n }, { h: 'Sales before VAT', num: 1, f: r => fmt.cur(r.base) }, { h: 'Earned', num: 1, f: r => fmt.cur(r.earned) },
+        { h: 'Sales', num: 1, f: r => r.n }, { h: 'Sales amount', num: 1, f: r => fmt.cur(r.base) }, { h: 'Earned', num: 1, f: r => fmt.cur(r.earned) },
         { h: 'Reversed', num: 1, f: r => r.rev ? `<span class="text-danger">${fmt.cur(r.rev)}</span>` : '—' }, { h: 'Paid', num: 1, f: r => fmt.cur(r.paid) }, { h: 'Not yet paid', num: 1, f: r => `<b>${fmt.cur(r.unpaid)}</b>` },
         { h: '', f: r => `<a class="btn btn-sm btn-outline" href="../h-commissions/commission-slip.html?payee=${r.c.payee}&id=${r.c.payeeId}">Slip</a>` }
       ], rows, { id: 'rT', cls: 'stack-sm', foot: ['Total', T('n'), fmt.cur(T('base')), fmt.cur(T('earned')), fmt.cur(T('rev')), fmt.cur(T('paid')), fmt.cur(T('unpaid')), ''] })}</div>`;

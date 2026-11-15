@@ -19,14 +19,12 @@ if (PAGE_ALLOWED) (function () {
     const g = guide(s.guideId); const slabI = Calc.slabIndex(s.net);
     const cs = S.commissions.filter(c => c.saleId === s.id);
     $('#page').innerHTML = UI.pageHead({ crumbs: 'H · Commissions', title: 'Commission per sale', brd: ['H1', 'H2', 'H3'], sub: 'Commission is calculated on every single sale – a percentage for the guide/driver plus a fixed amount by price level for the salesperson.' }) +
-      `<div class="mb">${UI.ruleNote(5, 'Commission is calculated per sale: a percentage for guides/drivers, a fixed amount by price level for staff. Calculated on the agreed price before VAT.')}</div>
+      `<div class="mb">${UI.ruleNote(5, 'Commission is calculated per sale: a percentage for guides/drivers, a fixed amount by price level for staff. Calculated on the agreed price.')}</div>
       <div class="grid g-1-2"><div class="card"><div class="card-header"><h3>Sales</h3></div><div class="card-content" style="max-height:70vh;overflow:auto;padding:0">${sales.map(x => `<button class="dp-item" style="all:unset;box-sizing:border-box;display:flex;gap:8px;width:100%;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;${x.id === s.id ? 'background:var(--sapphire-soft)' : ''}" data-s="${x.id}"><span class="mono" style="font-size:12px">${x.id}</span><span class="muted" style="font-size:12px;flex:1">${fmt.date(x.date)}</span><b style="font-size:12px">${fmt.cur(x.guideComm + x.staffComm)}</b></button>`).join('')}</div></div>
       <div class="card"><div class="card-header"><div><h2><span class="mono">${s.id}</span></h2><p>${fmt.dt(s.date)} · ${esc((cust(s.customerId) || {}).name)} · sold by ${esc(user(s.staffId).name)}</p></div><a class="btn btn-sm btn-outline" href="../g-payments/invoice.html?id=${s.id}">Invoice</a></div>
         <div class="card-content">
           <table class="table"><tbody>
-            <tr><td>Agreed total (incl. VAT)</td><td class="num">${fmt.lkr(s.total)}</td></tr>
-            <tr><td>Less VAT ${S.shop.vatRate}%</td><td class="num">− ${fmt.lkr(s.vat)}</td></tr>
-            <tr><td><b>Sale amount before VAT</b> (commission base)</td><td class="num"><b>${fmt.lkr(s.net)}</b></td></tr>
+            <tr><td><b>Agreed sale amount</b> (commission base)</td><td class="num"><b>${fmt.lkr(s.total)}</b></td></tr>
             <tr><td>Guide / driver: ${g ? esc(g.name) + ' (' + esc(g.vehicle) + ') × ' + s.guidePct + '%' : 'Walk-in – no guide'} <span class="brd">H1</span></td><td class="num">${fmt.lkr(s.guideComm)}</td></tr>
             <tr><td>Staff: ${esc(user(s.staffId).name)} – level ${slabI + 1} (${slabLabel(slabI)}) <span class="brd">H2</span></td><td class="num">${fmt.lkr(s.staffComm)}</td></tr>
           </tbody><tfoot><tr><td>Total commission on this sale <span class="brd">H3</span></td><td class="num">${fmt.lkr(s.guideComm + s.staffComm)}</td></tr></tfoot></table>

@@ -16,7 +16,7 @@
   <div class="auth-main"><div class="auth-card" style="max-width:480px">
     <div class="card"><div class="card-content" style="padding:28px">
       <h2 style="font-size:22px">Owner account setup</h2>
-      <div class="stepper mt" id="steps"><span class="on">1 · Owner</span><span>2 · Shop &amp; VAT</span><span>3 · Branch &amp; rates</span></div>
+      <div class="stepper mt" id="steps"><span class="on">1 · Owner</span><span>2 · Shop &amp; licence</span><span>3 · Branch &amp; rates</span></div>
       <form id="f" novalidate>
         <div data-step="1" class="stack" style="gap:12px">
           <div class="field"><label class="req">Full name</label><input class="input" name="oname" required placeholder="e.g. Ruwan Perera"></div>
@@ -28,8 +28,7 @@
         <div data-step="2" class="stack hidden" style="gap:12px">
           <div class="field"><label class="req">Shop name</label><input class="input" name="shop" required></div>
           <div class="field"><label class="req">Address</label><input class="input" name="address" required value="Ella, Sri Lanka"></div>
-          <div class="field"><label class="req">VAT registration number</label><input class="input mono" name="vatNo" required></div>
-          <div class="form-grid"><div class="field"><label class="req">VAT rate %</label><input class="input" type="number" name="vatRate" required value="18"></div><div class="field"><label class="req">NGJA licence no.</label><input class="input mono" name="ngja" required></div></div>
+          <div class="field"><label class="req">NGJA licence no.</label><input class="input mono" name="ngja" required></div>
           <div class="field"><label class="req">NGJA licence expiry</label><input class="input" type="date" name="ngjaExp" required></div>
         </div>
         <div data-step="3" class="stack hidden" style="gap:12px">
@@ -57,7 +56,7 @@
       if (F.pw.value !== F.pw2.value) { F.pw2.closest('.field').classList.add('invalid'); toast('Passwords do not match', '', 'error'); return; }
     }
     if (step < 3) { step++; show(); return; }
-    UI.modal({ title: 'Owner account created ✓', desc: 'Demo only – the prototype keeps using the sample shop data.', body: `<dl class="dl"><dt>Owner</dt><dd>${esc(F.oname.value)}</dd><dt>Shop</dt><dd>${esc(F.shop.value)}</dd><dt>VAT</dt><dd>${esc(F.vatNo.value)} · ${esc(F.vatRate.value)}%</dd><dt>Branch</dt><dd>${esc(F.branch.value)}</dd><dt>Rates</dt><dd>USD ${esc(F.usd.value)} · EUR ${esc(F.eur.value)}</dd></dl><div class="alert info mt">A verification email was sent to ${esc(F.email.value)}.</div>`, actions: [{ label: 'Go to dashboard', cls: 'btn-sapphire', onClick: () => { Prefs.set('role', 'owner'); Prefs.set('branch', 'all'); Prefs.set('loggedIn', true); location.href = '../dashboard/index.html'; } }] });
+    UI.modal({ title: 'Owner account created ✓', desc: 'Demo only – the prototype keeps using the sample shop data.', body: `<dl class="dl"><dt>Owner</dt><dd>${esc(F.oname.value)}</dd><dt>Shop</dt><dd>${esc(F.shop.value)}</dd><dt>Branch</dt><dd>${esc(F.branch.value)}</dd><dt>Rates</dt><dd>USD ${esc(F.usd.value)} · EUR ${esc(F.eur.value)}</dd></dl><div class="alert info mt">A verification email was sent to ${esc(F.email.value)}.</div>`, actions: [{ label: 'Go to dashboard', cls: 'btn-sapphire', onClick: () => { Prefs.set('role', 'owner'); Prefs.set('branch', 'all'); Prefs.set('loggedIn', true); location.href = '../dashboard/index.html'; } }] });
   };
   show();
 })();

@@ -27,7 +27,7 @@ if (PAGE_ALLOWED) (function () {
           </tbody></table>
         </div>
         <p class="mt" style="font-size:12px">We certify that the gemstone described above is a genuine natural ${esc(p.gem.toLowerCase())}, examined by our gemmologist. Treatment status is disclosed as above.</p>
-        <div class="row between mt" style="align-items:flex-end"><div style="font-size:11px;color:#555">Issued ${fmt.date(new Date().toISOString())}<br>NGJA dealer licence ${esc(S.shop.ngjaNo)}<br>Valid until ${fmt.date(S.shop.ngjaExpiry)} · VAT ${esc(S.shop.vatNo)}</div>${qrSVG(p.id + '|' + (p.cert.no || ''), 70)}<div class="center" style="font-size:11px"><div style="border-top:1px solid #333;width:180px;padding-top:4px">${esc(user('u1').name)}<br>Owner &amp; gemmologist</div></div></div>
+        <div class="row between mt" style="align-items:flex-end"><div style="font-size:11px;color:#555">Issued ${fmt.date(new Date().toISOString())}<br>NGJA dealer licence ${esc(S.shop.ngjaNo)}<br>Valid until ${fmt.date(S.shop.ngjaExpiry)}</div>${qrSVG(p.id + '|' + (p.cert.no || ''), 70)}<div class="center" style="font-size:11px"><div style="border-top:1px solid #333;width:180px;padding-top:4px">${esc(user('u1').name)}<br>Owner &amp; gemmologist</div></div></div>
         <div class="foot center">Scan the QR code or call ${esc(S.shop.phone)} to verify this certificate. This shop certificate is not a laboratory report.</div>
       </div>`;
     $('#pp').onchange = e => { p = prod(e.target.value); render(); };

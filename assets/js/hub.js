@@ -88,7 +88,7 @@
     reports() {
       const lm = new Date(); lm.setDate(1); lm.setMonth(lm.getMonth() - 1);
       const mk = monthKey(lm.toISOString()); const m = S.months[mk];
-      return m && m.status === 'closed' ? [] : [A('info', '🔒', `<b>${fmt.month(mk)} is not closed yet.</b> Check the VAT and Profit & Loss, then close the month.`, 'n-accountant/month-closing.html', 'Close month')];
+      return m && m.status === 'closed' ? [] : [A('info', '🔒', `<b>${fmt.month(mk)} is not closed yet.</b> Check the Profit & Loss, then close the month.`, 'n-accountant/month-closing.html', 'Close month')];
     },
     settings() {
       const out = []; const d = days(today, S.shop.ngjaExpiry);

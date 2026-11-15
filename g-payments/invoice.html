@@ -1,9 +1,9 @@
-<!-- Screen: VAT Invoice (print preview + send) | BRD: G3, G4, G5, G6, C5, J5 | Rules: 4, 10 | Roles: Owner, Salesperson, Accountant -->
+<!-- Screen: Invoice (print preview + send) | BRD: G3, G4, G5, G6, C5, J5 | Rules: 4, 10 | Roles: Owner, Salesperson, Accountant -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VAT Invoice · Gem Shop</title>
+<title>Invoice · Gem Shop</title>
 <link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body data-root="../" data-page="g-payments/invoice.html" data-roles="owner salesperson accountant">
@@ -23,7 +23,7 @@ if (PAGE_ALLOWED) (function () {
         <td><b>${esc(p.name)}</b>${i.returned ? ' <span class="badge badge-blue">Returned – see credit note</span>' : ''}<br><span class="mono" style="font-size:11px">${p.id}</span><br>
         <span style="font-size:12px">${esc(p.gem)} · ${esc(p.type)} · ${fmt.ct(p.carat)} · ${esc(p.colour)} · ${esc(p.shape)}<br>Treatment: <b>${esc(p.treatment)}</b></span></td>
         <td style="font-size:12px">${p.cert.type === 'lab' ? `Lab certificate<br><b>${esc(p.cert.lab)}</b><br>No. <span class="mono">${esc(p.cert.no)}</span>` : p.cert.type === 'shop' ? `Shop certificate<br>No. <span class="mono">${esc(p.cert.no || 'CGH-SC-' + p.id.slice(-5))}</span>` : 'No certificate'}</td>
-        <td class="right">${fmt.lkr(t.net)}</td><td class="right">${fmt.lkr(t.vat)}</td><td class="right"><b>${fmt.lkr(t.total)}</b></td></tr>`;
+        <td class="right"><b>${fmt.lkr(t.total)}</b></td></tr>`;
     }).join('');
     const pay = s.payments.map(p => `<tr><td>${p.method === 'card' ? 'Card' : 'Cash ' + p.currency}</td><td class="right">${p.currency !== 'LKR' ? fmt.money(p.amount, p.currency) + ' @ ' + fmt.num(p.rate) + ' = ' : ''}${fmt.lkr(p.lkr)}</td></tr>`).join('');
     const cancelled = s.status === 'cancelled';
@@ -35,19 +35,17 @@ if (PAGE_ALLOWED) (function () {
         ${canAct && !cancelled && s.items.some(i => !i.returned) ? `<a class="btn btn-outline" href="../e-returns/new-return.html?inv=${s.id}">↩️ Customer brings it back</a>` : ''}
         ${canAct && !cancelled && !pendingCancel ? '<button class="btn btn-outline" id="cancelBtn" style="color:var(--danger)">Request cancellation</button>' : ''}`)}
       <div class="doc-toolbar no-print" style="justify-content:flex-start">
-        ${UI.ruleNote(4, 'Every sale gets a VAT invoice with a running number. Completed invoices cannot be edited or deleted – only cancelled with owner approval (G6).')}
+        ${UI.ruleNote(4, 'Every sale gets an invoice with a running number. Completed invoices cannot be edited or deleted – only cancelled with owner approval (G6).')}
       </div>
       ${pendingCancel ? `<div class="doc-toolbar no-print"><div class="alert warning" style="width:100%">Cancellation requested (${pendingCancel.id}) – waiting for owner approval.</div></div>` : ''}
       <div class="doc ${cancelled ? 'watermark' : ''}" data-wm="CANCELLED">
-        ${UI.docHead('TAX INVOICE', `<div style="font-size:12px;margin-top:6px"><b>Invoice No:</b> <span class="mono">${s.id}</span><br><b>Date:</b> ${fmt.dt(s.date)}<br><b>Branch:</b> ${esc(branchName(s.branch))}<br><b>Served by:</b> ${esc(user(s.staffId).name)}</div>`)}
+        ${UI.docHead('INVOICE', `<div style="font-size:12px;margin-top:6px"><b>Invoice No:</b> <span class="mono">${s.id}</span><br><b>Date:</b> ${fmt.dt(s.date)}<br><b>Branch:</b> ${esc(branchName(s.branch))}<br><b>Served by:</b> ${esc(user(s.staffId).name)}</div>`)}
         <div class="grid g2" style="margin-bottom:14px">
           <div><div class="muted" style="font-size:11px;text-transform:uppercase">Bill to</div><b>${esc(c.name)}</b><br>${esc(c.country)}<br>${esc(c.email || '')}<br>${esc(c.whatsapp || '')}</div>
           <div style="text-align:right;font-size:12px"><div class="muted" style="font-size:11px;text-transform:uppercase">Currency</div>Amounts in Sri Lankan Rupees (LKR)<br>USD ${fmt.num(S.rates.USD)} · EUR ${fmt.num(S.rates.EUR)} rate of the day<br>${cancelled ? `<span class="badge badge-danger">Cancelled ${fmt.date(s.cancelledAt)}: ${esc(s.cancelReason || '')}</span>` : ''}</div>
         </div>
-        <table><thead><tr><th>#</th><th>Photo</th><th>Gem details</th><th>Certificate</th><th style="text-align:right">Price excl. VAT</th><th style="text-align:right">VAT ${S.shop.vatRate}%</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines}</tbody></table>
+        <table><thead><tr><th>#</th><th>Photo</th><th>Gem details</th><th>Certificate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines}</tbody></table>
         <table class="totals">
-          <tr><td>Subtotal (excl. VAT)</td><td class="right">${fmt.lkr(s.net)}</td></tr>
-          <tr><td>VAT ${S.shop.vatRate}%</td><td class="right">${fmt.lkr(s.vat)}</td></tr>
           <tr class="grand"><td>TOTAL</td><td class="right">${fmt.lkr(s.total)}</td></tr>
           <tr><td colspan="2" class="right" style="font-size:11px;color:#555">≈ USD ${fmt.num(fx.from(s.total, 'USD'))} · EUR ${fmt.num(fx.from(s.total, 'EUR'))}</td></tr>
         </table>
@@ -55,10 +53,10 @@ if (PAGE_ALLOWED) (function () {
           <div><b style="font-size:12px">Payment received</b><table style="font-size:12px">${pay}${s.change ? `<tr><td>Change given</td><td class="right">${fmt.lkr(s.change)}</td></tr>` : ''}</table></div>
           <div style="font-size:12px">${g ? `<b>Introduced by:</b> ${esc(g.name)} (${esc(g.vehicle)})<br>` : ''}<b>Language:</b> English (G5)<br>Goods sold are genuine natural gemstones as described. Treatment is disclosed above (CAA fair trading).</div>
         </div>
-        <div class="foot">This is a computer-generated VAT invoice. Returns accepted within ${S.shop.returnPolicyDays} days with this invoice, subject to owner approval. Licensed gem dealer – National Gem &amp; Jewellery Authority, licence ${esc(S.shop.ngjaNo)} (valid until ${fmt.date(S.shop.ngjaExpiry)}). Thank you for shopping at ${esc(S.shop.name)}, Ella!</div>
+        <div class="foot">This is a computer-generated invoice. Returns accepted within ${S.shop.returnPolicyDays} days with this invoice, subject to owner approval. Licensed gem dealer – National Gem &amp; Jewellery Authority, licence ${esc(S.shop.ngjaNo)} (valid until ${fmt.date(S.shop.ngjaExpiry)}). Thank you for shopping at ${esc(S.shop.name)}, Ella!</div>
       </div>
       <div class="doc-toolbar no-print mt"><span class="muted" style="font-size:12px">Sent: ${s.sentEmail ? '✉ Email ✓' : '✉ Email –'} · ${s.sentWhatsapp ? 'WhatsApp ✓' : 'WhatsApp –'}</span></div>`;
-    const sb = $('#sendBtn'); if (sb) sb.onclick = () => UI.send('VAT invoice ' + s.id, c, r => { s.sentEmail = s.sentEmail || r.email; s.sentWhatsapp = s.sentWhatsapp || r.whatsapp; Log.add('Invoice sent', s.id + ' to ' + c.name); Store.save(); render(); });
+    const sb = $('#sendBtn'); if (sb) sb.onclick = () => UI.send('Invoice ' + s.id, c, r => { s.sentEmail = s.sentEmail || r.email; s.sentWhatsapp = s.sentWhatsapp || r.whatsapp; Log.add('Invoice sent', s.id + ' to ' + c.name); Store.save(); render(); });
     $('#pdfBtn').onclick = () => UI.exportPDF('Invoice ' + s.id);
     const cb = $('#cancelBtn'); if (cb) cb.onclick = () => {
       if (guardLocked(s.date)) return;

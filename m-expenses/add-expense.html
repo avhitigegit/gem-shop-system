@@ -12,7 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const ed = find('expenses', qs('id'));
-  const x = ed || { date: new Date().toISOString(), branch: activeBranch(), category: '', amount: '', vat: 0, paidTo: '', method: 'Bank transfer', billPhoto: '', note: '' };
+  const x = ed || { date: new Date().toISOString(), branch: activeBranch(), category: '', amount: '', paidTo: '', method: 'Bank transfer', billPhoto: '', note: '' };
   const lim = S.shop.largeExpenseLimit;
   $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="expenses.html">M · Shop expenses</a>', title: ed ? 'Correct expense ' + ed.id : 'Add expense', brd: ['M2', 'M3', 'M6'], sub: ed ? 'The accountant can record and correct expenses (N2). Every change is kept in the activity log.' : 'Record every shop cost with its bill photo.' }) +
     `${ed && isLocked(ed.date) ? `<div class="alert danger mb">🔒 ${fmt.month(monthKey(ed.date))} is closed. This expense cannot be changed without owner approval (N6, rule 11). <a href="../n-accountant/month-closing.html">Month closing →</a></div>` : ''}
@@ -22,7 +22,6 @@ if (PAGE_ALLOWED) (function () {
       <div class="field"><label class="req">Category (M1)</label><select name="category" required>${UI.opts(S.lists.expenseCategories, x.category, 'Select…')}</select>${isRole('owner') ? '<span class="hint"><a href="../a-setup/lists.html?tab=expenseCategories">Edit expense types</a></span>' : ''}</div>
       <div class="field"><label class="req">Paid to</label><input class="input" name="paidTo" required value="${esc(x.paidTo)}" placeholder="e.g. Ceylon Electricity Board"></div>
       <div class="field"><label class="req">Amount (LKR, total on bill)</label><input class="input" type="number" min="1" step="0.01" name="amount" required value="${x.amount}"><span class="hint" id="limHint"></span></div>
-      <div class="field"><label>VAT shown on the supplier's VAT bill (M3)</label><div class="row" style="flex-wrap:nowrap"><input class="input" type="number" min="0" step="0.01" name="vat" value="${x.vat}"><button type="button" class="btn btn-outline btn-sm" id="calcVat" title="Calculate 18% VAT included in the amount">18%</button></div><span class="hint">Used as input VAT in the monthly VAT summary (N3)</span></div>
       <div class="field"><label class="req">Payment method</label><select name="method" required>${UI.opts((x.method === 'Cash (drawer)' ? ['Cash (drawer)'] : []).concat(['Bank transfer', 'Card']), x.method)}</select><span class="hint">Paid in cash from the drawer? Use <a href="../i-daily-closing/drawer-expenses.html">Pay out cash from the drawer</a>.</span></div>
       <div class="field"><label>Note</label><input class="input" name="note" value="${esc(x.note)}"></div>
       <div class="field full"><label class="req">Bill photo</label><div class="upload" id="up">${x.billPhoto ? '✔ ' + esc(x.billPhoto) : '⇪ Take a photo of the bill / upload PDF'}</div><span class="err">Every expense needs a bill photo (rule 11).</span></div>
@@ -31,16 +30,14 @@ if (PAGE_ALLOWED) (function () {
   const F = $('#f'); UI.bindUpload($('#up')); if (x.billPhoto) $('#up').dataset.file = x.billPhoto;
   const hint = () => { const a = +F.amount.value; $('#limHint').innerHTML = a > lim ? `<span class="text-warning">Above ${fmt.lkr(lim)} – needs owner approval</span>` : ''; };
   F.amount.oninput = hint; hint();
-  $('#calcVat').onclick = () => { F.vat.value = r2(+F.amount.value - +F.amount.value / 1.18); };
   F.onsubmit = e => {
     e.preventDefault(); let ok = UI.validate(F);
     if (!$('#up').dataset.file) { $('#up').closest('.field').classList.add('invalid'); if (ok) toast('Bill photo required', 'Rule 11', 'error'); ok = false; }
     if (!ok) return;
-    if (+F.vat.value > +F.amount.value) { toast('VAT cannot be more than the amount', '', 'error'); return; }
     if (guardLocked(F.date.value) || (ed && guardLocked(ed.date))) return;
     const amt = +F.amount.value; const big = amt > lim && !isRole('owner');
     const at = F.date.value === todayYmd() ? new Date().toISOString() : F.date.value + 'T12:00:00';
-    const d = { date: at, branch: F.branch.value, category: F.category.value, paidTo: F.paidTo.value, amount: amt, vat: +F.vat.value || 0, method: F.method.value, note: F.note.value, billPhoto: $('#up').dataset.file };
+    const d = { date: at, branch: F.branch.value, category: F.category.value, paidTo: F.paidTo.value, amount: amt, vat: 0, method: F.method.value, note: F.note.value, billPhoto: $('#up').dataset.file };
     let rec;
     if (ed) { const before = fmt.lkr(ed.amount); Object.assign(ed, d); rec = ed; Log.add('Expense corrected', ed.id + ' · ' + before + ' → ' + fmt.lkr(amt)); }
     else { rec = Object.assign({ id: nextId('expense', 'EXP-'), status: 'approved', by: currentUser().id, recurringId: null }, d); S.expenses.push(rec); Log.add('Expense recorded', rec.id + ' · ' + rec.category + ' · ' + fmt.lkr(amt)); }

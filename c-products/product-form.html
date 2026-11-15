@@ -78,7 +78,7 @@ if (PAGE_ALLOWED) (function () {
   function prices() {
     const c = +val('cost'), s = +val('price'), m = +val('min');
     $('#pfx').textContent = s ? fmt.tri(s) : '';
-    $('#margin').innerHTML = s && c ? `Margin at selling price: <b>${fmt.lkr(Calc.split(s).net - c)}</b> · at minimum: <b>${fmt.lkr(Calc.split(m || 0).net - c)}</b> (before VAT &amp; commission)` : '';
+    $('#margin').innerHTML = s && c ? `Margin at selling price: <b>${fmt.lkr(Calc.split(s).net - c)}</b> · at minimum: <b>${fmt.lkr(Calc.split(m || 0).net - c)}</b> (before commission)` : '';
   }
   $('#gem').addEventListener('change', () => { suggest(); preview(); });
   F.elements.type.addEventListener('change', preview);

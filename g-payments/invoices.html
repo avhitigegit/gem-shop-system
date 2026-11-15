@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VAT Invoices · Gem Shop</title>
+<title>Invoices · Gem Shop</title>
 <link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body data-root="../" data-page="g-payments/invoices.html" data-roles="owner salesperson accountant">
@@ -12,8 +12,8 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const f = { q: '', status: '', from: daysAgoYmd(30), to: todayYmd(), pay: '' };
-  $('#page').innerHTML = UI.pageHead({ crumbs: 'G · Payments & VAT invoice', title: 'VAT invoices', brd: ['G3', 'G4', 'G6'], sub: 'Running invoice numbers. Invoices can be viewed, printed and sent – never edited or deleted.', actions: (isRole('owner', 'salesperson') ? '<a class="btn btn-success" href="../f-pos/pos.html">+ New sale</a>' : '') + UI.exportButtons('#invTable', 'Invoices') }) +
-    `<div class="mb">${UI.ruleNote(4, 'Every sale gets a VAT invoice with a running number. Invoices are never deleted – there is no delete button. Cancelling needs owner approval and the invoice stays on record as CANCELLED.')}</div>
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'G · Payments & invoices', title: 'Invoices', brd: ['G3', 'G4', 'G6'], sub: 'Running invoice numbers. Invoices can be viewed, printed and sent – never edited or deleted.', actions: (isRole('owner', 'salesperson') ? '<a class="btn btn-success" href="../f-pos/pos.html">+ New sale</a>' : '') + UI.exportButtons('#invTable', 'Invoices') }) +
+    `<div class="mb">${UI.ruleNote(4, 'Every sale gets an invoice with a running number. Invoices are never deleted – there is no delete button. Cancelling needs owner approval and the invoice stays on record as CANCELLED.')}</div>
     <div class="card"><div class="card-content filters">
       <div class="field" style="flex:1;min-width:200px"><label>Search</label><input class="input" id="fq" placeholder="Invoice no, customer, product code…"></div>
       <div class="field"><label>From</label><input class="input" type="date" id="ffrom" value="${f.from}"></div>
@@ -34,11 +34,10 @@ if (PAGE_ALLOWED) (function () {
       { h: 'Customer', f: s => { const c = cust(s.customerId) || {}; return esc(c.name) + '<br><small class="muted">' + esc(c.country) + '</small>'; } },
       { h: 'Payment', f: s => s.payments.map(p => p.method === 'card' ? 'Card' : 'Cash ' + p.currency).join(' + ') },
       { h: 'Total', num: 1, f: s => `<b>${fmt.cur(s.total)}</b>` },
-      { h: 'VAT', num: 1, f: s => fmt.cur(s.vat) },
       { h: 'Sent', f: s => (s.sentEmail ? '✉' : '') + (s.sentWhatsapp ? ' 💬' : '') || '–' },
       { h: 'Status', f: s => badge(s.status) + (pend(s.id) ? '<br><span class="badge badge-warning">Cancel requested</span>' : '') },
       { h: '', f: s => `<div class="row" style="gap:4px;flex-wrap:nowrap"><a class="btn btn-sm btn-outline" href="invoice.html?id=${s.id}&print=1">Print</a>${isRole('owner', 'salesperson') && s.status === 'completed' && !pend(s.id) ? `<button class="btn btn-sm btn-ghost" data-cancel="${s.id}" style="color:var(--danger)">Cancel…</button>` : ''}</div>` }
-    ], rows, { id: 'invTable', cls: 'stack-sm', empty: 'No invoices match the filters.', foot: ['Total ' + rows.length, '', '', '', fmt.cur(sum(rows.filter(s => s.status !== 'cancelled'), s => s.total)), fmt.cur(sum(rows.filter(s => s.status !== 'cancelled'), s => s.vat)), '', '', ''] });
+    ], rows, { id: 'invTable', cls: 'stack-sm', empty: 'No invoices match the filters.', foot: ['Total ' + rows.length, '', '', '', fmt.cur(sum(rows.filter(s => s.status !== 'cancelled'), s => s.total)), '', '', ''] });
   }
   $('#fq').oninput = e => { f.q = e.target.value; render(); };
   $('#ffrom').onchange = e => { f.from = e.target.value; render(); };

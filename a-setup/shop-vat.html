@@ -1,9 +1,9 @@
-<!-- Screen: Shop, VAT & NGJA licence details | BRD: A3, §08 Laws (NGJA licence + reminder, VAT 18%), M6, NFR-8 | Roles: Owner -->
+<!-- Screen: Shop & NGJA licence details | BRD: A3, §08 Laws (NGJA licence + reminder), M6, NFR-8 | Roles: Owner | v8: no VAT -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shop &amp; VAT Details · Gem Shop</title>
+<title>Shop Details · Gem Shop</title>
 <link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body data-root="../" data-page="a-setup/shop-vat.html" data-roles="owner">
@@ -14,7 +14,7 @@ if (PAGE_ALLOWED) (function () {
   const sh = S.shop;
   function render() {
     const days = Math.round((new Date(sh.ngjaExpiry) - new Date(todayYmd())) / 864e5);
-    $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Shop, VAT & licence details', brd: ['A3'], sub: 'Printed on every invoice and certificate. Can be changed without new software (NFR-8).' }) +
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Shop & licence details', brd: ['A3'], sub: 'Printed on every invoice and certificate. Can be changed without new software (NFR-8).' }) +
       `${days <= sh.ngjaRemindDays ? `<div class="alert ${days < 0 ? 'danger' : 'warning'} mb"><b>📜 NGJA dealer licence ${days < 0 ? 'EXPIRED ' + (-days) + ' days ago' : 'expires in ' + days + ' days'} (${fmt.date(sh.ngjaExpiry)}).</b>&nbsp;Renew with the National Gem &amp; Jewellery Authority and update the expiry date below.</div>` : ''}
       <form id="f" novalidate class="grid g2"><div class="card"><div class="card-header"><h3>Shop details</h3></div><div class="card-content stack" style="gap:12px">
         <div class="field"><label class="req">Shop name</label><input class="input" name="sname" required value="${esc(sh.name)}"></div>
@@ -24,13 +24,7 @@ if (PAGE_ALLOWED) (function () {
         <div class="field"><label>Website</label><input class="input" name="website" value="${esc(sh.website)}"></div>
         <div class="field"><label>Logo</label><div class="upload" id="up"><img src="../assets/img/logo.svg" style="height:46px;margin:0 auto 6px">⇪ Change logo</div></div>
       </div></div>
-      <div class="stack"><div class="card"><div class="card-header"><h3>VAT (Inland Revenue)</h3></div><div class="card-content stack" style="gap:12px">
-        <div class="field"><label class="req">VAT registration number</label><input class="input mono" name="vatNo" required value="${esc(sh.vatNo)}"></div>
-        <div class="form-grid"><div class="field"><label class="req">VAT rate (%)</label><input class="input" type="number" step="0.5" min="0" max="50" name="vatRate" required value="${sh.vatRate}"><span class="hint">Standard VAT is currently 18%</span></div>
-        <div class="field"><label>Prices entered at the POS</label><select name="vatInclusive">${UI.opts([{ v: '1', l: 'Include VAT' }, { v: '0', l: 'Exclude VAT (VAT added on top)' }], sh.vatInclusive ? '1' : '0')}</select></div></div>
-        <div class="muted" id="vatEx" style="font-size:12px"></div>
-      </div></div>
-      <div class="card"><div class="card-header"><h3>NGJA gem dealer licence</h3><span class="brd">§08</span></div><div class="card-content stack" style="gap:12px">
+      <div class="stack"><div class="card"><div class="card-header"><h3>NGJA gem dealer licence</h3><span class="brd">§08</span></div><div class="card-content stack" style="gap:12px">
         <div class="form-grid"><div class="field"><label class="req">Licence number</label><input class="input mono" name="ngjaNo" required value="${esc(sh.ngjaNo)}"></div><div class="field"><label class="req">Expiry date</label><input class="input" type="date" name="ngjaExpiry" required value="${sh.ngjaExpiry}"></div></div>
         <div class="form-grid"><div class="field"><label>Remind me before expiry (days)</label><input class="input" type="number" min="1" name="ngjaRemindDays" value="${sh.ngjaRemindDays}"></div><label class="check" style="align-self:end"><input type="checkbox" name="printLic" ${sh.printLicenceOnInvoice ? 'checked' : ''}> Print licence on invoices &amp; certificates</label></div>
       </div></div>
@@ -39,14 +33,11 @@ if (PAGE_ALLOWED) (function () {
         <div class="field"><label>Return policy (days)</label><input class="input" type="number" min="0" name="ret" value="${sh.returnPolicyDays}"></div>
       </div><div class="card-footer"><a class="btn btn-outline" href="../g-payments/invoice.html">Preview on invoice</a><button class="btn btn-sapphire" type="submit">Save settings</button></div></div></div></form>`;
     const F = $('#f'); UI.bindUpload($('#up'));
-    const ex = () => { const r = +F.vatRate.value / 100, inc = F.vatInclusive.value === '1', a = 450000; const net = inc ? a / (1 + r) : a; $('#vatEx').textContent = 'Example: agreed LKR 450,000 → ' + (inc ? 'net ' + fmt.lkr(net) + ' + VAT ' + fmt.lkr(a - net) + ' = ' + fmt.lkr(a) : 'net ' + fmt.lkr(a) + ' + VAT ' + fmt.lkr(a * r) + ' = ' + fmt.lkr(a * (1 + r))); };
-    F.addEventListener('input', ex); F.addEventListener('change', ex); ex();
     F.onsubmit = e => {
       e.preventDefault(); if (!UI.validate(F)) return;
-      const oldRate = sh.vatRate;
-      Object.assign(sh, { name: F.sname.value, tagline: F.tagline.value, address: F.address.value, phone: F.phone.value, email: F.email.value, website: F.website.value, vatNo: F.vatNo.value, vatRate: +F.vatRate.value, vatInclusive: F.vatInclusive.value === '1', ngjaNo: F.ngjaNo.value, ngjaExpiry: F.ngjaExpiry.value, ngjaRemindDays: +F.ngjaRemindDays.value, printLicenceOnInvoice: F.printLic.checked, largeExpenseLimit: +F.limit.value, returnPolicyDays: +F.ret.value });
-      Log.add('Shop & VAT settings saved', oldRate !== sh.vatRate ? 'VAT rate ' + oldRate + '% → ' + sh.vatRate + '% (applies to new sales)' : 'details updated', 'all');
-      Store.save(); toast('Settings saved', oldRate !== sh.vatRate ? 'New VAT rate applies to new sales only. Existing invoices are not changed (rule 4).' : '', 'success'); render();
+      Object.assign(sh, { name: F.sname.value, tagline: F.tagline.value, address: F.address.value, phone: F.phone.value, email: F.email.value, website: F.website.value, ngjaNo: F.ngjaNo.value, ngjaExpiry: F.ngjaExpiry.value, ngjaRemindDays: +F.ngjaRemindDays.value, printLicenceOnInvoice: F.printLic.checked, largeExpenseLimit: +F.limit.value, returnPolicyDays: +F.ret.value });
+      Log.add('Shop settings saved', 'details updated', 'all');
+      Store.save(); toast('Settings saved', '', 'success'); render();
     };
   }
   render();

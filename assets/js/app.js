@@ -1,13 +1,14 @@
 /* =====================================================================
    Gem Shop prototype — shared helpers.
    State (localStorage), formatting (LKR 450,000.00 / DD/MM/YYYY), currency
-   conversion, VAT & commission maths, roles, toasts, dialogs, approvals,
+   conversion, commission maths, roles, toasts, dialogs, approvals,
    activity log, alerts, gem SVG illustrations, payment & send dialogs.
    ===================================================================== */
 (function () {
   'use strict';
   const ROOT = (document.body && document.body.dataset.root) || '';
-  const LS_STATE = 'gemshop.state.v1';
+  const LS_STATE = 'gemshop.state.v2'; // v8: new key (no VAT) – old v1 data is dropped
+  try { localStorage.removeItem('gemshop.state.v1'); } catch (e) { }
   const LS_PREFS = 'gemshop.prefs.v1';
 
   /* ---------------- small utils ---------------- */
@@ -25,15 +26,11 @@
   const groupBy = (arr, f) => arr.reduce((m, x) => { const k = f(x); (m[k] = m[k] || []).push(x); return m; }, {});
   const initials = name => String(name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-  /* ---------------- Calc (VAT, commission, cash) ---------------- */
+  /* ---------------- Calc (commission, cash) ---------------- */
   const Calc = {
-    rate(st) { return (st || S).shop.vatRate / 100; },
-    /* gross = agreed amount. If prices include VAT the VAT is extracted, else added on top. */
-    split(gross, st) {
-      st = st || S; const r = Calc.rate(st);
-      if (st.shop.vatInclusive) { const net = r2(gross / (1 + r)); return { net, vat: r2(gross - net), total: r2(gross) }; }
-      const vat = r2(gross * r); return { net: r2(gross), vat, total: r2(gross + vat) };
-    },
+    /* v8: no VAT in this system – the owner's prices already include it and VAT is not shown.
+       net = total = the agreed amount; vat is always 0 (kept only so old fields still work). */
+    split(gross) { return { net: r2(gross), vat: 0, total: r2(gross) }; },
     staffComm(net, st) {
       const slabs = (st || S).commissionRules.slabs;
       for (const s of slabs) if (s.upTo == null || net <= s.upTo) return s.amount;
@@ -80,8 +77,7 @@
       if (s.status === 'cancelled') return 0;
       const active = s.items.filter(i => !i.returned);
       return Calc.split(sum(active, i => i.agreed), st).net;
-    },
-    saleVatActive(s, st) { st = st || S; if (s.status === 'cancelled') return 0; return Calc.split(sum(s.items.filter(i => !i.returned), i => i.agreed), st).vat; }
+    }
   };
 
   window.Calc = Calc; // needed by buildSeed() in data.js
@@ -477,7 +473,7 @@
     const usdFull = Math.ceil(fx.from(total, 'USD')), eurFull = Math.ceil(fx.from(total, 'EUR'));
     body.innerHTML = `
       <div class="card" style="background:var(--navy);color:#fff;border:0"><div class="card-content">
-        <div class="muted" style="color:#aab8d6">Amount to pay (incl. VAT)</div>
+        <div class="muted" style="color:#aab8d6">Amount to pay</div>
         <div style="font-size:26px;font-weight:700">${fmt.lkr(total)}</div>
         <div style="color:var(--gold)">USD ${nf(fx.from(total, 'USD'))} · EUR ${nf(fx.from(total, 'EUR'))}</div>
         <div style="font-size:11px;color:#aab8d6;margin-top:4px">Today's rates: 1 USD = LKR ${nf(S.rates.USD)} · 1 EUR = LKR ${nf(S.rates.EUR)} (owner set, A4)</div>
@@ -675,7 +671,7 @@
 (function () {
   UI.docHead = function (title, rightHTML) {
     const sh = S.shop;
-    return `<div class="doc-head"><div class="logo"><img src="${url('assets/img/logo.svg')}" width="54" height="54" alt=""><div><h1 style="color:var(--navy)">${esc(sh.name)}</h1><div style="font-size:12px;color:#555">${esc(sh.tagline)}<br>${esc(sh.address)}<br>${esc(sh.phone)} · ${esc(sh.email)}<br><b>VAT Reg. No:</b> ${esc(sh.vatNo)}${sh.printLicenceOnInvoice ? ` · <b>NGJA Licence:</b> ${esc(sh.ngjaNo)}` : ''}</div></div></div>
+    return `<div class="doc-head"><div class="logo"><img src="${url('assets/img/logo.svg')}" width="54" height="54" alt=""><div><h1 style="color:var(--navy)">${esc(sh.name)}</h1><div style="font-size:12px;color:#555">${esc(sh.tagline)}<br>${esc(sh.address)}<br>${esc(sh.phone)} · ${esc(sh.email)}${sh.printLicenceOnInvoice ? `<br><b>NGJA Licence:</b> ${esc(sh.ngjaNo)}` : ''}</div></div></div>
       <div style="text-align:right"><h1 style="color:var(--sapphire);font-size:20px;letter-spacing:.04em">${title}</h1>${rightHTML || ''}</div></div>`;
   };
   UI.docToolbar = function (backHref, backLabel, extra) {
@@ -683,7 +679,7 @@
   };
 })();
 
-/* ---------------- monthly finance figures (N3, N4, L4) ---------------- */
+/* ---------------- monthly finance figures (N4) ---------------- */
 (function () {
   window.Fin = {
     months() { return [...new Set(S.sales.map(s => monthKey(s.date)).concat(S.expenses.map(e => monthKey(e.date)), [monthKey(todayYmd())]))].sort().reverse(); },
@@ -691,15 +687,14 @@
       const inB = x => !b || b === 'all' || x.branch === b;
       const sales = S.sales.filter(s => monthKey(s.date) === mk && s.status !== 'cancelled' && inB(s));
       const cns = S.creditNotes.filter(c => monthKey(c.date) === mk && inB(sale(c.saleId) || {}));
-      const grossNet = sum(sales, s => Calc.split(sum(s.items, i => i.agreed)).net);
-      const outVat = sum(sales, s => Calc.split(sum(s.items, i => i.agreed)).vat);
-      const cnNet = sum(cns, c => Calc.split(c.amount).net), cnVat = sum(cns, c => c.vat);
+      const grossNet = sum(sales, s => sum(s.items, i => i.agreed));
+      const cnNet = sum(cns, c => c.amount);
       const cogs = sum(sales, s => Calc.saleCost(s));
       const comm = sum(S.commissions.filter(c => monthKey(c.date) === mk && inB(sale(c.saleId) || {}) && (sale(c.saleId) || {}).status !== 'cancelled'), c => c.amount);
       const ex = S.expenses.filter(e => e.status === 'approved' && monthKey(e.date) === mk && inB(e));
-      const expenses = sum(ex, e => e.amount - e.vat), inVat = sum(ex, e => e.vat);
+      const expenses = sum(ex, e => e.amount);
       const salesNet = r2(grossNet - cnNet);
-      return { mk, invoices: sales.length, salesNet, grossNet, outVat: r2(outVat - cnVat), cnNet, cnVat, cogs, comm, expenses, inVat, vatToPay: r2(outVat - cnVat - inVat), gross: r2(salesNet - cogs), net: r2(salesNet - cogs - comm - expenses), byCat: groupBy(ex, e => e.category) };
+      return { mk, invoices: sales.length, salesNet, grossNet, cnNet, cogs, comm, expenses, gross: r2(salesNet - cogs), net: r2(salesNet - cogs - comm - expenses), byCat: groupBy(ex, e => e.category) };
     }
   };
 })();

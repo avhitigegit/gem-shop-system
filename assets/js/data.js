@@ -15,9 +15,6 @@
       phone: '+94 57 222 8800',
       email: 'sales@ceylongemhouse.lk',
       website: 'www.ceylongemhouse.lk',
-      vatNo: '114567890-7000',
-      vatRate: 18,
-      vatInclusive: true,       // assumption confirmed in plan: agreed prices include VAT
       ngjaNo: 'NGJA/DL/2024/0457',
       ngjaExpiryDays: 45,       // expiry is set relative to today so the reminder shows
       ngjaRemindDays: 60,
@@ -421,10 +418,10 @@
     let exN = 0;
     const addExp = (daysAgo, cat, amount, vat, paidTo, method, extra) => {
       exN++;
-      S.expenses.push(Object.assign({ id: 'EXP-' + String(exN).padStart(4, '0'), date: dAgo(daysAgo, 12), branch: 'ella', category: cat, amount, vat, paidTo, method, billPhoto: 'bill-exp-' + exN + '.jpg', status: 'approved', by: 'u4', note: '', recurringId: null }, extra || {}));
+      S.expenses.push(Object.assign({ id: 'EXP-' + String(exN).padStart(4, '0'), date: dAgo(daysAgo, 12), branch: 'ella', category: cat, amount, vat: 0, paidTo, method, billPhoto: 'bill-exp-' + exN + '.jpg', status: 'approved', by: 'u4', note: '', recurringId: null }, extra || {}));
     };
     S.recurring.push({ id: 'RC-01', category: 'Rent', amount: 85000, vat: 0, paidTo: 'Mr. S. Rajapaksha (landlord)', method: 'Bank transfer', day: 1, branch: 'ella', active: true, lastRun: null });
-    S.recurring.push({ id: 'RC-02', category: 'Phone & internet', amount: 6500, vat: 990, paidTo: 'SLT-Mobitel', method: 'Card', day: 5, branch: 'ella', active: true, lastRun: null });
+    S.recurring.push({ id: 'RC-02', category: 'Phone & internet', amount: 6500, vat: 0, paidTo: 'SLT-Mobitel', method: 'Card', day: 5, branch: 'ella', active: true, lastRun: null });
     S.recurring.push({ id: 'RC-03', category: 'Staff salaries & allowances', amount: 110000, vat: 0, paidTo: 'Staff (2)', method: 'Bank transfer', day: 28, branch: 'ella', active: true, lastRun: null });
     const monthStarts = [2, 1, 0].map(k => { const d = new Date(now.getFullYear(), now.getMonth() - k, 1, 12); return d; });
     monthStarts.forEach((ms, mi) => {
