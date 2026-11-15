@@ -10,7 +10,6 @@
 <div id="page">
   <div id="head"></div>
   <div id="intent"></div>
-  <div id="saleSteps"></div>
   <div class="grid g-2-1">
     <div class="stack">
       <div class="card">
@@ -90,10 +89,10 @@ if (PAGE_ALLOWED) (function () {
       ['VAT invoice', 'Print or send', false]
     ];
     const next = st.findIndex(x => !x[2]);
-    $('#saleSteps').innerHTML = `<nav class="flowbar no-print"><span class="fb-title">This sale</span><ol>${st.map((x, i) => `<li class="${x[2] ? 'done' : ''} ${i === next ? 'here' : ''}"><a href="#" data-jump="${i}"><span class="fb-n">${x[2] ? '✓' : i + 1}</span><span class="fb-t"><b>${esc(x[0])}</b><small>${esc(x[1] || '')}</small></span></a></li>`).join('')}</ol></nav>`;
+    if ($('#saleSteps')) $('#saleSteps').innerHTML = `<nav class="flowbar no-print"><span class="fb-title">This sale</span><ol>${st.map((x, i) => `<li class="${x[2] ? 'done' : ''} ${i === next ? 'here' : ''}"><a href="#" data-jump="${i}"><span class="fb-n">${x[2] ? '✓' : i + 1}</span><span class="fb-t"><b>${esc(x[0])}</b><small>${esc(x[1] || '')}</small></span></a></li>`).join('')}</ol></nav>`;
     [1, 2, 3].forEach(i => { const el = $('#sn' + i); if (el) { el.classList.toggle('ok', st[i - 1][2]); el.textContent = st[i - 1][2] ? '✓' : i; } });
   }
-  $('#saleSteps').addEventListener('click', e => {
+  if ($('#saleSteps')) $('#saleSteps').addEventListener('click', e => {
     const a = e.target.closest('[data-jump]'); if (!a) return; e.preventDefault();
     const target = ['#scan', '#custBox', '#guide', '#payBtn', '#payBtn'][Number(a.dataset.jump)];
     const el = $(target); if (!el) return;

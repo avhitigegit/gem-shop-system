@@ -22,7 +22,6 @@
     'e-returns/returns.html': () => { const n = S.returns.filter(r => r.status === 'pending' && inB(sale(r.saleId))).length; return n ? { t: n + ' waiting', tone: 'warning' } : 'none waiting'; },
     'e-returns/credit-note.html': () => S.creditNotes.length + ' in total',
     'c-products/products.html': () => Metrics.stock(b).count + ' in stock',
-    'd-stock/stock.html': () => S.branches.length + ' branches',
     'b-purchasing/suppliers.html': () => S.suppliers.length + ' suppliers',
     'b-purchasing/purchase-history.html': () => S.purchases.filter(p => monthKey(p.date) === mkNow).length + ' this month',
     'j-customers-promotions/customers.html': () => S.customers.length + ' customers',
@@ -104,13 +103,13 @@
     sell() {
       if (!isRole('owner', 'salesperson', 'accountant')) return '';
       const list = S.sales.filter(s => inB(s)).sort((a, z) => z.date.localeCompare(a.date)).slice(0, 6);
-      return `<div class="card"><div class="card-header"><h3>Latest invoices</h3><a class="btn btn-sm btn-ghost" href="../g-payments/invoices.html">All invoices →</a></div>
+      return `<div class="card"><div class="card-header"><h3>Latest invoices</h3></div>
         <ul class="list hub-recent">${list.map(s => `<li><a href="../g-payments/invoice.html?id=${s.id}">${gemSVG(prod(s.items[0].productId).gem, prod(s.items[0].productId).type, 34)}<span style="flex:1"><b>${esc((cust(s.customerId) || {}).name || '—')}</b> <small class="muted">${esc((cust(s.customerId) || {}).country || '')}</small><br><small class="muted mono">${s.id} · ${fmt.dt(s.date)} · ${s.items.length} gem(s)</small></span><span class="right"><b>${fmt.cur(s.total)}</b><br>${badge(s.status)}</span></a></li>`).join('')}</ul></div>`;
     },
     stock() {
       if (!isRole('owner', 'salesperson', 'staff')) return '';
       const list = S.products.filter(p => inB(p) && Metrics.STOCK_STATUSES.includes(p.status)).sort((a, z) => (z.createdAt || z.id).localeCompare(a.createdAt || a.id)).slice(0, 6);
-      return `<div class="card"><div class="card-header"><h3>Newest gems</h3><a class="btn btn-sm btn-ghost" href="../c-products/products.html">All gems →</a></div>
+      return `<div class="card"><div class="card-header"><h3>Newest gems</h3></div>
         <ul class="list hub-recent">${list.map(p => `<li><a href="../c-products/product-detail.html?id=${p.id}">${gemSVG(p.gem, p.type, 34)}<span style="flex:1"><b>${esc(p.name)}</b><br><small class="muted mono">${p.id} · ${fmt.ct(p.carat)}</small></span><span class="right"><b>${fmt.cur(p.price)}</b><br>${badge(p.status)}</span></a></li>`).join('')}</ul></div>`;
     }
   };
@@ -129,10 +128,9 @@
     return `<details class="hub-more" ${sessionStorage.getItem('hubmore.' + sec.key) === '1' ? 'open' : ''}><summary>${esc(g.name)} <small class="muted">(${items.length})</small></summary><div class="hub-links">${items.map(it => `<a href="../${it[0]}"><span>${it[2]}</span>${esc(it[1])}${it[3] ? ` <small class="muted">– ${esc(it[3])}</small>` : ''}</a>`).join('')}</div></details>`;
   };
 
-  const att = (ATT[sec.key] ? ATT[sec.key]() : []);
-  const flow = sec.key === 'money' && isRole('owner', 'salesperson') ? Flows.bar('day', null)
-    : sec.key === 'reports' ? Flows.bar('monthend', null)
-    : sec.key === 'stock' && isRole('owner') ? Flows.bar('newstock', null, { compact: true }) : '';
+  const onPage = new Set(sec.groups.flatMap(g => visible(g.items).map(it => it[0])));
+  const att = (ATT[sec.key] ? ATT[sec.key]() : []).map(a => onPage.has(a.href) ? Object.assign(a, { href: null }) : a);
+  const flow = ''; // v7: step bars are shown on the task pages, not on section homes (the buttons below do the same)
   const recent = RECENT[sec.key] ? RECENT[sec.key]() : '';
   const groups = sec.groups.map(groupHTML).join('');
 

@@ -63,13 +63,11 @@
       hidden: [['dashboard/index.html', null, 'Home'], ['n-accountant/dashboard.html', null, 'Home'], ['index.html', null, 'All screens']] },
 
     { key: 'sell', icon: '💎', title: 'Sell', roles: [O, SP, AC], hub: 'hub/sell.html',
-      intro: 'Sell gems, keep a gem for a customer, and handle gems that come back.',
+      intro: 'Sell gems, keep a gem for a customer or give a quote (both from New sale), and handle gems that come back.',
       groups: [
         { name: 'What do you want to do?', show: 'tiles', side: true, items: [
-          ['f-pos/pos.html', 'New sale', '💎', 'Scan the tag, agree the price, take payment', [O, SP]],
-          ['e-returns/new-return.html', 'Customer brings a gem back', '↩️', 'Refund or exchange – the owner approves', [O, SP]],
-          ['f-pos/pos.html?intent=reserve', 'Keep a gem for a customer', '📌', 'Reserve it for a few days', [O, SP]],
-          ['f-pos/pos.html?intent=quote', 'Give a price quote', '📝', 'Print a quotation for the customer', [O, SP]]
+          ['f-pos/pos.html', 'New sale', '💎', 'Scan the tag, agree the price, take payment', [O, SP], { side: false }],
+          ['e-returns/new-return.html', 'Customer brings a gem back', '↩️', 'Refund or exchange – the owner approves', [O, SP]]
         ] },
         { name: 'Look up', show: 'cards', side: true, items: [
           ['g-payments/invoices.html', 'Invoices', '🧾', 'Print or send again, cancel', [O, SP, AC]],
@@ -91,8 +89,7 @@
           ['c-products/shop-certificate.html', 'Print shop certificate', '📜', 'For gems without a lab certificate', [O, SP]]
         ] },
         { name: 'Look up', show: 'cards', side: true, items: [
-          ['c-products/products.html', 'All gems', '🔍', 'Search by code, name or gem', [O, SP, ST]],
-          ['d-stock/stock.html', 'Stock by branch', '📦', 'What is where', [O, SP, ST]],
+          ['c-products/products.html', 'All gems', '🔍', 'Search or scan a tag, every branch', [O, SP, ST]],
           ['b-purchasing/suppliers.html', 'Suppliers', '🤝', 'Who we buy from', [O, AC]],
           ['b-purchasing/purchase-history.html', 'Purchases', '🧾', 'Everything bought', [O, AC]]
         ] },
@@ -129,16 +126,13 @@
       groups: [
         { name: 'What do you want to do?', show: 'tiles', side: true, items: [
           ['i-daily-closing/opening-cash.html', 'Start the day', '☀️', 'Count the cash in the drawer', [O, SP]],
-          ['i-daily-closing/drawer-expenses.html', 'Pay out cash from the drawer', '💵', 'Small expenses, cash commission', [O, SP]],
+          ['i-daily-closing/drawer-expenses.html', 'Pay out cash from the drawer', '💵', 'Small expenses paid in cash', [O, SP]],
           ['i-daily-closing/day-end.html', 'Close the day', '🌙', 'Count the cash, send to owner', [O, SP]],
-          ['m-expenses/add-expense.html', 'Add an expense', '🧾', 'Bill photo and type', [O, AC]]
+          ['m-expenses/add-expense.html', 'Add an expense', '🧾', 'Bank or card bills, with photo', [O, AC]]
         ] },
         { name: 'Look up', show: 'cards', side: true, items: [
           ['m-expenses/expenses.html', 'Expenses', '📒', 'All shop expenses', [O, AC]],
           ['m-expenses/recurring.html', 'Monthly bills', '🔁', 'Rent, phone, salaries', [O, AC]]
-        ] },
-        { name: 'Other tasks', show: 'cards', items: [
-          ['m-expenses/categories.html', 'Expense types', '🏷', 'Rent, salaries, transport…', [O]]
         ] }
       ], hidden: [] },
 
@@ -183,7 +177,7 @@
           ['a-setup/currencies.html', 'Exchange rates', '💱', 'USD and EUR rate of the day', [O]],
           ['a-setup/commission-rules.html', 'Commission', '🚐', 'Guide % and staff levels', [O]],
           ['a-setup/branches.html', 'Branches', '🏬', 'Ella now, Branch 2 from January 2027', [O]],
-          ['a-setup/lists.html', 'Drop-down lists', '📃', 'Gem types, colours, shapes, labs…', [O]]
+          ['a-setup/lists.html', 'Drop-down lists', '📃', 'Gem types, colours, labs, expense types…', [O]]
         ] }
       ], hidden: [] }
   ];
@@ -210,7 +204,7 @@
     monthend: {
       title: 'Month end',
       steps: [
-        { page: 'm-expenses/expenses.html', label: 'Check expenses', status: () => ({ note: 'Bills & photos' }) },
+        { page: 'm-expenses/expenses.html', label: 'Check expenses', bar: false, status: () => ({ note: 'Bills & photos' }) },
         { page: 'n-accountant/vat-summary.html', label: 'VAT', status: () => ({ note: 'VAT to pay' }) },
         { page: 'n-accountant/profit-loss.html', label: 'Profit & Loss', status: () => ({ note: 'The month result' }) },
         { page: 'n-accountant/tax-pack.html', label: 'Tax pack', status: () => ({ note: 'Download' }) },
@@ -231,7 +225,7 @@
       return `<li class="${cls}"><a href="${url(s.page)}"><span class="fb-n">${st.done ? '✓' : i + 1}</span><span class="fb-t"><b>${esc(s.label)}</b><small>${esc(st.note || '')}</small></span></a></li>`;
     }).join('') + '</ol></nav>';
   }
-  const FLOW_OF = {}; Object.keys(FLOWS).forEach(k => FLOWS[k].steps.forEach(s => { if (!FLOW_OF[s.page]) FLOW_OF[s.page] = k; }));
+  const FLOW_OF = {}; Object.keys(FLOWS).forEach(k => FLOWS[k].steps.forEach(s => { if (!FLOW_OF[s.page] && s.bar !== false) FLOW_OF[s.page] = k; }));
   FLOW_OF['c-products/products.html'] = null; // a list page – no flow bar there
 
   /* ---------- helpers ---------- */
@@ -261,7 +255,7 @@
   const subList = (sec, open) => {
     const seen = new Set();
     const list = [];
-    sec.groups.forEach(g => { const v = visible(g.items).filter(it => !seen.has(it[0])); v.forEach(it => seen.add(it[0])); if (v.length && list.length) list.push(null); list.push(...v); });
+    sec.groups.forEach(g => { const v = visible(g.items).filter(it => !seen.has(it[0]) && !(it[5] && it[5].side === false)); v.forEach(it => seen.add(it[0])); if (v.length && list.length) list.push(null); list.push(...v); });
     let activeDone = false;
     const activeKey = hereItem ? hereItem[0] : (hereHidden && hereHidden[1]);
     const lis = list.map(it => {
@@ -286,7 +280,7 @@
   sidebar.innerHTML = `<div class="brand"><img src="${url('assets/img/logo.svg')}" alt=""><div><b>${esc(S.shop.name)}</b><span>GEM SHOP</span></div></div>
     ${isRole(O, SP) && here !== 'f-pos/pos.html' ? `<div style="padding:14px 14px 4px"><a class="btn btn-gold btn-block btn-lg" href="${url('f-pos/pos.html')}">+ New sale</a></div>` : ''}
     <nav class="nav-simple">${navHTML}</nav>
-    <div class="side-foot">Prototype v6 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
+    <div class="side-foot">Prototype v7 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
   /* ⌄ arrow: open / close a section's page list without leaving the page */
   sidebar.addEventListener('click', e => {
     const b = e.target.closest('.nav-chev'); if (!b) return;

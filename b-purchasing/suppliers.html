@@ -20,7 +20,7 @@ if (PAGE_ALLOWED) (function () {
         { h: 'NIC / Business reg.', f: s => `<span class="badge badge-outline">${s.idType}</span> <span class="mono">${esc(s.idNo)}</span>` },
         { h: 'Purchases', num: 1, f: s => S.purchases.filter(p => p.supplierId === s.id).length },
         { h: 'Total bought', num: 1, f: s => fmt.cur(tot(s)) },
-        { h: '', f: s => `<a class="btn btn-sm btn-outline" href="supplier-detail.html?id=${s.id}">Open</a> <button class="btn btn-sm btn-ghost" data-roles="owner" data-edit="${s.id}">Edit</button>` }
+        { h: '', f: s => `<button class="btn btn-sm btn-ghost" data-roles="owner" data-edit="${s.id}">Edit</button>` }
       ], S.suppliers, { id: 'spT', cls: 'stack-sm' })}</div>`;
   }
   function form(s) {

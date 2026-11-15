@@ -679,7 +679,7 @@
       <div style="text-align:right"><h1 style="color:var(--sapphire);font-size:20px;letter-spacing:.04em">${title}</h1>${rightHTML || ''}</div></div>`;
   };
   UI.docToolbar = function (backHref, backLabel, extra) {
-    return `<div class="doc-toolbar no-print"><a class="btn btn-ghost" href="${backHref}">← ${backLabel}</a><div style="flex:1"></div>${extra || ''}<button class="btn btn-sapphire" onclick="window.print()">🖨 Print</button></div>`;
+    return `<div class="doc-toolbar no-print"><div style="flex:1"></div>${extra || ''}<button class="btn btn-sapphire" onclick="window.print()">🖨 Print</button></div>`;
   };
 })();
 

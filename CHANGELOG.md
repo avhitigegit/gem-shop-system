@@ -3,6 +3,37 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v7 – 15/11/2026 – one way to each job (duplicates removed after the demo)
+**Same button twice on one screen**
+- A1–A3 Cash & expenses, Reports and Gems & stock home pages: the step bar is removed (the big
+  buttons do the same). A notice no longer has a button when that button is already on the page.
+- A3/A4 Removed the extra "All gems →" and "All invoices →" links (the cards open the same lists).
+- A5 Home: removed the "Close the day" / "Start the day" tile (the Today's cash bar is there).
+- A6 New sale: removed the second step bar; the numbered boxes 1–4 stay.
+- A7 Invoice, quotation, shop certificate, commission slip: one back button (top bar only).
+- A8 Invoices, Suppliers, Guides, Credit notes: rows open by the number/name only
+  (removed "View", "Open", "Profile", "View / print"). "Print" on invoices stays.
+- A9 Expenses list no longer shows the accountant's Month end bar.
+
+**Two pages for one job**
+- B1 Add an expense = bank transfer or card only. Cash from the drawer only through
+  "Pay out cash from the drawer" (old drawer expenses can still be corrected).
+- B2 Guide/driver commission is paid only in "Pay guides & drivers" (choose Cash (drawer) –
+  it still shows on the drawer page and comes off the expected cash).
+- B4 "Stock by branch" merged into **All gems** (old address opens All gems).
+- B7 "Expense types" moved into **Settings → Drop-down lists** (old address opens it there).
+
+**Menu**
+- C1 Sell menu: removed "Keep a gem for a customer" and "Give a price quote" – they are the
+  "Keep for customer" and "Give a quote" buttons on the New sale screen.
+- C2 Sell menu: removed "New sale" (the gold **+ New sale** button is always at the top of the menu;
+  the Sell home page still has the New sale button).
+
+Checked: 77 pages × 4 roles, no errors.
+
+**Demo guide PDF:** to update later – New sale step bar, Keep / quote, Stock by branch,
+Expense types, drawer page (no commission payment), section home pictures.
+
 ## v6 – 14/11/2026 – two reset buttons (prototype only)
 In the user menu (top right, under "Prototype only") and on the sitemap page:
 - **↺ Normal reset** – throws away all changes made in this browser and goes back to the

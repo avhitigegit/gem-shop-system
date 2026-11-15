@@ -16,8 +16,7 @@ if (PAGE_ALLOWED) (function () {
     $('#page').innerHTML = UI.pageHead({ crumbs: 'E · Returns', title: 'Credit notes', brd: ['E2'], sub: 'Created automatically when the owner approves a return.', actions: UI.exportButtons('#cnT', 'Credit notes') }) + `<div class="card">${UI.table([
       { h: 'Credit note', f: c => `<a class="mono" href="?id=${c.id}">${c.id}</a>` }, { h: 'Date', f: c => fmt.date(c.date) },
       { h: 'Product', f: c => UI.prodCell(prod(c.productId)) }, { h: 'Invoice', f: c => `<a class="mono" href="../g-payments/invoice.html?id=${c.saleId}">${c.saleId}</a>` },
-      { h: 'Amount', num: 1, f: c => fmt.cur(c.amount) }, { h: 'VAT', num: 1, f: c => fmt.cur(c.vat) }, { h: 'Commission', f: c => c.commissionReversed ? '<span class="badge badge-danger">Reversed</span>' : '—' },
-      { h: '', f: c => `<a class="btn btn-sm btn-outline" href="?id=${c.id}">View / print</a>` }
+      { h: 'Amount', num: 1, f: c => fmt.cur(c.amount) }, { h: 'VAT', num: 1, f: c => fmt.cur(c.vat) }, { h: 'Commission', f: c => c.commissionReversed ? '<span class="badge badge-danger">Reversed</span>' : '—' }
     ], S.creditNotes, { id: 'cnT', cls: 'stack-sm', empty: 'No credit notes yet.' })}</div>`;
     return;
   }

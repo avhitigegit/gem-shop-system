@@ -30,7 +30,6 @@ else (function () {
       T('k-owner-control/approvals.html', '✅', 'Approvals', pend.length ? pend.length + ' waiting for you' : 'Nothing waiting', { badge: pend.length || '' }),
       T('c-products/product-form.html', '➕', 'Add a gem', 'New stock with photo'),
       T('c-products/products.html', '🔍', 'Find a gem', stock.count + ' in stock'),
-      T('i-daily-closing/day-end.html', '🧮', 'Close the day', 'Count the cash'),
       T('m-expenses/add-expense.html', '🧾', 'Add expense', 'With bill photo'),
       T('h-commissions/commissions-payable.html', '🚐', 'Pay commissions', 'Guides & drivers'),
       T('hub/reports.html', '📊', 'Reports', 'Sales, profit, VAT')
@@ -41,7 +40,6 @@ else (function () {
       T('g-payments/invoices.html', '🧾', 'Invoices', 'Print or send again'),
       T('e-returns/new-return.html', '↩️', 'Gem brought back', 'Refund or exchange'),
       T('f-pos/reservations.html', '📌', 'Reserved & quotes', 'Kept for customers'),
-      T(opened ? 'i-daily-closing/day-end.html' : 'i-daily-closing/opening-cash.html', '🧮', opened ? 'Close the day' : 'Start the day', opened ? 'Count the cash' : 'Enter opening cash'),
       T('j-customers-promotions/customers.html', '👥', 'Customers', S.customers.length + ' customers')
     ],
     staff: [

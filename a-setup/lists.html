@@ -11,10 +11,11 @@
 <script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
 <script>
 if (PAGE_ALLOWED) (function () {
-  const TABS = { gemTypes: 'Gem types', productTypes: 'Product types', colours: 'Colours', shapes: 'Shapes / cuts', labs: 'Certificate labs', treatments: 'Treatments' };
+  const TABS = { gemTypes: 'Gem types', productTypes: 'Product types', colours: 'Colours', shapes: 'Shapes / cuts', labs: 'Certificate labs', treatments: 'Treatments', expenseCategories: 'Expense types' };
   const FIELD = { gemTypes: 'gem', productTypes: 'type', colours: 'colour', shapes: 'shape', treatments: 'treatment' };
   let tab = qs('tab') || 'gemTypes';
-  const used = (k, v) => k === 'labs' ? S.products.filter(p => p.cert.lab === v).length : S.products.filter(p => p[FIELD[k]] === v).length;
+  const used = (k, v) => k === 'expenseCategories' ? S.expenses.filter(e => e.category === v).length : k === 'labs' ? S.products.filter(p => p.cert.lab === v).length : S.products.filter(p => p[FIELD[k]] === v).length;
+  const unit = () => tab === 'expenseCategories' ? ' expense(s)' : ' product(s)';
   function render() {
     const list = S.lists[tab];
     $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Drop-down lists', brd: ['A5'], sub: 'Lists the owner can edit. Changes appear in all forms straight away (NFR-8).' }) +
@@ -22,7 +23,7 @@ if (PAGE_ALLOWED) (function () {
       <div class="grid g-2-1"><div class="card"><div class="card-header"><h3>${TABS[tab]}</h3></div>${UI.table([
         { h: '#', f: (v, i) => i + 1 },
         { h: 'Value', f: v => (tab === 'gemTypes' ? `<span class="row" style="gap:6px">${gemSVG(v, 'Loose gem', 22)}${esc(v)}</span>` : esc(v)) },
-        { h: 'Used by', num: 1, f: v => used(tab, v) + ' product(s)' },
+        { h: 'Used by', num: 1, f: v => used(tab, v) + unit() },
         { h: '', f: (v, i) => `<button class="btn btn-sm btn-ghost" data-up="${i}" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn btn-sm btn-ghost" data-ren="${i}">Rename</button><button class="btn btn-sm btn-ghost" data-del="${i}" style="color:var(--danger)">Remove</button>` }
       ], list)}</div>
       <div class="card" style="align-self:start"><div class="card-header"><h3>Add value</h3></div><form class="card-content stack" id="f" novalidate style="gap:10px"><div class="field"><label class="req">New ${TABS[tab].toLowerCase().replace(/s$/, '').replace(/ \/.*/, '')}</label><input class="input" name="v" required></div><button class="btn btn-sapphire" type="submit">Add</button>
@@ -33,8 +34,8 @@ if (PAGE_ALLOWED) (function () {
     const d = e.target.dataset; const list = S.lists[tab];
     if (d.t) { tab = d.t; render(); return; }
     if (d.up) { const i = +d.up; [list[i - 1], list[i]] = [list[i], list[i - 1]]; Store.save(); render(); }
-    if (d.del) { const i = +d.del, v = list[i]; const n = used(tab, v); if (n) { toast('Cannot remove', v + ' is used by ' + n + ' product(s). Rename it instead.', 'error'); return; } UI.confirm('Remove “' + esc(v) + '”?', 'It will no longer appear in drop-downs.', () => { list.splice(i, 1); Log.add('List value removed', TABS[tab] + ': ' + v, 'all'); Store.save(); render(); }, { danger: true, yes: 'Remove' }); }
-    if (d.ren) { const i = +d.ren, v = list[i]; UI.modal({ title: 'Rename', body: `<div class="field"><label class="req">Value</label><input class="input" id="nv" required value="${esc(v)}"></div><p class="muted mt-s" style="font-size:12px">Products using “${esc(v)}” are updated too.</p>`, actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { if (!UI.validate(el)) return false; const nv = $('#nv', el).value.trim(); list[i] = nv; S.products.forEach(p => { if (tab === 'labs') { if (p.cert.lab === v) p.cert.lab = nv; } else if (FIELD[tab] && p[FIELD[tab]] === v) p[FIELD[tab]] = nv; }); Log.add('List value renamed', v + ' → ' + nv, 'all'); Store.save(); render(); } }] }); }
+    if (d.del) { const i = +d.del, v = list[i]; const n = used(tab, v); if (n) { toast('Cannot remove', v + ' is used by ' + n + unit() + '. Rename it instead.', 'error'); return; } UI.confirm('Remove “' + esc(v) + '”?', 'It will no longer appear in drop-downs.', () => { list.splice(i, 1); Log.add('List value removed', TABS[tab] + ': ' + v, 'all'); Store.save(); render(); }, { danger: true, yes: 'Remove' }); }
+    if (d.ren) { const i = +d.ren, v = list[i]; UI.modal({ title: 'Rename', body: `<div class="field"><label class="req">Value</label><input class="input" id="nv" required value="${esc(v)}"></div><p class="muted mt-s" style="font-size:12px">${tab === 'expenseCategories' ? 'Expenses' : 'Products'} using “${esc(v)}” are updated too.</p>`, actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { if (!UI.validate(el)) return false; const nv = $('#nv', el).value.trim(); list[i] = nv; if (tab === 'expenseCategories') S.expenses.forEach(x => { if (x.category === v) x.category = nv; }); S.products.forEach(p => { if (tab === 'labs') { if (p.cert.lab === v) p.cert.lab = nv; } else if (FIELD[tab] && p[FIELD[tab]] === v) p[FIELD[tab]] = nv; }); Log.add('List value renamed', v + ' → ' + nv, 'all'); Store.save(); render(); } }] }); }
   });
   render();
 })();

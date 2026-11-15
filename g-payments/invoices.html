@@ -37,7 +37,7 @@ if (PAGE_ALLOWED) (function () {
       { h: 'VAT', num: 1, f: s => fmt.cur(s.vat) },
       { h: 'Sent', f: s => (s.sentEmail ? '✉' : '') + (s.sentWhatsapp ? ' 💬' : '') || '–' },
       { h: 'Status', f: s => badge(s.status) + (pend(s.id) ? '<br><span class="badge badge-warning">Cancel requested</span>' : '') },
-      { h: '', f: s => `<div class="row" style="gap:4px;flex-wrap:nowrap"><a class="btn btn-sm btn-outline" href="invoice.html?id=${s.id}">View</a><a class="btn btn-sm btn-outline" href="invoice.html?id=${s.id}&print=1">Print</a>${isRole('owner', 'salesperson') && s.status === 'completed' && !pend(s.id) ? `<button class="btn btn-sm btn-ghost" data-cancel="${s.id}" style="color:var(--danger)">Cancel…</button>` : ''}</div>` }
+      { h: '', f: s => `<div class="row" style="gap:4px;flex-wrap:nowrap"><a class="btn btn-sm btn-outline" href="invoice.html?id=${s.id}&print=1">Print</a>${isRole('owner', 'salesperson') && s.status === 'completed' && !pend(s.id) ? `<button class="btn btn-sm btn-ghost" data-cancel="${s.id}" style="color:var(--danger)">Cancel…</button>` : ''}</div>` }
     ], rows, { id: 'invTable', cls: 'stack-sm', empty: 'No invoices match the filters.', foot: ['Total ' + rows.length, '', '', '', fmt.cur(sum(rows.filter(s => s.status !== 'cancelled'), s => s.total)), fmt.cur(sum(rows.filter(s => s.status !== 'cancelled'), s => s.vat)), '', '', ''] });
   }
   $('#fq').oninput = e => { f.q = e.target.value; render(); };
