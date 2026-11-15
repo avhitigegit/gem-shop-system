@@ -15,6 +15,8 @@ The owner's prices already include VAT and VAT is not shown to customers.
 - Shop details and sign-up: VAT number, VAT rate and "prices include VAT" removed.
 - Commission is now worked out on the full agreed price (before, the 18% VAT was taken off first).
 - Saved demo data uses a new storage key, so the sample data is rebuilt once without VAT.
+- Demo guide (doc/Ceylon_Gem_House_Demo_Guide.pdf) updated to v8: 49 pages, 74 screens, all
+  screenshots retaken; the two VAT screens are removed.
 
 ## v7 – 15/11/2026 – one way to each job (duplicates removed after the demo)
 **Same button twice on one screen**
