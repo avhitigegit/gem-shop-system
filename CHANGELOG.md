@@ -31,8 +31,11 @@ To see an old version: `git checkout v3` (go back with `git checkout main`).
 
 Checked: 77 pages × 4 roles, no errors.
 
-**Demo guide PDF:** to update later – New sale step bar, Keep / quote, Stock by branch,
-Expense types, drawer page (no commission payment), section home pictures.
+**Demo guide PDF:** updated to v7 on 15/11/2026 (`doc/Ceylon_Gem_House_Demo_Guide.pdf`, 50 pages,
+76 screens). New screenshots; "Stock by branch" merged into All gems; Expense types now under
+Settings → Drop-down lists; Keep / quote from the New sale buttons; drawer page without commission;
+Add an expense = bank or card; How the screens work mentions the menu arrows and the numbered sale
+boxes; demo tips use Normal reset / Reset system. Cover and footer say "Prototype v7".
 
 ## v6 – 14/11/2026 – two reset buttons (prototype only)
 In the user menu (top right, under "Prototype only") and on the sitemap page:
