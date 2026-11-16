@@ -12,7 +12,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const br = activeBranch();
-  const expected = S.products.filter(p => p.branch === br && ['in_stock', 'reserved', 'returned', 'on_hold'].includes(p.status));
+  const expected = S.products.filter(p => p.branch === br && ['in_stock', 'reserved', 'returned', 'on_hold', 'not_ready'].includes(p.status));
   const scanned = new Set(); const wrong = []; const unknown = [];
   let finished = null;
   $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Stock check – ' + esc(branchName(br)), brd: ['D4'], sub: 'Scan every tag in the branch. The system lists any product that is missing or in the wrong place.', actions: '<button class="btn btn-outline" id="simAll">Demo: scan all but 2</button><button class="btn btn-sapphire" id="finish">Finish check</button>' }) +

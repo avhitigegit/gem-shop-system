@@ -20,6 +20,7 @@
       ngjaRemindDays: 60,
       printLicenceOnInvoice: true,
       largeExpenseLimit: 50000, // M6
+      cardFeePct: 3,            // v9: bank fee on card payments, paid by the customer
       invoicePrefix: 'INV-',
       returnPolicyDays: 14
     },
@@ -333,11 +334,12 @@
       const t = Calc.saleTotals(s.items, s.guideId, S);
       Object.assign(s, { subtotal: t.subtotal, net: t.net, vat: t.vat, total: t.total, guidePct: t.guidePct, guideComm: t.guideComm, staffComm: t.staffComm });
       const mode = payMix[i % payMix.length];
-      if (mode === 'card') s.payments.push({ method: 'card', currency: 'LKR', amount: t.total, rate: 1, lkr: t.total });
+      const cardPay = amt => { const f = Calc.cardFee(amt, S); return { method: 'card', currency: 'LKR', amount: amt, rate: 1, lkr: amt, fee: f, feePct: Calc.cardPct(S), charged: amt + f }; };
+      if (mode === 'card') s.payments.push(cardPay(t.total));
       else if (mode === 'split') {
         const usd = Math.round(t.total * 0.4 / rates.USD / 50) * 50 || 50;
         s.payments.push({ method: 'cash', currency: 'USD', amount: usd, rate: rates.USD, lkr: usd * rates.USD });
-        s.payments.push({ method: 'card', currency: 'LKR', amount: t.total - usd * rates.USD, rate: 1, lkr: t.total - usd * rates.USD });
+        s.payments.push(cardPay(t.total - usd * rates.USD));
       } else {
         const cur = mode.slice(4);
         const rate = cur === 'LKR' ? 1 : rates[cur];
@@ -345,6 +347,7 @@
         s.payments.push({ method: 'cash', currency: cur, amount: amt, rate, lkr: amt * rate });
         s.change = amt * rate - t.total;
       }
+      s.cardFee = s.payments.reduce((a, p) => a + (p.fee || 0), 0);
       s.items.forEach(it => {
         const p = P(it.productId);
         p.status = 'sold'; p.saleId = s.id; p.soldAt = s.date;
@@ -368,7 +371,9 @@
       retSale.items.push({ productId: g121.id, listPrice: 165000, agreed: 165000, minPrice: 140000, returned: true });
       const t = Calc.saleTotals(retSale.items, retSale.guideId, S);
       Object.assign(retSale, { subtotal: t.subtotal, net: t.net, vat: t.vat, total: t.total, guideComm: t.guideComm, staffComm: t.staffComm });
-      retSale.payments = [{ method: 'card', currency: 'LKR', amount: t.total, rate: 1, lkr: t.total }];
+      const rf = Calc.cardFee(t.total, S);
+      retSale.payments = [{ method: 'card', currency: 'LKR', amount: t.total, rate: 1, lkr: t.total, fee: rf, feePct: Calc.cardPct(S), charged: t.total + rf }];
+      retSale.cardFee = rf;
       retSale.change = 0;
       S.commissions = S.commissions.filter(c => c.saleId !== retSale.id);
       if (retSale.guideId) S.commissions.push({ id: 'CM-' + retSale.id.slice(-4) + 'G', saleId: retSale.id, payee: 'guide', payeeId: retSale.guideId, amount: t.guideComm, pct: t.guidePct, status: 'paid', paidAt: retSale.date, method: 'Cash (owner)', date: retSale.date });

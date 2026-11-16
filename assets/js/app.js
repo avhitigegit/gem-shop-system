@@ -7,8 +7,8 @@
 (function () {
   'use strict';
   const ROOT = (document.body && document.body.dataset.root) || '';
-  const LS_STATE = 'gemshop.state.v2'; // v8: new key (no VAT) – old v1 data is dropped
-  try { localStorage.removeItem('gemshop.state.v1'); } catch (e) { }
+  const LS_STATE = 'gemshop.state.v3'; // v9: new key (card fee) – old data is dropped
+  try { ['gemshop.state.v1', 'gemshop.state.v2'].forEach(k => localStorage.removeItem(k)); } catch (e) { }
   const LS_PREFS = 'gemshop.prefs.v1';
 
   /* ---------------- small utils ---------------- */
@@ -31,6 +31,10 @@
     /* v8: no VAT in this system – the owner's prices already include it and VAT is not shown.
        net = total = the agreed amount; vat is always 0 (kept only so old fields still work). */
     split(gross) { return { net: r2(gross), vat: 0, total: r2(gross) }; },
+    /* v9: card fee – the bank takes 3% of every card payment, so the customer pays it on top.
+       Cash stays at the shown price. The fee is not shop income: it goes to the bank. */
+    cardPct(st) { const v = ((st || S).shop || {}).cardFeePct; return v == null ? 3 : Number(v); },
+    cardFee(amount, st) { return r2((amount || 0) * Calc.cardPct(st) / 100); },
     staffComm(net, st) {
       const slabs = (st || S).commissionRules.slabs;
       for (const s of slabs) if (s.upTo == null || net <= s.upTo) return s.amount;
@@ -58,7 +62,7 @@
       const cash = { LKR: op.LKR || 0, USD: op.USD || 0, EUR: op.EUR || 0 };
       let card = 0, cashSalesLKR = 0, drawerOut = 0;
       st.sales.filter(s => s.branch === branch && ymd(s.date) === date && s.status !== 'cancelled').forEach(s => {
-        s.payments.forEach(p => { if (p.method === 'card') card += p.lkr; else { cash[p.currency] += p.amount; cashSalesLKR += p.lkr; } });
+        s.payments.forEach(p => { if (p.method === 'card') card += p.lkr + (p.fee || 0); else { cash[p.currency] += p.amount; cashSalesLKR += p.lkr; } });
         if (s.change) { cash.LKR -= s.change; cashSalesLKR -= s.change; }
       });
       st.expenses.filter(e => e.branch === branch && ymd(e.date) === date && e.method === 'Cash (drawer)').forEach(e => { cash.LKR -= e.amount; drawerOut += e.amount; });
@@ -235,7 +239,7 @@
   /* ---------------- status badges ---------------- */
   const STATUS = {
     in_stock: ['In stock', 'success'], reserved: ['Reserved', 'gold'], sold: ['Sold', 'navy'], returned: ['Returned', 'blue'],
-    in_transit: ['In transit', 'warning'], written_off: ['Written off', 'danger'], returned_supplier: ['Returned to supplier', 'default'], on_hold: ['On hold (approval)', 'warning'],
+    in_transit: ['In transit', 'warning'], written_off: ['Written off', 'danger'], returned_supplier: ['Returned to supplier', 'default'], on_hold: ['On hold (approval)', 'warning'], not_ready: ['Not ready to sell', 'default'],
     pending: ['Pending', 'warning'], approved: ['Approved', 'success'], rejected: ['Rejected', 'danger'], completed: ['Completed', 'success'], cancelled: ['Cancelled', 'danger'],
     paid: ['Paid', 'success'], unpaid: ['Not yet paid', 'warning'], reversed: ['Reversed', 'danger'], active: ['Active', 'blue'], expired: ['Expired', 'default'], converted: ['Converted to sale', 'success'],
     sent: ['Sent', 'success'], draft: ['Draft', 'default'], received: ['Received', 'success'], opening: ['Opening Jan 2027', 'gold'], closed: ['Closed (locked)', 'navy'], open: ['Open', 'blue']
@@ -450,7 +454,7 @@
       const s = {
         id: nextId('invoice', S.shop.invoicePrefix, 6), date: new Date().toISOString(), branch: activeBranch(), customerId: draft.customerId, guideId: draft.guideId || null, staffId: currentUser().id,
         items: draft.items.map(i => ({ productId: i.productId, listPrice: i.listPrice, agreed: i.agreed, minPrice: i.minPrice, approvalId: i.approvalId || null })),
-        payments: pay.payments, change: pay.change || 0, status: 'completed', sentEmail: false, sentWhatsapp: false, notes: draft.notes || '',
+        payments: pay.payments, change: pay.change || 0, cardFee: r2(sum(pay.payments, p => p.fee || 0)), status: 'completed', sentEmail: false, sentWhatsapp: false, notes: draft.notes || '',
         subtotal: t.subtotal, net: t.net, vat: t.vat, total: t.total, guidePct: t.guidePct, guideComm: t.guideComm, staffComm: t.staffComm, heldId: draft.heldId || null, quoteId: draft.quoteId || null
       };
       S.sales.push(s);
@@ -476,6 +480,7 @@
         <div class="muted" style="color:#aab8d6">Amount to pay</div>
         <div style="font-size:26px;font-weight:700">${fmt.lkr(total)}</div>
         <div style="color:var(--gold)">USD ${nf(fx.from(total, 'USD'))} · EUR ${nf(fx.from(total, 'EUR'))}</div>
+        <div style="font-size:12px;color:#fff;margin-top:6px">💳 Card: + ${Calc.cardPct()}% bank fee · 💵 Cash: the price above</div>
         <div style="font-size:11px;color:#aab8d6;margin-top:4px">Today's rates: 1 USD = LKR ${nf(S.rates.USD)} · 1 EUR = LKR ${nf(S.rates.EUR)} (owner set, A4)</div>
       </div></div>
       <div class="row mt-s"><span class="label">Quick:</span>
@@ -493,26 +498,31 @@
     function renderLines() {
       $('#payLines', body).innerHTML = lines.map((l, i) => `
         <div class="row" style="margin-bottom:8px" data-i="${i}">
-          <select data-k="kind" style="width:150px">${opts([{ v: 'cash-LKR', l: 'Cash · LKR' }, { v: 'cash-USD', l: 'Cash · USD' }, { v: 'cash-EUR', l: 'Cash · EUR' }, { v: 'card-LKR', l: 'Card (machine)' }], l.method + '-' + l.currency)}</select>
+          <select data-k="kind" style="width:150px">${opts([{ v: 'cash-LKR', l: 'Cash · LKR' }, { v: 'cash-USD', l: 'Cash · USD' }, { v: 'cash-EUR', l: 'Cash · EUR' }, { v: 'card-LKR', l: 'Card (+' + Calc.cardPct() + '%)' }], l.method + '-' + l.currency)}</select>
           <input class="input" data-k="amount" type="number" min="0" step="0.01" value="${l.amount}" style="width:150px">
-          <span class="muted" data-eq style="min-width:140px">= ${fmt.lkr(fx.toLKR(l.amount || 0, l.currency))}</span>
+          <span class="muted" data-eq style="min-width:140px">${eqText(l)}</span>
           <button class="btn btn-ghost btn-sm" data-del="${i}">Remove</button>
         </div>`).join('') || '<div class="muted">No payment lines yet – use a quick button or add a line.</div>';
     }
+    function eqText(l) {
+      if (l.method === 'card') { const f = Calc.cardFee(l.amount); return '+ ' + Calc.cardPct() + '% fee ' + fmt.lkr(f) + ' → charge ' + fmt.lkr(r2((l.amount || 0) + f)) + ' on the machine'; }
+      return '= ' + fmt.lkr(fx.toLKR(l.amount || 0, l.currency));
+    }
     function renderSum() {
+      const fee = r2(sum(lines.filter(l => l.method === 'card'), l => Calc.cardFee(l.amount)));
       const paid = r2(sum(lines, l => fx.toLKR(l.amount || 0, l.currency)));
       const cashPaid = r2(sum(lines.filter(l => l.method === 'cash'), l => fx.toLKR(l.amount || 0, l.currency)));
       const remaining = r2(Math.max(0, total - paid));
       const change = r2(Math.max(0, paid - total));
       const cardOver = change > 0 && change > cashPaid + 0.001;
-      $('#paySum', body).innerHTML = `<dt>Paid (LKR)</dt><dd>${fmt.lkr(paid)}</dd><dt>Remaining</dt><dd class="${remaining > 0 ? 'text-danger' : 'text-success'}">${fmt.lkr(remaining)}</dd><dt>Change due</dt><dd style="font-size:18px" class="${change > 0 ? 'text-gold bold' : ''}">${fmt.lkr(change)}${change > 0 ? ` <small class="muted">(USD ${nf(fx.from(change, 'USD'))})</small>` : ''}</dd>`;
+      $('#paySum', body).innerHTML = `${fee ? `<dt>Card fee (${Calc.cardPct()}%)</dt><dd>${fmt.lkr(fee)}</dd><dt>Customer pays in total</dt><dd class="bold">${fmt.lkr(r2(total + fee))}</dd>` : ''}<dt>Paid towards the bill (LKR)</dt><dd>${fmt.lkr(paid)}</dd><dt>Remaining</dt><dd class="${remaining > 0 ? 'text-danger' : 'text-success'}">${fmt.lkr(remaining)}</dd><dt>Change due</dt><dd style="font-size:18px" class="${change > 0 ? 'text-gold bold' : ''}">${fmt.lkr(change)}${change > 0 ? ` <small class="muted">(USD ${nf(fx.from(change, 'USD'))})</small>` : ''}</dd>`;
       $('#payMsg', body).innerHTML = cardOver ? '<div class="alert danger">Card payments cannot be more than the amount due. Reduce the card amount.</div>' : '';
       const btn = $('#payDone'); if (btn) btn.disabled = remaining > 0 || cardOver || !lines.length;
     }
     function render() { renderLines(); renderSum(); }
     body.addEventListener('input', e => {
       const row = e.target.closest('[data-i]'); if (!row) return; const l = lines[row.dataset.i];
-      if (e.target.dataset.k === 'amount') { l.amount = Number(e.target.value) || 0; $('[data-eq]', row).textContent = '= ' + fmt.lkr(fx.toLKR(l.amount, l.currency)); renderSum(); }
+      if (e.target.dataset.k === 'amount') { l.amount = Number(e.target.value) || 0; $('[data-eq]', row).textContent = eqText(l); renderSum(); }
     });
     body.addEventListener('change', e => {
       const row = e.target.closest('[data-i]'); if (!row) return; const l = lines[row.dataset.i];
@@ -533,10 +543,10 @@
       if (e.target.id === 'addLine') { const paid = sum(lines, l => fx.toLKR(l.amount || 0, l.currency)); lines.push({ method: 'cash', currency: 'LKR', amount: r2(Math.max(0, total - paid)) }); render(); }
     });
     const m = modal({
-      title: 'Take payment', desc: 'Cash in LKR / USD / EUR, card, or split payment (BRD G1, G2)', size: 'lg', body, focus: false,
+      title: 'Take payment', desc: 'Cash in LKR / USD / EUR, card (+' + Calc.cardPct() + '% bank fee), or split payment (BRD G1, G2)', size: 'lg', body, focus: false,
       actions: [{ label: 'Cancel', cls: 'btn-outline' }, {
         label: 'Confirm payment', cls: 'btn-success', id: 'payDone', onClick: () => {
-          const payments = lines.filter(l => l.amount > 0).map(l => ({ method: l.method, currency: l.currency, amount: r2(l.amount), rate: fx.rate(l.currency), lkr: fx.toLKR(l.amount, l.currency) }));
+          const payments = lines.filter(l => l.amount > 0).map(l => { const p = { method: l.method, currency: l.currency, amount: r2(l.amount), rate: fx.rate(l.currency), lkr: fx.toLKR(l.amount, l.currency) }; if (l.method === 'card') { p.fee = Calc.cardFee(p.lkr); p.feePct = Calc.cardPct(); p.charged = r2(p.lkr + p.fee); } return p; });
           const paid = sum(payments, p => p.lkr);
           onDone({ payments, change: r2(Math.max(0, paid - total)) });
         }
@@ -641,7 +651,7 @@
 (function () {
   const inB = (x, b) => b === 'all' || x.branch === b;
   window.Metrics = {
-    STOCK_STATUSES: ['in_stock', 'reserved', 'returned', 'on_hold', 'in_transit'],
+    STOCK_STATUSES: ['in_stock', 'reserved', 'returned', 'on_hold', 'in_transit', 'not_ready'],
     salesOn(date, b) { return S.sales.filter(s => s.status !== 'cancelled' && ymd(s.date) === date && inB(s, b)); },
     salesBetween(from, to, b) { return S.sales.filter(s => ymd(s.date) >= from && ymd(s.date) <= to && inB(s, b || 'all')); },
     stock(b) {

@@ -15,7 +15,7 @@ if (PAGE_ALLOWED) (function () {
   const code = edit ? edit.id : 'GEM-' + String((S.seq.product || 130) + 1).padStart(5, '0');
   const p = edit || { id: code, name: '', gem: '', type: '', carat: '', colour: '', shape: '', treatment: 'Heated', description: '', cert: { type: '', lab: '', no: '', date: '', scan: '' }, cost: '', price: '', min: '', branch: activeBranch(), supplierId: '', photos: 0 };
   const L = S.lists;
-  $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="products.html">C · Gem products</a> / ' + (edit ? 'Edit' : 'Add'), title: edit ? 'Edit ' + p.id : 'Add product', brd: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], sub: 'The product code is created automatically. Required fields are marked *.' }) + `
+  $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="products.html">C · Gem products</a> / ' + (edit ? 'Edit' : 'Add'), title: edit ? 'Edit ' + p.id : 'Add product', brd: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'], sub: 'The product code is created automatically. Required fields are marked *.' }) + (edit ? '' : `<div class="alert info mb">Use this page only for gems <b>not bought from a supplier</b> (for example gems the shop already had). Bought a gem? Use <a href="../b-purchasing/new-purchase.html"><b>Buy gems from a supplier</b></a> – it adds the gems to stock for you.</div>`) + `
   <form id="f" novalidate class="grid g-2-1">
     <div class="stack">
       <div class="card"><div class="card-header"><h2>Product &amp; gem details</h2><span class="badge badge-navy mono">${p.id}</span></div><div class="card-content form-grid">

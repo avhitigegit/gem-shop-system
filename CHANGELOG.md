@@ -3,6 +3,28 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v9 – 16/11/2026 – 3% card fee (client request)
+The bank takes 3% of every card payment in Sri Lanka, so the customer pays it on top.
+Cash stays at the shown price. Example: gem LKR 50,000 → cash LKR 50,000, card LKR 51,500.
+- Payment window: shows "Card: + 3% bank fee"; each card line shows the fee and the amount to
+  charge on the machine; "Customer pays in total" appears when a card is used (also for split payments).
+- New sale: under the total it shows the cash price and the card price.
+- Invoice: Gem price + Card fee (3% bank charge) = TOTAL PAID; the payment line shows the fee.
+- Quotation: "Price for cash. Card payments: + 3% bank fee (amount)".
+- Close the day: the expected card machine total includes the fee.
+- Settings → Shop details: new field "Card payment fee (%)" (default 3).
+- Not changed: sales, profit, commission and refunds use the gem price only (the fee goes to the bank).
+- Saved demo data uses a new storage key, so the sample data is rebuilt once with card fees.
+
+**New gems – simpler (also v9)**
+- Buying from a supplier already puts every gem into stock, so the "New gems coming in" step bar is now
+  just: Buy from supplier → Print the tags → Ready to sell ("Add each gem" removed).
+- "Add a gem" is renamed "Add a gem (not bought)" and says it is only for gems not from a supplier
+  purchase (e.g. gems the shop already had).
+- New: on Buy gems from a supplier, each gem has a tick "Not ready to sell yet" (e.g. needs cutting).
+  Such gems are in stock but cannot be sold. On the gem page, Owner or Shop Staff press
+  "✓ Mark ready to sell". All gems has a "Not ready to sell" filter; stock check and stock value include them.
+
 ## v8 – 15/11/2026 – no VAT anywhere (client request)
 The owner's prices already include VAT and VAT is not shown to customers.
 - Invoice ("INVOICE", not "TAX INVOICE"), quotation, reservation, credit note, payment and
