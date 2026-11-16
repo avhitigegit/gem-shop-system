@@ -25,6 +25,14 @@ Cash stays at the shown price. Example: gem LKR 50,000 → cash LKR 50,000, card
   Such gems are in stock but cannot be sold. On the gem page, Owner or Shop Staff press
   "✓ Mark ready to sell". All gems has a "Not ready to sell" filter; stock check and stock value include them.
 
+**Documents:** updated on 16/11/2026.
+- Demo guide (`doc/Ceylon_Gem_House_Demo_Guide.pdf`) → v9: 49 pages, 74 screens, all screenshots retaken.
+  Card fee on New sale, Take payment, Invoice, Quotation and Close the day; new-gem chapter says
+  buying = adding to stock; "Add a gem (not bought)"; "Not ready to sell" tick and "Mark ready to sell".
+- BRD (`doc/Gem_Shop_BRD.pdf`) → version 1.1: no VAT (A3, G3, L4/M3/N3 removed, rules, assumptions,
+  laws, glossary), card fee (new G7, rule 12, F2, H1, I3), buying adds to stock (process steps, B2, B3,
+  new B5, C1, D2, rule 13). Changed items are marked UPDATED / NEW / REMOVED. 80 features + 8 qualities.
+
 ## v8 – 15/11/2026 – no VAT anywhere (client request)
 The owner's prices already include VAT and VAT is not shown to customers.
 - Invoice ("INVOICE", not "TAX INVOICE"), quotation, reservation, credit note, payment and
