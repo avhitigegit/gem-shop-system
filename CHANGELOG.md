@@ -23,6 +23,8 @@ keeps LKR 1,500, which is a shop cost.
 
 **Documents:** Demo guide (`doc/Ceylon_Gem_House_Demo_Guide.pdf`) → v11: screens 6, 25, 27, 28, 33,
 52, 72 and the demo story changed; all screenshots retaken on 21/11/2026. 49 pages, 74 screens.
+- BRD (`doc/Gem_Shop_BRD.pdf`) → version 1.2: card fee paid by the shop (change summary, process step 5,
+  A3, E2, F2, G7, H1, I3, rule 12, assumptions, glossary, POS mock-up). 16 pages.
 
 ## v10 – 21/11/2026 – prototype and demo guide checked against each other
 Every one of the 74 screens in the demo guide was compared with the prototype (page, menu place,
