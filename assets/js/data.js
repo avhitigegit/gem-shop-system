@@ -173,6 +173,7 @@
       suppliers: raw.suppliers,
       guides: raw.guides,
       customers: [],
+      birthdayWishes: [],
       products: [],
       purchases: [],
       supplierReturns: [],
@@ -200,6 +201,8 @@
         ses: { enabled: true, domain: 'ceylongemhouse.lk', region: 'ap-south-1', spf: true, dkim: true },
         wa: { enabled: false, phone: '', accountId: '', token: '', verified: false },
         auto: { invoiceEmail: true, invoiceWhatsapp: true, thankYou: true, ownerClosing: true },
+        // v12: automatic birthday wish (J8) – consent customers only (rule 8), once a year
+        birthday: { on: true, email: true, whatsapp: true, time: '09:00', subject: 'Happy birthday from {shop}!', text: 'Happy birthday, {name}! 🎂 Warm wishes from all of us at {shop} in Sri Lanka. We hope your new year shines as bright as a Ceylon sapphire.' },
         emailOn: true
       },
       seq: {}
@@ -221,6 +224,15 @@
         consent: c[4], consentAt: c[4] ? dAgo(30 - i, 11) : null, unsubscribed: false,
         passport: (c[1].slice(0, 2).toUpperCase()) + String(4000000 + i * 7919).slice(0, 7), createdAt: dAgo(Math.max(0, 29 - i), 11), notes: ''
       });
+    });
+
+    // v12: birthdays (day & month only – no year). A few fall near today so the automatic wish can be shown.
+    const md = iso => { const d = new Date(iso); return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const near = { 'C-005': 0, 'C-003': 0, 'C-002': -3, 'C-012': -6, 'C-009': 5, 'C-016': 12, 'C-021': 20 }; // days ago (negative = coming up)
+    const fixedB = ['04-17', '', '', '11-02', '', '06-24', '', '02-09', '', '', '08-30', '', '05-05', '', '03-21', '', '', '12-11', '07-14', '01-26', '', '09-18', '10-03', '', '12-29'];
+    S.customers.forEach((c, i) => {
+      c.birthday = near[c.id] != null ? md(dAgo(near[c.id])) : fixedB[i] || '';
+      if (near[c.id] > 0 && c.consent) S.birthdayWishes.push({ id: 'BW-' + String(S.birthdayWishes.length + 1).padStart(3, '0'), customerId: c.id, at: dAgo(near[c.id], 9), email: c.email ? 'sent' : 'no email', whatsapp: 'WhatsApp off' });
     });
 
     const hist = (p, at, user, action, detail) => p.history.push({ at, user, action, detail });

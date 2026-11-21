@@ -3,6 +3,32 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v12 – 22/11/2026 – customer birthday and automatic birthday wishes (J8)
+The client wants the customer's birthday so the system can send a birthday wish by WhatsApp and email.
+- Customer birthday (day and month only – no year, PDPA) is asked on: New sale → step 2 (new
+  customer), Customers → + Add customer, and Customer page → Edit. Optional. Wrong dates (e.g. 31 April,
+  or only the day chosen) are stopped. 29 February is wished on 28 February in other years.
+- Customers list: new "Birthday" column with "🎂 Today" / "in N days", and a "Birthdays this week" box
+  (in place of "Top country").
+- Customer page: shows the birthday; "Automatic messages" lists the birthday wishes sent (email /
+  WhatsApp status) and says when the next one goes out, or why it will not.
+- Email & WhatsApp settings: new "Birthday wishes" card – on/off, send by Email and/or WhatsApp, time
+  (default 09:00 Sri Lanka time), email subject, message with {name} and {shop}, live preview, the
+  birthdays in the next 30 days with what will happen, and "Send today's wishes now".
+  Opening the page with `#birthday` puts this card first.
+- Rules: only customers who agreed to promotions and have not unsubscribed (rule 8); one wish a year;
+  WhatsApp only when WhatsApp Premium is on and verified (a Meta-approved marketing template).
+- The daily job (real build: a server task every day at the set time) is simulated: it runs when any
+  page is opened after the set time. Each wish is written to the Activity log as "System (automatic)".
+- Sample data: birthdays for most customers, two today, a few in the coming days, two wishes already sent.
+- Sitemap: J8 added (BRD count J1–J8). Sidebar shows "Prototype v12".
+- Saved demo data uses a new storage key, so the sample data is rebuilt once.
+
+**Documents:** Demo guide → v12: new screen "Birthday wishes"; New sale, Customers, One customer and
+Email & WhatsApp settings text updated; all screenshots retaken. 50 pages, 75 screens.
+- BRD → version 1.3: new J8 Birthday wishes; F5 and J1 include the birthday; rule 8 covers birthday
+  wishes; PDPA note; change summary; totals 81 features + 8 system qualities. 16 pages.
+
 ## v11 – 21/11/2026 – card bank fee is paid by the shop (client correction)
 v9 was wrong: the customer does **not** pay the 3% card fee. The customer always pays the shown or
 agreed price, by cash or by card. The bank keeps 3% of card payments and the **shop** pays it.

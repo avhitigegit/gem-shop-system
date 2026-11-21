@@ -56,7 +56,7 @@
 <script>
 if (PAGE_ALLOWED) (function () {
   const KEY = 'gemshop.pos.draft';
-  const blank = () => ({ items: [], guideId: '', custMode: 'new', customerId: '', newCust: { name: '', country: '', email: '', whatsapp: '', consent: false }, heldId: null, quoteId: null });
+  const blank = () => ({ items: [], guideId: '', custMode: 'new', customerId: '', newCust: { name: '', country: '', email: '', whatsapp: '', bday: '', bmonth: '', consent: false }, heldId: null, quoteId: null });
   let D; try { D = JSON.parse(localStorage.getItem(KEY)) || blank(); } catch (e) { D = blank(); }
   const saveDraft = () => { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) { } };
   const owner = isRole('owner');
@@ -176,6 +176,7 @@ if (PAGE_ALLOWED) (function () {
           <div class="field"><label class="req">Country</label><select data-c="country">${UI.opts(countries, c.country, 'Select country…')}</select></div>
           <div class="field"><label>Email</label><input class="input" type="email" data-c="email" value="${esc(c.email)}" placeholder="for the invoice PDF"></div>
           <div class="field"><label>WhatsApp number</label><input class="input" data-c="whatsapp" value="${esc(c.whatsapp)}" placeholder="+49 …"></div>
+          ${Birthday.fields((c.bmonth || '') + '-' + (c.bday || ''), k => 'data-c="' + k + '"')}
           <label class="check"><input type="checkbox" data-c="consent" ${c.consent ? 'checked' : ''}><span>Customer agrees to receive promotions by email / WhatsApp (J2) – PDPA. They can unsubscribe at any time.</span></label>
         </div>`;
     if (D.custMode === 'existing') {
@@ -277,8 +278,10 @@ if (PAGE_ALLOWED) (function () {
     const c = D.newCust;
     if (!c.name.trim() || !c.country) { $$('#custBox [data-c="name"], #custBox [data-c="country"]').forEach(i => !i.value && i.closest('.field').classList.add('invalid')); toast('Customer name and country are required', 'F5', 'error'); return null; }
     if (c.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) { toast('Email address looks wrong', c.email, 'error'); return null; }
-    if (!createIfNew) return { id: null, name: c.name, country: c.country, email: c.email, whatsapp: c.whatsapp, consent: c.consent };
-    const nc = { id: nextId('customer', 'C-', 3), name: c.name.trim(), country: c.country, email: c.email, whatsapp: c.whatsapp, consent: !!c.consent, consentAt: c.consent ? new Date().toISOString() : null, unsubscribed: false, passport: '', createdAt: new Date().toISOString(), notes: '' };
+    const bd = Birthday.value(c.bday || '', c.bmonth || '');
+    if (bd === null) { toast('Birthday looks wrong', 'Choose both the day and the month, or leave both empty.', 'error'); return null; }
+    if (!createIfNew) return { id: null, name: c.name, country: c.country, email: c.email, whatsapp: c.whatsapp, birthday: bd, consent: c.consent };
+    const nc = { id: nextId('customer', 'C-', 3), name: c.name.trim(), country: c.country, email: c.email, whatsapp: c.whatsapp, birthday: bd, consent: !!c.consent, consentAt: c.consent ? new Date().toISOString() : null, unsubscribed: false, passport: '', createdAt: new Date().toISOString(), notes: '' };
     S.customers.push(nc); Log.add('Customer added', nc.name + ' · ' + nc.country + (nc.consent ? ' · consent given' : ''));
     D.custMode = 'existing'; D.customerId = nc.id; saveDraft();
     return nc;

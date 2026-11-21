@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   const ROOT = (document.body && document.body.dataset.root) || '';
-  const LS_STATE = 'gemshop.state.v4'; // v11: new key (card fee paid by the shop) – old data is dropped
+  const LS_STATE = 'gemshop.state.v5'; // v12: new key (customer birthdays) – old data is dropped
   try { ['gemshop.state.v1', 'gemshop.state.v2'].forEach(k => localStorage.removeItem(k)); } catch (e) { }
   const LS_PREFS = 'gemshop.prefs.v1';
 
@@ -154,7 +154,7 @@
   const prod = id => find('products', id);
   const cust = id => find('customers', id);
   const guide = id => find('guides', id);
-  const user = id => find('users', id) || { name: '—', role: '' };
+  const user = id => find('users', id) || (id === 'system' ? { name: 'System (automatic)', role: '' } : { name: '—', role: '' });
   const sup = id => find('suppliers', id);
   const sale = id => find('sales', id);
   const branchName = id => id === 'all' ? 'All branches' : ((find('branches', id) || {}).short || (find('branches', id) || {}).name || id);
@@ -741,4 +741,76 @@
       return n;
     }
   };
+})();
+
+/* ---------------- birthday wishes (J8) – v12 ----------------
+   The customer's birthday is kept as day + month only ('MM-DD'). Every day at the set time the server
+   sends a birthday wish by email and WhatsApp to customers whose birthday is today.
+   Rule 8: only customers who agreed to promotions and have not unsubscribed. Once a year per customer.
+   Prototype: the "daily job" runs when any page is opened after the set time. */
+(function () {
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const MAXD = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const pad = n => String(n).padStart(2, '0');
+  const cfg = () => S.messaging.birthday || {};
+  const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  /* the 'MM-DD' a birthday is celebrated on in a given year (29 Feb → 28 Feb in other years) */
+  const on = (b, y) => b === '02-29' && !isLeap(y) ? '02-28' : b;
+  const fill = (t, c) => String(t || '').replace(/\{name\}/g, String(c.name).split(' ')[0]).replace(/\{shop\}/g, S.shop.name);
+  const B = window.Birthday = {
+    MONTHS,
+    fmt(b) { if (!b) return '—'; const [m, d] = b.split('-'); return Number(d) + ' ' + MONTHS[Number(m) - 1]; },
+    short(b) { if (!b) return '—'; const [m, d] = b.split('-'); return Number(d) + ' ' + MONTHS[Number(m) - 1].slice(0, 3); },
+    /* two drop-downs (day, month). attr(k) gives the name / data attribute for 'bday' and 'bmonth' */
+    fields(b, attr, cls) {
+      const [m, d] = (b || '-').split('-');
+      return `<div class="field ${cls || ''}"><label>Birthday <small class="muted">(optional)</small></label><div class="row" style="gap:6px;flex-wrap:nowrap"><select ${attr('bday')} style="width:84px">${UI.opts(Array.from({ length: 31 }, (_, i) => ({ v: pad(i + 1), l: String(i + 1) })), d || '', 'Day')}</select><select ${attr('bmonth')} style="flex:1">${UI.opts(MONTHS.map((x, i) => ({ v: pad(i + 1), l: x })), m || '', 'Month')}</select></div><span class="hint">Day and month only – for the automatic birthday wish.</span></div>`;
+    },
+    /* returns 'MM-DD', '' (not given) or null (invalid: e.g. 31 April, or only one box chosen) */
+    value(d, m) { if (!d && !m) return ''; if (!d || !m || Number(d) > MAXD[Number(m) - 1]) return null; return m + '-' + d; },
+    daysUntil(b) {
+      if (!b) return null;
+      const t = new Date(); t.setHours(0, 0, 0, 0);
+      for (let i = 0; i < 367; i++) { const d = new Date(t); d.setDate(t.getDate() + i); if (on(b, d.getFullYear()) === pad(d.getMonth() + 1) + '-' + pad(d.getDate())) return i; }
+      return null;
+    },
+    isToday(b) { return B.daysUntil(b) === 0; },
+    canSend(c) { return !!(c.consent && !c.unsubscribed); },
+    upcoming(days) { return S.customers.filter(c => c.birthday && B.daysUntil(c.birthday) <= days).sort((a, b) => B.daysUntil(a.birthday) - B.daysUntil(b.birthday)); },
+    sentThisYear(c) { const y = String(new Date().getFullYear()); return (S.birthdayWishes || []).find(w => w.customerId === c.id && String(new Date(w.at).getFullYear()) === y); },
+    /* what happens on each channel for this customer */
+    channels(c) {
+      const k = cfg(), M = S.messaging;
+      return {
+        email: !k.email || !M.emailOn ? 'email off' : !c.email ? 'no email' : 'sent',
+        whatsapp: !k.whatsapp || !(M.wa.enabled && M.wa.verified) ? 'WhatsApp off' : !c.whatsapp ? 'no number' : 'sent'
+      };
+    },
+    text(c) { return fill(cfg().text, c); },
+    subject(c) { return fill(cfg().subject, c); },
+    due() { const n = new Date(); return pad(n.getHours()) + ':' + pad(n.getMinutes()) >= (cfg().time || '09:00'); },
+    /* the daily job. force = the owner's "Send today's wishes now" button */
+    run(force) {
+      if (!S.messaging || !S.messaging.birthday || !cfg().on || !S.customers) return 0;
+      if (!force && !B.due()) return 0;
+      S.birthdayWishes = S.birthdayWishes || [];
+      let n = 0;
+      S.customers.filter(c => c.birthday && B.isToday(c.birthday) && B.canSend(c) && !B.sentThisYear(c)).forEach(c => {
+        const ch = B.channels(c);
+        S.birthdayWishes.unshift({ id: 'BW-' + Date.now() + n, customerId: c.id, at: new Date().toISOString(), email: ch.email, whatsapp: ch.whatsapp });
+        S.log.unshift({ at: new Date().toISOString(), user: 'system', action: 'Birthday wish sent', detail: c.name + ' · email: ' + ch.email + ' · WhatsApp: ' + ch.whatsapp, branch: 'all' });
+        n++;
+      });
+      if (n) Store.save();
+      return n;
+    },
+    /* list cell: "14 Mar" + Today / in N days */
+    cell(c) {
+      if (!c.birthday) return '<span class="muted">—</span>';
+      const d = B.daysUntil(c.birthday);
+      return esc(B.short(c.birthday)) + (d === 0 ? ' <span class="badge badge-gold">🎂 Today</span>' : d <= 7 ? ' <span class="badge badge-outline">in ' + d + ' day' + (d > 1 ? 's' : '') + '</span>' : '');
+    },
+    chBadge(v) { return v === 'sent' ? '<span class="badge badge-success">sent</span>' : '<span class="badge badge-default">' + esc(v) + '</span>'; }
+  };
+  try { B.run(false); } catch (e) { console.warn('Birthday job', e); }
 })();
