@@ -20,7 +20,7 @@
       ngjaRemindDays: 60,
       printLicenceOnInvoice: true,
       largeExpenseLimit: 50000, // M6
-      cardFeePct: 3,            // v9: bank fee on card payments, paid by the customer
+      cardFeePct: 3,            // v11: bank fee on card payments – paid by the shop, not the customer
       invoicePrefix: 'INV-',
       returnPolicyDays: 14
     },
@@ -334,7 +334,7 @@
       const t = Calc.saleTotals(s.items, s.guideId, S);
       Object.assign(s, { subtotal: t.subtotal, net: t.net, vat: t.vat, total: t.total, guidePct: t.guidePct, guideComm: t.guideComm, staffComm: t.staffComm });
       const mode = payMix[i % payMix.length];
-      const cardPay = amt => { const f = Calc.cardFee(amt, S); return { method: 'card', currency: 'LKR', amount: amt, rate: 1, lkr: amt, fee: f, feePct: Calc.cardPct(S), charged: amt + f }; };
+      const cardPay = amt => { const f = Calc.cardFee(amt, S); return { method: 'card', currency: 'LKR', amount: amt, rate: 1, lkr: amt, fee: f, feePct: Calc.cardPct(S), charged: amt }; };
       if (mode === 'card') s.payments.push(cardPay(t.total));
       else if (mode === 'split') {
         const usd = Math.round(t.total * 0.4 / rates.USD / 50) * 50 || 50;
@@ -372,7 +372,7 @@
       const t = Calc.saleTotals(retSale.items, retSale.guideId, S);
       Object.assign(retSale, { subtotal: t.subtotal, net: t.net, vat: t.vat, total: t.total, guideComm: t.guideComm, staffComm: t.staffComm });
       const rf = Calc.cardFee(t.total, S);
-      retSale.payments = [{ method: 'card', currency: 'LKR', amount: t.total, rate: 1, lkr: t.total, fee: rf, feePct: Calc.cardPct(S), charged: t.total + rf }];
+      retSale.payments = [{ method: 'card', currency: 'LKR', amount: t.total, rate: 1, lkr: t.total, fee: rf, feePct: Calc.cardPct(S), charged: t.total }];
       retSale.cardFee = rf;
       retSale.change = 0;
       S.commissions = S.commissions.filter(c => c.saleId !== retSale.id);

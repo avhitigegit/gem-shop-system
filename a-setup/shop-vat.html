@@ -31,7 +31,7 @@ if (PAGE_ALLOWED) (function () {
       <div class="card"><div class="card-header"><h3>Control limits</h3></div><div class="card-content form-grid">
         <div class="field"><label class="req">Expenses needing owner approval above (LKR)</label><input class="input" type="number" min="0" name="limit" required value="${sh.largeExpenseLimit}"><span class="hint">M6</span></div>
         <div class="field"><label>Return policy (days)</label><input class="input" type="number" min="0" name="ret" value="${sh.returnPolicyDays}"></div>
-        <div class="field"><label class="req">Card payment fee (%)</label><input class="input" type="number" min="0" max="10" step="0.1" name="cardFee" required value="${Calc.cardPct()}"><span class="hint">The bank's charge. The customer pays it on top when paying by card. Cash stays at the shown price.</span></div>
+        <div class="field"><label class="req">Card bank fee (%) – paid by the shop</label><input class="input" type="number" min="0" max="10" step="0.1" name="cardFee" required value="${Calc.cardPct()}"><span class="hint">The part of every card payment the bank keeps. The customer pays the normal price; this fee is a shop cost (shown in Profit &amp; Loss).</span></div>
       </div><div class="card-footer"><a class="btn btn-outline" href="../g-payments/invoice.html">Preview on invoice</a><button class="btn btn-sapphire" type="submit">Save settings</button></div></div></div></form>`;
     const F = $('#f'); UI.bindUpload($('#up'));
     F.onsubmit = e => {

@@ -3,6 +3,27 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v11 – 21/11/2026 – card bank fee is paid by the shop (client correction)
+v9 was wrong: the customer does **not** pay the 3% card fee. The customer always pays the shown or
+agreed price, by cash or by card. The bank keeps 3% of card payments and the **shop** pays it.
+Example: gem LKR 50,000 → customer pays LKR 50,000 by cash or card; on a card payment the bank
+keeps LKR 1,500, which is a shop cost.
+- Take payment: "Cash and card: the same price. The 3% bank fee on cards is paid by the shop."
+  Card lines say "Charge LKR … on the machine" (the same amount). "Customer pays in total" removed.
+- New sale: the cash price / card price line is removed.
+- Invoice: no Card fee line, no "TOTAL PAID" – the total is the agreed price; payment shows "Card".
+- Quotation: "Same price for cash or card."
+- Close the day: the expected card machine total = card sales (no fee added). New line
+  "Card bank fee (3%, shop pays)" so the owner sees the cost.
+- Profit & Loss: new cost line "Less: card bank fees (3%, paid by the shop)" and a "Card fees"
+  column; net profit now takes the fee off (also on Accountant home, Tax pack and Month closing).
+- Settings → Shop details: field renamed "Card bank fee (%) – paid by the shop".
+- Sidebar shows "Prototype v11" (it still said v9).
+- Saved demo data uses a new storage key, so the sample data is rebuilt once.
+
+**Documents:** Demo guide (`doc/Ceylon_Gem_House_Demo_Guide.pdf`) → v11: screens 6, 25, 27, 28, 33,
+52, 72 and the demo story changed; all screenshots retaken on 21/11/2026. 49 pages, 74 screens.
+
 ## v10 – 21/11/2026 – prototype and demo guide checked against each other
 Every one of the 74 screens in the demo guide was compared with the prototype (page, menu place,
 who can use it, buttons and fields). Differences found and fixed:

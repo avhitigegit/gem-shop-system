@@ -277,7 +277,7 @@
   sidebar.innerHTML = `<div class="brand"><img src="${url('assets/img/logo.svg')}" alt=""><div><b>${esc(S.shop.name)}</b><span>GEM SHOP</span></div></div>
     ${isRole(O, SP) && here !== 'f-pos/pos.html' ? `<div style="padding:14px 14px 4px"><a class="btn btn-gold btn-block btn-lg" href="${url('f-pos/pos.html')}">+ New sale</a></div>` : ''}
     <nav class="nav-simple">${navHTML}</nav>
-    <div class="side-foot">Prototype v9 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
+    <div class="side-foot">Prototype v11 · ${S.emptySystem ? 'empty system' : 'sample data only'}</div>`;
   /* ⌄ arrow: open / close a section's page list without leaving the page */
   sidebar.addEventListener('click', e => {
     const b = e.target.closest('.nav-chev'); if (!b) return;

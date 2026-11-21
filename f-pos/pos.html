@@ -237,7 +237,6 @@ if (PAGE_ALLOWED) (function () {
       <div class="sep"></div>
       <div class="row between"><b>Total to pay</b><b style="font-size:20px;color:var(--navy)">${fmt.lkr(t.total)}</b></div>
       <div class="right text-gold" style="font-size:13px">USD ${fmt.num(fx.from(t.total, 'USD'))} · EUR ${fmt.num(fx.from(t.total, 'EUR'))}</div>
-      ${t.total ? `<div class="right muted" style="font-size:12px">💵 Cash: ${fmt.lkr(t.total)} · 💳 Card (+${Calc.cardPct()}% bank fee): <b>${fmt.lkr(t.total + Calc.cardFee(t.total))}</b></div>` : ''}
       <div class="sep"></div>
       <div class="dl" style="grid-template-columns:1fr auto;font-size:12px">
         <dt>Guide commission ${g ? '(' + g.pct + '%)' : ''}</dt><dd class="right">${fmt.lkr(t.guideComm)}</dd>
@@ -313,7 +312,7 @@ if (PAGE_ALLOWED) (function () {
       D = blank(); saveDraft(); $('#guide').value = ''; renderCust(); render();
       UI.modal({
         title: 'Sale completed ✓', desc: 'Invoice ' + s.id + ' · ' + fmt.lkr(s.total),
-        body: `<div class="dl"><dt>Invoice</dt><dd class="mono">${s.id}</dd><dt>Customer</dt><dd>${esc(c.name)} (${esc(c.country)})</dd><dt>Paid</dt><dd>${s.payments.map(p => p.method === 'card' ? 'Card ' + fmt.lkr(p.charged || p.lkr) + (p.fee ? ' (incl. ' + p.feePct + '% fee ' + fmt.lkr(p.fee) + ')' : '') : 'Cash ' + fmt.money(p.amount, p.currency)).join(' + ')}</dd><dt>Change due</dt><dd class="text-gold bold">${fmt.lkr(s.change)}</dd><dt>Commissions</dt><dd>Guide ${fmt.lkr(s.guideComm)} · Staff ${fmt.lkr(s.staffComm)}</dd></div>
+        body: `<div class="dl"><dt>Invoice</dt><dd class="mono">${s.id}</dd><dt>Customer</dt><dd>${esc(c.name)} (${esc(c.country)})</dd><dt>Paid</dt><dd>${s.payments.map(p => p.method === 'card' ? 'Card ' + fmt.lkr(p.lkr) : 'Cash ' + fmt.money(p.amount, p.currency)).join(' + ')}</dd><dt>Change due</dt><dd class="text-gold bold">${fmt.lkr(s.change)}</dd><dt>Commissions</dt><dd>Guide ${fmt.lkr(s.guideComm)} · Staff ${fmt.lkr(s.staffComm)}</dd></div>
           ${autoE || autoW ? `<div class="alert success mt">Invoice PDF sent automatically by ${[autoE && 'email', autoW && 'WhatsApp'].filter(Boolean).join(' and ')} (J5). Thank-you message queued.</div>` : ''}
           <div class="alert info mt">The owner received an instant sale alert (K2).</div>`,
         actions: [{ label: 'New sale', cls: 'btn-outline', onClick: () => setTimeout(() => scan.focus(), 50) }, { label: 'Send invoice', cls: 'btn-outline', onClick: () => { UI.send('Invoice ' + s.id, c, r => { s.sentEmail = s.sentEmail || r.email; s.sentWhatsapp = s.sentWhatsapp || r.whatsapp; Store.save(); }); } }, { label: 'Print invoice', cls: 'btn-sapphire', onClick: () => { location.href = '../g-payments/invoice.html?id=' + s.id; } }]

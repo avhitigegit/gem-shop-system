@@ -25,8 +25,7 @@ if (PAGE_ALLOWED) (function () {
         <td style="font-size:12px">${p.cert.type === 'lab' ? `Lab certificate<br><b>${esc(p.cert.lab)}</b><br>No. <span class="mono">${esc(p.cert.no)}</span>` : p.cert.type === 'shop' ? `Shop certificate<br>No. <span class="mono">${esc(p.cert.no || 'CGH-SC-' + p.id.slice(-5))}</span>` : 'No certificate'}</td>
         <td class="right"><b>${fmt.lkr(t.total)}</b></td></tr>`;
     }).join('');
-    const pay = s.payments.map(p => `<tr><td>${p.method === 'card' ? 'Card' + (p.fee ? ' (' + fmt.lkr(p.lkr) + ' + ' + p.feePct + '% fee ' + fmt.lkr(p.fee) + ')' : '') : 'Cash ' + p.currency}</td><td class="right">${p.currency !== 'LKR' ? fmt.money(p.amount, p.currency) + ' @ ' + fmt.num(p.rate) + ' = ' : ''}${fmt.lkr(p.charged || p.lkr)}</td></tr>`).join('');
-    const feePct = (s.payments.find(p => p.fee) || {}).feePct;
+    const pay = s.payments.map(p => `<tr><td>${p.method === 'card' ? 'Card' : 'Cash ' + p.currency}</td><td class="right">${p.currency !== 'LKR' ? fmt.money(p.amount, p.currency) + ' @ ' + fmt.num(p.rate) + ' = ' : ''}${fmt.lkr(p.lkr)}</td></tr>`).join('');
     const cancelled = s.status === 'cancelled';
     const pendingCancel = S.approvals.find(a => a.type === 'cancel_invoice' && a.status === 'pending' && a.payload.saleId === s.id);
     $('#page').innerHTML = `
@@ -47,9 +46,8 @@ if (PAGE_ALLOWED) (function () {
         </div>
         <table><thead><tr><th>#</th><th>Photo</th><th>Gem details</th><th>Certificate</th><th style="text-align:right">Amount</th></tr></thead><tbody>${lines}</tbody></table>
         <table class="totals">
-          ${s.cardFee ? `<tr><td>Gem price</td><td class="right">${fmt.lkr(s.total)}</td></tr><tr><td>Card fee (${feePct}% bank charge)</td><td class="right">${fmt.lkr(s.cardFee)}</td></tr>` : ''}
-          <tr class="grand"><td>TOTAL${s.cardFee ? ' PAID' : ''}</td><td class="right">${fmt.lkr(s.total + (s.cardFee || 0))}</td></tr>
-          <tr><td colspan="2" class="right" style="font-size:11px;color:#555">≈ USD ${fmt.num(fx.from(s.total + (s.cardFee || 0), 'USD'))} · EUR ${fmt.num(fx.from(s.total + (s.cardFee || 0), 'EUR'))}</td></tr>
+          <tr class="grand"><td>TOTAL</td><td class="right">${fmt.lkr(s.total)}</td></tr>
+          <tr><td colspan="2" class="right" style="font-size:11px;color:#555">≈ USD ${fmt.num(fx.from(s.total, 'USD'))} · EUR ${fmt.num(fx.from(s.total, 'EUR'))}</td></tr>
         </table>
         <div class="grid g2 mt">
           <div><b style="font-size:12px">Payment received</b><table style="font-size:12px">${pay}${s.change ? `<tr><td>Change given</td><td class="right">${fmt.lkr(s.change)}</td></tr>` : ''}</table></div>

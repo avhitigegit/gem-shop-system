@@ -24,7 +24,7 @@ if (PAGE_ALLOWED) (function () {
   $('#open').onclick = () => {
     const a = Number($('#amt').value); if (!(a > 0)) { toast('Enter an amount', '', 'error'); return; }
     UI.payment(a, r => {
-      $('#res').innerHTML = UI.table([{ h: 'Method', f: p => p.method }, { h: 'Currency', f: p => p.currency }, { h: 'Amount', num: 1, f: p => fmt.money(p.amount, p.currency) }, { h: 'Rate', num: 1, f: p => fmt.num(p.rate) }, { h: 'LKR', num: 1, f: p => fmt.lkr(p.lkr) }, { h: 'Card fee', num: 1, f: p => p.fee ? fmt.lkr(p.fee) : '–' }, { h: 'Charged', num: 1, f: p => fmt.lkr(p.charged || p.lkr) }], r.payments, { foot: ['Change due', '', '', '', '', '', `<span class="text-gold">${fmt.lkr(r.change)}</span>`] });
+      $('#res').innerHTML = UI.table([{ h: 'Method', f: p => p.method }, { h: 'Currency', f: p => p.currency }, { h: 'Amount', num: 1, f: p => fmt.money(p.amount, p.currency) }, { h: 'Rate', num: 1, f: p => fmt.num(p.rate) }, { h: 'LKR', num: 1, f: p => fmt.lkr(p.lkr) }, { h: 'Bank fee (shop pays)', num: 1, f: p => p.fee ? fmt.lkr(p.fee) : '–' }], r.payments, { foot: ['Change due', '', '', '', '', `<span class="text-gold">${fmt.lkr(r.change)}</span>`] });
       toast('Payment confirmed (demo)', 'Change due ' + fmt.lkr(r.change), 'success');
     });
   };

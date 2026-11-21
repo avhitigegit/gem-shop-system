@@ -13,7 +13,7 @@
 if (PAGE_ALLOWED) (function () {
   const months = Fin.months();
   const f = { month: months[1] || months[0], branch: 'all' };
-  $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant & tax', title: 'Profit & Loss', brd: ['N4'], sub: 'Sales − cost of products sold − commissions − expenses = net profit, by month and branch.', actions: UI.exportButtons('#plT', 'Profit and Loss') }) +
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'N · Accountant & tax', title: 'Profit & Loss', brd: ['N4'], sub: 'Sales − cost of products sold − commissions − card bank fees − expenses = net profit, by month and branch.', actions: UI.exportButtons('#plT', 'Profit and Loss') }) +
     `<div class="card mb"><div class="card-content filters"><div class="field"><label>Month</label><select data-f="month">${UI.opts(months.map(m => ({ v: m, l: fmt.month(m) })), f.month)}</select></div><div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div></div></div><div id="out"></div>`;
   function render() {
     const m = Fin.month(f.month, f.branch);
@@ -24,11 +24,12 @@ if (PAGE_ALLOWED) (function () {
       ${line('Less: cost of products sold', '− ' + fmt.lkr(m.cogs))}
       ${line('<b>Gross profit</b>', '<b>' + fmt.lkr(m.gross) + '</b>')}
       ${line('Less: commissions (guides &amp; staff)', '− ' + fmt.lkr(m.comm))}
+      ${line('Less: card bank fees (' + Calc.cardPct() + '%, paid by the shop)', '− ' + fmt.lkr(m.cardFees))}
       ${line('Less: shop expenses (rent, electricity, salaries…)', '− ' + fmt.lkr(m.expenses))}
       ${Object.entries(m.byCat).map(([c, l]) => line('<span class="muted" style="padding-left:16px">' + esc(c) + '</span>', '<span class="muted">' + fmt.lkr(sum(l, e => e.amount)) + '</span>')).join('')}
       </tbody><tfoot><tr><td>Net profit for the month</td><td class="num" style="font-size:18px;color:${m.net < 0 ? 'var(--danger)' : 'var(--success)'}">${fmt.lkr(m.net)}</td></tr></tfoot></table></div></div>
       <div class="card"><div class="card-header"><h3>Month by month</h3></div>${UI.table([
-        { h: 'Month', f: x => `<b>${fmt.month(x.mk)}</b>` }, { h: 'Sales', num: 1, f: x => fmt.cur(x.salesNet) }, { h: 'Cost', num: 1, f: x => fmt.cur(x.cogs) }, { h: 'Commissions', num: 1, f: x => fmt.cur(x.comm) }, { h: 'Expenses', num: 1, f: x => fmt.cur(x.expenses) },
+        { h: 'Month', f: x => `<b>${fmt.month(x.mk)}</b>` }, { h: 'Sales', num: 1, f: x => fmt.cur(x.salesNet) }, { h: 'Cost', num: 1, f: x => fmt.cur(x.cogs) }, { h: 'Commissions', num: 1, f: x => fmt.cur(x.comm) }, { h: 'Card fees', num: 1, f: x => fmt.cur(x.cardFees) }, { h: 'Expenses', num: 1, f: x => fmt.cur(x.expenses) },
         { h: 'Net profit', num: 1, f: x => `<b class="${x.net < 0 ? 'text-danger' : 'text-success'}">${fmt.cur(x.net)}</b>` }
       ], months.map(k => Fin.month(k, f.branch)), { cls: 'stack-sm' })}
       <div class="card-content"><h3>By branch – ${fmt.month(m.mk)}</h3>${UI.table([{ h: 'Branch', f: b => esc(b.name) }, { h: 'Sales', num: 1, f: b => fmt.cur(Fin.month(m.mk, b.id).salesNet) }, { h: 'Net profit', num: 1, f: b => fmt.cur(Fin.month(m.mk, b.id).net) }], S.branches)}</div></div></div>
