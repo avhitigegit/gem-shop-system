@@ -18,7 +18,7 @@ if (PAGE_ALLOWED) (function () {
       <div class="field" style="flex:1;min-width:220px"><label>Search or scan</label><input class="input" id="q" placeholder="Code (GEM-00125), name, colour…" autofocus></div>
       <div class="field"><label>Gem type</label><select id="gem">${UI.opts(S.lists.gemTypes, '', 'All gem types')}</select></div>
       <div class="field"><label>Product type</label><select id="type">${UI.opts(S.lists.productTypes, '', 'All product types')}</select></div>
-      <div class="field"><label>Status</label><select id="st">${UI.opts([{ v: 'stock', l: 'Available stock' }, { v: '', l: 'All statuses' }, { v: 'in_stock', l: 'In stock' }, { v: 'reserved', l: 'Reserved' }, { v: 'sold', l: 'Sold' }, { v: 'returned', l: 'Returned' }, { v: 'in_transit', l: 'In transit' }, { v: 'on_hold', l: 'On hold' }, { v: 'not_ready', l: 'Not ready to sell' }], 'stock')}</select></div>
+      <div class="field"><label>Status</label><select id="st">${UI.opts([{ v: 'stock', l: 'Available stock' }, { v: '', l: 'All statuses' }, { v: 'in_stock', l: 'In stock' }, { v: 'reserved', l: 'Reserved' }, { v: 'sold', l: 'Sold' }, { v: 'returned', l: 'Returned' }, { v: 'in_transit', l: 'On the way' }, { v: 'on_hold', l: 'On hold' }, { v: 'not_ready', l: 'Not ready to sell' }], 'stock')}</select></div>
       <div class="field"><label>Certificate</label><select id="cert">${UI.opts([{ v: '', l: 'All' }, { v: 'lab', l: 'Lab certificate' }, { v: 'shop', l: 'Shop certificate' }, { v: 'none', l: 'No certificate' }])}</select></div>
       <div class="tabs" id="vt"><button data-v="grid">▦ Photos</button><button data-v="table">☰ Table</button></div>
     </div></div>

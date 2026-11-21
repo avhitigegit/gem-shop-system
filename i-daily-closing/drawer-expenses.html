@@ -17,14 +17,14 @@ if (PAGE_ALLOWED) (function () {
     const cm = S.commissions.filter(c => c.method === 'Cash (drawer)' && c.paidAt && ymd(c.paidAt) === d && (c.branch || 'ella') === br);
     $('#page').innerHTML = UI.pageHead({ crumbs: 'I · Daily cash closing', title: 'Drawer expenses – ' + fmt.date(d), brd: ['I2', 'M4'], sub: 'Small shop expenses paid in cash from the drawer. They are taken off the expected cash at day end.' }) +
       `<div class="grid g-1-2"><form class="card" id="f" novalidate><div class="card-header"><h3>Pay from drawer</h3></div><div class="card-content stack" style="gap:12px">
-        <div class="field"><label class="req">Category</label><select name="category" required>${UI.opts(S.lists.expenseCategories, '', 'Select…')}</select></div>
+        <div class="field"><label class="req">Expense type</label><select name="category" required>${UI.opts(S.lists.expenseCategories, '', 'Select…')}</select></div>
         <div class="field"><label class="req">Amount (LKR)</label><input class="input" type="number" name="amount" min="1" required></div>
         <div class="field"><label class="req">Paid to</label><input class="input" name="paidTo" required placeholder="e.g. Tea shop, post office"></div>
         <div class="field"><label class="req">Bill photo</label><div class="upload" id="up">⇪ Take / upload bill photo</div><span class="err">Every expense needs a bill photo (rule 11).</span></div>
         <button class="btn btn-sapphire" type="submit">Record drawer expense</button>
         <div class="muted" style="font-size:12px">Expenses above ${fmt.lkr(S.shop.largeExpenseLimit)} need owner approval (M6).</div>
       </div></form>
-      <div class="stack"><div class="card"><div class="card-header"><h3>Today's drawer expenses</h3><b>${fmt.lkr(sum(ex, e => e.amount))}</b></div>${UI.table([{ h: 'Time', f: e => fmt.time(e.date) }, { h: 'Category', f: e => esc(e.category) }, { h: 'Paid to', f: e => esc(e.paidTo) }, { h: 'Bill', f: e => e.billPhoto ? '📎' : '—' }, { h: 'Amount', num: 1, f: e => fmt.lkr(e.amount) }, { h: 'Status', f: e => badge(e.status) }], ex, { empty: 'No drawer expenses today.' })}</div>
+      <div class="stack"><div class="card"><div class="card-header"><h3>Today's drawer expenses</h3><b>${fmt.lkr(sum(ex, e => e.amount))}</b></div>${UI.table([{ h: 'Time', f: e => fmt.time(e.date) }, { h: 'Expense type', f: e => esc(e.category) }, { h: 'Paid to', f: e => esc(e.paidTo) }, { h: 'Bill', f: e => e.billPhoto ? '📎' : '—' }, { h: 'Amount', num: 1, f: e => fmt.lkr(e.amount) }, { h: 'Status', f: e => badge(e.status) }], ex, { empty: 'No drawer expenses today.' })}</div>
       <div class="card"><div class="card-header"><h3>Commissions paid in cash from the drawer</h3><b>${fmt.lkr(sum(cm, c => c.amount))}</b></div>${UI.table([{ h: 'Payee', f: c => esc(Commissions.payeeName(c)) }, { h: 'Invoice', f: c => c.saleId }, { h: 'Amount', num: 1, f: c => fmt.lkr(c.amount) }], cm, { empty: 'None today.' })}
         <div class="card-content muted" style="font-size:13px">To pay a guide or driver, use <a href="../h-commissions/commissions-payable.html">Pay guides &amp; drivers</a> and choose <b>Cash (drawer)</b>. It shows here and comes off the expected cash.</div></div></div></div>`;
     const F = $('#f'); UI.bindUpload($('#up'));

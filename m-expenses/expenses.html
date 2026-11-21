@@ -14,10 +14,10 @@ if (PAGE_ALLOWED) (function () {
   const f = { cat: '', method: '', month: monthKey(todayYmd()), status: '' };
   const months = [...new Set(S.expenses.map(e => monthKey(e.date)))].sort().reverse();
   $('#page').innerHTML = UI.pageHead({ crumbs: 'M · Shop expenses', title: 'Expenses', brd: ['M2', 'M3', 'M4'], sub: 'Every shop cost, so the owner and the accountant see the true profit.', actions: '<a class="btn btn-sapphire" href="add-expense.html">+ Add expense</a>' + UI.exportButtons('#exT', 'Expenses') }) +
-    `<div class="mb">${UI.ruleNote(11, 'Every expense has a category and a bill photo. Closed months cannot be changed without owner approval.')}</div>
+    `<div class="mb">${UI.ruleNote(11, 'Every expense has an expense type and a bill photo. Closed months cannot be changed without owner approval.')}</div>
     <div class="card"><div class="card-content filters">
       <div class="field"><label>Month</label><select id="mo">${UI.opts([{ v: '', l: 'All months' }].concat(months.map(m => ({ v: m, l: fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : '') }))), f.month)}</select></div>
-      <div class="field"><label>Category</label><select id="ca">${UI.opts(S.lists.expenseCategories, '', 'All categories')}</select></div>
+      <div class="field"><label>Expense type</label><select id="ca">${UI.opts(S.lists.expenseCategories, '', 'All types')}</select></div>
       <div class="field"><label>Payment method</label><select id="me">${UI.opts(['Cash (drawer)', 'Bank transfer', 'Card'], '', 'All')}</select></div>
       <div class="field"><label>Status</label><select id="st">${UI.opts([{ v: '', l: 'All' }, { v: 'approved', l: 'Approved' }, { v: 'pending', l: 'Waiting for owner' }, { v: 'rejected', l: 'Rejected' }])}</select></div>
     </div><div id="list"></div></div>`;
@@ -25,7 +25,7 @@ if (PAGE_ALLOWED) (function () {
     const rows = S.expenses.filter(inBranch).filter(e => (!f.month || monthKey(e.date) === f.month) && (!f.cat || e.category === f.cat) && (!f.method || e.method === f.method) && (!f.status || e.status === f.status)).sort((a, b) => b.date.localeCompare(a.date));
     $('#list').innerHTML = UI.table([
       { h: 'Date', f: e => fmt.date(e.date) + '<br><small class="muted mono">' + e.id + '</small>' },
-      { h: 'Category', f: e => esc(e.category) + (e.recurringId ? ' <span class="badge badge-outline" title="Repeating expense">↻</span>' : '') },
+      { h: 'Expense type', f: e => esc(e.category) + (e.recurringId ? ' <span class="badge badge-outline" title="Repeating expense">↻</span>' : '') },
       { h: 'Paid to', f: e => esc(e.paidTo) + (e.note ? '<br><small class="muted">' + esc(e.note) + '</small>' : '') },
       { h: 'Method', f: e => esc(e.method) }, { h: 'Branch', f: e => esc(branchName(e.branch)) },
       { h: 'Bill', f: e => e.billPhoto ? `<button class="btn btn-sm btn-ghost" data-bill="${e.id}">📎</button>` : '<span class="badge badge-danger">missing</span>' },

@@ -3,6 +3,32 @@
 Each version is saved in git with a tag (`git tag` lists them).
 To see an old version: `git checkout v3` (go back with `git checkout main`).
 
+## v10 – 21/11/2026 – prototype and demo guide checked against each other
+Every one of the 74 screens in the demo guide was compared with the prototype (page, menu place,
+who can use it, buttons and fields). Differences found and fixed:
+
+**Prototype changed (to match the guide)**
+- Commission per sale: new filters From / To / Guide (or Walk-in only) / Salesperson, as the guide says.
+- Expenses: the field "Category" is now called **Expense type** everywhere (Add an expense – it
+  showed "Category (M1)", Pay out cash from the drawer, Expenses list and filter, Monthly bills,
+  Expenses report), the same as Settings → Drop-down lists → Expense types.
+- Gems moving between branches now show **On the way** (was "In transit") on All gems, the status
+  filter and Send / receive between branches – the same words as Home and the guide.
+
+**Demo guide changed (to match the prototype)**
+- 13 Email & WhatsApp settings: example is "Email the invoice PDF after every purchase".
+- 23 One gem: Print tag is for owner and shop staff; the button is "Shop certificate".
+- 39 Commission per sale: press a sale in the list to see how it was worked out.
+- 48 / 50 / 51: "expense type"; Expenses list filters are month, expense type, payment method and
+  status (branch is chosen at the top).
+- 52 Close the day: count each currency and the card machine total (not "card slips").
+- 59 Return a gem to the supplier: choose the gem (its supplier is shown), reason, details and refund.
+- 60 Purchases: filter by supplier or dates. 65 Daily cash: choose the dates.
+- 66 Expenses report: choose the branch; each month has its own column.
+
+**Documents:** Demo guide (`doc/Ceylon_Gem_House_Demo_Guide.pdf`) → v10: 49 pages, 74 screens,
+all screenshots retaken on 21/11/2026.
+
 ## v9 – 16/11/2026 – 3% card fee (client request)
 The bank takes 3% of every card payment in Sri Lanka, so the customer pays it on top.
 Cash stays at the shown price. Example: gem LKR 50,000 → cash LKR 50,000, card LKR 51,500.
