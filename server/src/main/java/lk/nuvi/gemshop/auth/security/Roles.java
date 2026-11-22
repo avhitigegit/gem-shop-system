@@ -13,6 +13,7 @@ public final class Roles {
     public static final String OWNER_ACCOUNTANT = "hasAnyRole('OWNER','ACCOUNTANT')";
     public static final String OWNER_SALES_ACCOUNTANT = "hasAnyRole('OWNER','SALESPERSON','ACCOUNTANT')";
     public static final String OWNER_SALES_STAFF = "hasAnyRole('OWNER','SALESPERSON','STAFF')";
+    public static final String OWNER_SALES_STAFF_ACCOUNTANT = "hasAnyRole('OWNER','SALESPERSON','STAFF','ACCOUNTANT')";
 
     private Roles() {}
 }
