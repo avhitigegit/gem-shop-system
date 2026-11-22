@@ -2531,4 +2531,33 @@
       flex-direction: column;
     }
   }
+
+  /* P2-03 Buy gems from a supplier: one card per gem, four fields a row; the bill photo in the purchase window. */
+  .form-grid.g4-form,
+  .form-grid.buy-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .buy-line {
+    background: #fafbfd;
+  }
+  .bill-photo {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  @media (max-width: 900px) {
+    .form-grid.g4-form,
+    .form-grid.buy-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 480px) {
+    .form-grid.g4-form,
+    .form-grid.buy-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 }

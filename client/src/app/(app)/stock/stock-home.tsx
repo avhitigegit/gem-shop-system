@@ -1,7 +1,8 @@
 "use client";
 
 /* Gems & stock home – prototype hub/stock.html: gems back from customers / not ready to sell, "N in stock" on
-   All gems, and the newest gems. Transfers and stock corrections are added with Stock (P2-04). */
+   All gems, and the newest gems. Suppliers / purchases counts (P2-03).
+   Transfers and stock corrections are added with Stock (P2-04). */
 import Link from "next/link";
 import { SectionHome, type Attention } from "@/components/shell/section-home";
 import { StatusPill } from "@/components/ui/badge";
@@ -9,13 +10,15 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { GemSvg } from "@/components/ui/gem-picture";
 import { api } from "@/lib/api/client";
 import { carat, inCurrency } from "@/lib/format";
-import { ACCOUNTANT } from "@/lib/roles";
+import { ACCOUNTANT, OWNER } from "@/lib/roles";
 import { useSession } from "@/lib/session";
 import { useLoad } from "@/lib/use-load";
 
 export function StockHome() {
   const { role, branch, currency, rates } = useSession();
   const { data: s } = useLoad(() => api.GET("/api/gems/summary"), [branch]);
+  const buyer = role === OWNER || role === ACCOUNTANT;
+  const { data: p } = useLoad(async () => (buyer ? api.GET("/api/purchases/summary") : { data: null }), [buyer]);
   const attention: Attention[] = [];
   const counts: Record<string, string> = {};
   if (s) {
@@ -44,6 +47,10 @@ export function StockHome() {
         button: "See gems",
       });
     counts["/stock/gems"] = `${s.inStock} in stock`;
+  }
+  if (p) {
+    counts["/stock/suppliers"] = `${p.suppliers} suppliers`;
+    counts["/stock/purchases"] = `${p.purchasesThisMonth} this month`;
   }
   const side =
     s && role !== ACCOUNTANT && s.newest.length ? (
