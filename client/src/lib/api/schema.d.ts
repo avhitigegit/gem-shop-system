@@ -4,6 +4,94 @@
  */
 
 export interface paths {
+    "/api/settings/staff/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a login (name, email, role, branch, on / off) */
+        put: operations["editStaff"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/shop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shop and NGJA licence details */
+        get: operations["getShopSettings"];
+        /** Save shop details, licence and control limits */
+        put: operations["saveShopSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/lists/values/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Rename a value (records using it are updated too) */
+        put: operations["renameListValue"];
+        post?: never;
+        /** Remove a value nobody uses */
+        delete: operations["removeListValue"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/commission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Default guide % and the staff price levels */
+        get: operations["getCommissionRules"];
+        /** Save commission rules (applies to new sales) */
+        put: operations["saveCommissionRules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/branches/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a branch */
+        put: operations["editBranch"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/setup": {
         parameters: {
             query?: never;
@@ -15,6 +103,145 @@ export interface paths {
         put?: never;
         /** Create the owner, shop, first branch and rates; signs the owner in */
         post: operations["runSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All logins (active first) */
+        get: operations["getStaff"];
+        put?: never;
+        /** Add a login; a welcome email with a 'choose your password' link is sent */
+        post: operations["addStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/staff/{id}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unlock a login locked after too many wrong passwords */
+        post: operations["unlockStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/staff/{id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Email the person a link to choose a new password */
+        post: operations["resetStaffPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Today's USD / EUR rates and the history (one line per day) */
+        get: operations["getRates"];
+        put?: never;
+        /** Save today's rates (used for all new sales from now on) */
+        post: operations["saveRates"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/lists/{list}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a value at the end of a list */
+        post: operations["addListValue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/lists/values/{id}/up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a value one place up */
+        post: operations["moveListValueUp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All branches with their staff */
+        get: operations["getBranches"];
+        put?: never;
+        /** Add a branch (Opening until its opening date) */
+        post: operations["addBranch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/branches/{code}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a branch as open, opening or closed (inactive) */
+        post: operations["setBranchStatus"];
         delete?: never;
         options?: never;
         head?: never;
@@ -234,6 +461,57 @@ export interface paths {
         };
         /** Is the owner first-time setup still needed? */
         get: operations["getSetupStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts and 'needs attention' for the Settings home */
+        get: operations["getSettingsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every drop-down list with how many records use each value */
+        get: operations["getLists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Values of every drop-down list, in order (for forms) */
+        get: operations["getListValues"];
         put?: never;
         post?: never;
         delete?: never;
@@ -502,6 +780,152 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        StaffForm: {
+            name: string;
+            /** Format: email */
+            email: string;
+            phone?: string;
+            /** @enum {string} */
+            role: "OWNER" | "SALESPERSON" | "STAFF" | "ACCOUNTANT";
+            /** @description Branch code – needed for Salesperson and Shop Staff */
+            branch?: string;
+            active: boolean;
+        };
+        StaffView: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            email: string;
+            phone?: string;
+            /** @enum {string} */
+            role: "OWNER" | "SALESPERSON" | "STAFF" | "ACCOUNTANT";
+            /** @description Branch code; empty for Owner and Accountant (all branches) */
+            branch?: string;
+            active: boolean;
+            /** @description Locked after too many wrong passwords */
+            locked: boolean;
+            /** @description false = invited, has not chosen a password yet */
+            hasPassword: boolean;
+            /** Format: date-time */
+            lastLoginAt?: string;
+            /** @description This is the signed-in owner */
+            me: boolean;
+        };
+        ShopForm: {
+            name: string;
+            tagline?: string;
+            address: string;
+            phone: string;
+            /** Format: email */
+            email: string;
+            website?: string;
+            /**
+             * Format: uuid
+             * @description A LOGO upload (POST /api/files). Empty = keep the logo as it is.
+             */
+            logoFileId?: string;
+            /** @description true = go back to the default logo */
+            removeLogo?: boolean;
+            ngjaLicenceNo: string;
+            /** Format: date */
+            ngjaLicenceExpiry: string;
+            /** Format: int32 */
+            ngjaRemindDays: number;
+            printLicenceOnInvoice: boolean;
+            largeExpenseLimit: number;
+            cardFeePct: number;
+            /** Format: int32 */
+            returnPolicyDays: number;
+        };
+        ShopView: {
+            name: string;
+            tagline?: string;
+            address?: string;
+            phone?: string;
+            email?: string;
+            website?: string;
+            /**
+             * Format: uuid
+             * @description Uploaded logo (empty = the default logo)
+             */
+            logoFileId?: string;
+            /** @description Private link to the uploaded logo (works about an hour) */
+            logoUrl?: string;
+            ngjaLicenceNo?: string;
+            /** Format: date */
+            ngjaLicenceExpiry?: string;
+            /** Format: int32 */
+            ngjaRemindDays: number;
+            printLicenceOnInvoice: boolean;
+            /**
+             * Format: int32
+             * @description Days until the licence expires (below 0 = expired)
+             */
+            licenceDaysLeft?: number;
+            largeExpenseLimit: number;
+            cardFeePct: number;
+            /** Format: int32 */
+            returnPolicyDays: number;
+        };
+        ValueForm: {
+            value: string;
+        };
+        ListItem: {
+            /** Format: int64 */
+            id: number;
+            value: string;
+            /** Format: int64 */
+            usedBy: number;
+            unit: string;
+        };
+        ListView: {
+            /** @enum {string} */
+            name: "GEM_TYPE" | "PRODUCT_TYPE" | "COLOUR" | "SHAPE" | "LAB" | "TREATMENT" | "EXPENSE_TYPE";
+            label: string;
+            items: components["schemas"]["ListItem"][];
+        };
+        CommissionForm: {
+            defaultGuidePct: number;
+            levels: components["schemas"]["LevelDto"][];
+        };
+        LevelDto: {
+            /** @description Sale total up to (LKR); empty on the last level = "above …" */
+            upTo?: number;
+            amount: number;
+        };
+        CommissionView: {
+            defaultGuidePct: number;
+            levels: components["schemas"]["LevelDto"][];
+            /** @description The BRD example levels (button "Use BRD example levels") */
+            exampleLevels: components["schemas"]["LevelDto"][];
+        };
+        BranchForm: {
+            name: string;
+            /** @description Short name for the top bar, e.g. "Branch 2" */
+            shortName?: string;
+            address: string;
+            phone?: string;
+            /** Format: date */
+            openedOn: string;
+        };
+        BranchStaff: {
+            name: string;
+            /** @enum {string} */
+            role: "OWNER" | "SALESPERSON" | "STAFF" | "ACCOUNTANT";
+            active: boolean;
+        };
+        BranchView: {
+            code: string;
+            name: string;
+            shortName?: string;
+            address?: string;
+            phone?: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "OPENING" | "INACTIVE";
+            /** Format: date */
+            openedOn?: string;
+            staff: components["schemas"]["BranchStaff"][];
+        };
         BranchPart: {
             name: string;
         };
@@ -574,6 +998,29 @@ export interface components {
             role: "OWNER" | "SALESPERSON" | "STAFF" | "ACCOUNTANT";
             /** @description Branch code; empty for Owner and Accountant (all branches) */
             branch?: string;
+        };
+        RatesForm: {
+            usd: number;
+            eur: number;
+        };
+        RateDay: {
+            /** Format: date */
+            date: string;
+            usd?: number;
+            eur?: number;
+            by?: string;
+        };
+        RatesView: {
+            usd?: number;
+            eur?: number;
+            /** Format: date-time */
+            updatedAt?: string;
+            updatedBy?: string;
+            history: components["schemas"]["RateDay"][];
+        };
+        BranchStatusForm: {
+            /** @enum {string} */
+            status: "ACTIVE" | "OPENING" | "INACTIVE";
         };
         FileView: {
             /** Format: uuid */
@@ -670,6 +1117,34 @@ export interface components {
             needed: boolean;
             /** @description Shop name for the login page; empty before setup */
             shopName?: string;
+        };
+        SettingsSummary: {
+            /** Format: int32 */
+            staffLogins: number;
+            /** Format: int32 */
+            branches: number;
+            usd?: number;
+            eur?: number;
+            /** Format: date-time */
+            ratesUpdatedAt?: string;
+            ratesUpdatedToday: boolean;
+            /** Format: date */
+            licenceExpiry?: string;
+            /**
+             * Format: int32
+             * @description Days until the NGJA licence expires (below 0 = expired)
+             */
+            licenceDaysLeft?: number;
+            /** Format: int32 */
+            licenceRemindDays: number;
+            defaultGuidePct: number;
+            /** Format: int32 */
+            listValues: number;
+        };
+        ListValues: {
+            /** @enum {string} */
+            name: "GEM_TYPE" | "PRODUCT_TYPE" | "COLOUR" | "SHAPE" | "LAB" | "TREATMENT" | "EXPENSE_TYPE";
+            values: string[];
         };
         HealthResponse: {
             /** @enum {string} */
@@ -770,6 +1245,266 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    editStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StaffView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getShopSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ShopView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveShopSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShopForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ShopView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    renameListValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValueForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removeListValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getCommissionRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommissionView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveCommissionRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommissionForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommissionView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    editBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BranchView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     runSetup: {
         parameters: {
             query?: never;
@@ -790,6 +1525,353 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Session"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StaffView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StaffView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unlockStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StaffView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    resetStaffPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RatesView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveRates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatesForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RatesView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addListValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                list: "GEM_TYPE" | "PRODUCT_TYPE" | "COLOUR" | "SHAPE" | "LAB" | "TREATMENT" | "EXPENSE_TYPE";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValueForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    moveListValueUp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getBranches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BranchView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BranchView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setBranchStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchStatusForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BranchView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -1210,6 +2292,93 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SetupStatus"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getSettingsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SettingsSummary"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getListValues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ListValues"][];
                 };
             };
             /** @description Error (ApiError format) */
