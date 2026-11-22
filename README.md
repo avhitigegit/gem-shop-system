@@ -59,6 +59,15 @@ docker compose up -d --build
 
 Stop: `docker compose down` · Stop and delete the local database: `docker compose down -v`
 
+**Reset the local data** (empty database → tables rebuilt → fresh sample data; local Docker only):
+
+```sh
+sh infra/scripts/reset-data.sh                                   # Git Bash / Linux / macOS
+powershell -ExecutionPolicy Bypass -File infra\scriptseset-data.ps1   # Windows PowerShell
+```
+
+Add `-y` (Bash) or `-Yes` (PowerShell) to skip the question.
+
 Ports used on this computer: 8100 app, 8081 backend, 5433 database, 8025 / 1025 MailHog.
 
 ### Working on one part (faster)
@@ -71,6 +80,12 @@ cd client && npm install && npm run dev  # frontend on http://localhost:3000 (/a
 ```
 
 ### Checks
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and every merge into `dev`, `uat`, `main`:
+backend build + tests, frontend lint + type check + format check + build, Docker image builds (not pushed), Compose / Nginx config check.
+A pull request can be merged only when all checks are green.
+
+The same checks locally:
 
 ```sh
 cd server && ./mvnw verify               # backend build + tests (needs Docker for the test database)
