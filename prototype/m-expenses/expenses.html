@@ -1,0 +1,46 @@
+<!-- Screen: Expense list | BRD: M2, M3, M4, M6, N2 | Rule: 11 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expenses · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="m-expenses/expenses.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { cat: '', method: '', month: monthKey(todayYmd()), status: '' };
+  const months = [...new Set(S.expenses.map(e => monthKey(e.date)))].sort().reverse();
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'M · Shop expenses', title: 'Expenses', brd: ['M2', 'M3', 'M4'], sub: 'Every shop cost, so the owner and the accountant see the true profit.', actions: '<a class="btn btn-sapphire" href="add-expense.html">+ Add expense</a>' + UI.exportButtons('#exT', 'Expenses') }) +
+    `<div class="mb">${UI.ruleNote(11, 'Every expense has an expense type and a bill photo. Closed months cannot be changed without owner approval.')}</div>
+    <div class="card"><div class="card-content filters">
+      <div class="field"><label>Month</label><select id="mo">${UI.opts([{ v: '', l: 'All months' }].concat(months.map(m => ({ v: m, l: fmt.month(m) + (isLocked(m + '-01') ? ' 🔒' : '') }))), f.month)}</select></div>
+      <div class="field"><label>Expense type</label><select id="ca">${UI.opts(S.lists.expenseCategories, '', 'All types')}</select></div>
+      <div class="field"><label>Payment method</label><select id="me">${UI.opts(['Cash (drawer)', 'Bank transfer', 'Card'], '', 'All')}</select></div>
+      <div class="field"><label>Status</label><select id="st">${UI.opts([{ v: '', l: 'All' }, { v: 'approved', l: 'Approved' }, { v: 'pending', l: 'Waiting for owner' }, { v: 'rejected', l: 'Rejected' }])}</select></div>
+    </div><div id="list"></div></div>`;
+  function render() {
+    const rows = S.expenses.filter(inBranch).filter(e => (!f.month || monthKey(e.date) === f.month) && (!f.cat || e.category === f.cat) && (!f.method || e.method === f.method) && (!f.status || e.status === f.status)).sort((a, b) => b.date.localeCompare(a.date));
+    $('#list').innerHTML = UI.table([
+      { h: 'Date', f: e => fmt.date(e.date) + '<br><small class="muted mono">' + e.id + '</small>' },
+      { h: 'Expense type', f: e => esc(e.category) + (e.recurringId ? ' <span class="badge badge-outline" title="Repeating expense">↻</span>' : '') },
+      { h: 'Paid to', f: e => esc(e.paidTo) + (e.note ? '<br><small class="muted">' + esc(e.note) + '</small>' : '') },
+      { h: 'Method', f: e => esc(e.method) }, { h: 'Branch', f: e => esc(branchName(e.branch)) },
+      { h: 'Bill', f: e => e.billPhoto ? `<button class="btn btn-sm btn-ghost" data-bill="${e.id}">📎</button>` : '<span class="badge badge-danger">missing</span>' },
+      { h: 'Amount', num: 1, f: e => `<b>${fmt.cur(e.amount)}</b>` },
+      { h: 'Status', f: e => badge(e.status, e.status === 'pending' ? 'Waiting for owner' : null) },
+      { h: '', f: e => isLocked(e.date) ? '<span class="badge badge-navy" title="Month closed">🔒</span>' : `<a class="btn btn-sm btn-outline" href="add-expense.html?id=${e.id}">Correct</a>` }
+    ], rows, { id: 'exT', cls: 'stack-sm', empty: 'No expenses for these filters.', foot: [rows.length + ' expenses', '', '', '', '', '', fmt.cur(sum(rows.filter(e => e.status !== 'rejected'), e => e.amount)), '', ''] });
+  }
+  $('#mo').onchange = e => { f.month = e.target.value; render(); };
+  $('#ca').onchange = e => { f.cat = e.target.value; render(); };
+  $('#me').onchange = e => { f.method = e.target.value; render(); };
+  $('#st').onchange = e => { f.status = e.target.value; render(); };
+  $('#list').addEventListener('click', e => { const id = e.target.dataset.bill; if (!id) return; const x = find('expenses', id); UI.modal({ title: 'Bill photo – ' + id, body: `<div style="background:#fffdf5;border:1px solid #e5e7eb;padding:18px;font-family:'Courier New',monospace;font-size:12px;transform:rotate(-1deg)"><b>${esc(x.paidTo.toUpperCase())}</b><br>${fmt.date(x.date)}<hr>${esc(x.category)}<span style="float:right">${fmt.num(x.amount)}</span><br><hr><b>TOTAL<span style="float:right">${fmt.num(x.amount)}</span></b></div><p class="muted mt-s" style="font-size:11px">${esc(x.billPhoto)} (demo)</p>` }); });
+  render();
+})();
+</script>
+</body>
+</html>

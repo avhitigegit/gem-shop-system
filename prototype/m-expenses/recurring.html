@@ -1,0 +1,42 @@
+<!-- Screen: Repeating expenses (added automatically each month) | BRD: M5, M2 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repeating Expenses · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="m-expenses/recurring.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const nextRun = r => { const n = new Date(); let d = new Date(n.getFullYear(), n.getMonth(), r.day); if (d < new Date(todayYmd())) d = new Date(n.getFullYear(), n.getMonth() + 1, r.day); return ymd(d); };
+  const doneThisMonth = r => S.expenses.some(e => e.recurringId === r.id && monthKey(e.date) === monthKey(todayYmd()));
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'M · Shop expenses', title: 'Repeating expenses', brd: ['M5'], sub: 'Repeating expenses (e.g. monthly rent) are added automatically each month on the chosen day.', actions: '<button class="btn btn-outline" id="run">▶ Run this month now (demo)</button><button class="btn btn-sapphire" id="add">+ Add repeating expense</button>' }) +
+      `<div class="card">${UI.table([
+        { h: 'Expense type', f: r => `<b>${esc(r.category)}</b><br><small class="muted">${r.id}</small>` }, { h: 'Paid to', f: r => esc(r.paidTo) },
+        { h: 'Amount', num: 1, f: r => fmt.cur(r.amount) }, { h: 'Method', f: r => esc(r.method) },
+        { h: 'Every month on', f: r => 'day ' + r.day }, { h: 'Last added', f: r => fmt.date(r.lastRun) }, { h: 'Next', f: r => r.active ? fmt.date(nextRun(r)) : '—' },
+        { h: 'This month', f: r => doneThisMonth(r) ? '<span class="badge badge-success">✓ added</span>' : '<span class="badge badge-warning">due</span>' },
+        { h: 'Active', f: r => `<label class="switch"><input type="checkbox" data-act="${r.id}" ${r.active ? 'checked' : ''}><span></span></label>` }
+      ], S.recurring, { cls: 'stack-sm' })}</div>
+      <div class="alert info mt">In the live system a nightly job adds each active repeating expense on its day and copies the last bill photo; the accountant can attach the new bill later.</div>`;
+  }
+  $('#page').addEventListener('change', e => { const id = e.target.dataset.act; if (id) { const r = find('recurring', id); r.active = e.target.checked; Store.save(); toast(r.active ? 'Activated' : 'Paused', r.category, 'success'); render(); } });
+  $('#page').addEventListener('click', e => {
+    if (e.target.id === 'run') {
+      if (guardLocked(todayYmd())) return;
+      let n = 0;
+      S.recurring.filter(r => r.active && !doneThisMonth(r)).forEach(r => { const d = new Date(); d.setDate(Math.min(r.day, d.getDate())); S.expenses.push({ id: nextId('expense', 'EXP-'), date: ymd(d) + 'T12:00:00', branch: r.branch, category: r.category, amount: r.amount, vat: 0, paidTo: r.paidTo, method: r.method, billPhoto: 'auto-' + r.id + '.jpg', status: 'approved', by: currentUser().id, note: 'Added automatically (M5)', recurringId: r.id }); r.lastRun = new Date().toISOString(); n++; });
+      Log.add('Repeating expenses run', n + ' added'); Store.save(); toast(n ? n + ' expense(s) added' : 'Nothing due', n ? 'See the expense list.' : 'All repeating expenses are already added this month.', n ? 'success' : ''); render();
+    }
+    if (e.target.id === 'add') UI.modal({ title: 'Add repeating expense', body: `<form class="form-grid" novalidate><div class="field"><label class="req">Expense type</label><select name="category" required>${UI.opts(S.lists.expenseCategories, '', 'Select…')}</select></div><div class="field"><label class="req">Paid to</label><input class="input" name="paidTo" required></div><div class="field"><label class="req">Amount (LKR)</label><input class="input" type="number" min="1" name="amount" required></div><div class="field"><label class="req">Day of month</label><input class="input" type="number" min="1" max="28" name="day" required value="1"></div><div class="field"><label>Method</label><select name="method">${UI.opts(['Bank transfer', 'Card', 'Cash (drawer)'])}</select></div></form>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { const f = $('form', el); if (!UI.validate(f)) return false; S.recurring.push({ id: 'RC-' + String(S.recurring.length + 1).padStart(2, '0'), category: f.category.value, amount: +f.amount.value, vat: 0, paidTo: f.paidTo.value, method: f.method.value, day: +f.day.value, branch: activeBranch(), active: true, lastRun: null }); Log.add('Repeating expense added', f.category.value + ' · ' + fmt.lkr(+f.amount.value)); Store.save(); toast('Saved', '', 'success'); render(); } }] });
+  });
+  render();
+})();
+</script>
+</body>
+</html>

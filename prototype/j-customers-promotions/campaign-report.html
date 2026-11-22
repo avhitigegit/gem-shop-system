@@ -1,0 +1,35 @@
+<!-- Screen: Campaign report | BRD: J6, J2 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campaign Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="j-customers-promotions/campaign-report.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const sent = S.campaigns.filter(c => c.status === 'sent');
+  const T = k => sum(sent, c => c.stats[k]);
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+  const hl = qs('id');
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'J · Customers & promotions', title: 'Campaign report', brd: ['J6'], sub: 'How many messages were sent, delivered and opened (where available).', actions: '<a class="btn btn-sapphire" href="email-campaign.html">+ Email campaign</a><a class="btn btn-success" href="whatsapp-campaign.html">+ WhatsApp campaign</a>' + UI.exportButtons('#crT', 'Campaign report') }) +
+    `<div class="grid g4 mb">${UI.kpi('Messages sent', T('sent'), sent.length + ' campaigns')}${UI.kpi('Delivered', T('delivered'), pct(T('delivered'), T('sent')))}${UI.kpi('Opened', T('opened'), pct(T('opened'), T('delivered')) + ' of delivered')}${UI.kpi('Unsubscribed', T('unsubscribed'), 'removed from future promotions')}</div>
+    <div class="card">${UI.table([
+      { h: 'Campaign', f: c => `<b>${esc(c.name)}</b><br><small class="muted">${c.id}${c.subject ? ' · ' + esc(c.subject) : ''}</small>` },
+      { h: 'Channel', f: c => c.channel === 'email' ? '<span class="badge badge-blue">✉ Email</span>' : '<span class="badge badge-success">💬 WhatsApp</span>' },
+      { h: 'Audience', f: c => esc([c.audience.countries.join(', '), c.audience.gems.join(', ')].filter(Boolean).join(' · ') || 'All with consent') },
+      { h: 'Sent on', f: c => c.sentAt ? fmt.dt(c.sentAt) : '—' },
+      { h: 'Sent', num: 1, f: c => c.stats.sent }, { h: 'Delivered', num: 1, f: c => c.stats.delivered + ' <small class="muted">' + pct(c.stats.delivered, c.stats.sent) + '</small>' },
+      { h: 'Opened', num: 1, f: c => c.stats.opened + ' <small class="muted">' + pct(c.stats.opened, c.stats.delivered) + '</small>' },
+      { h: 'Clicked', num: 1, f: c => c.channel === 'email' ? c.stats.clicked : '<small class="muted">n/a</small>' },
+      { h: 'Unsub.', num: 1, f: c => c.stats.unsubscribed },
+      { h: 'Status', f: c => badge(c.status) + (c.status === 'draft' ? ` <a class="btn btn-sm btn-outline" href="email-campaign.html?id=${c.id}">Edit</a>` : '') }
+    ], S.campaigns, { id: 'crT', cls: 'stack-sm', rowAttr: c => c.id === hl ? 'style="background:var(--gold-soft)"' : '' })}</div>
+    <div class="card mt"><div class="card-header"><h3>Delivery funnel</h3></div><div class="card-content stack" style="gap:10px">${[['Sent', T('sent')], ['Delivered', T('delivered')], ['Opened', T('opened')], ['Clicked (email)', T('clicked')]].map(r => `<div class="row" style="flex-wrap:nowrap"><span style="width:120px">${r[0]}</span><div class="bar" style="flex:1"><i style="width:${T('sent') ? r[1] / T('sent') * 100 : 0}%"></i></div><b style="width:40px" class="right">${r[1]}</b></div>`).join('')}<p class="muted" style="font-size:12px">“Opened” for email uses a tracking pixel (SES); for WhatsApp it is the read receipt (Meta Cloud API).</p></div></div>`;
+})();
+</script>
+</body>
+</html>

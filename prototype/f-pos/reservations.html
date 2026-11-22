@@ -1,0 +1,45 @@
+<!-- Screen: Reservations & Quotations | BRD: F7 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservations &amp; Quotations · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="f-pos/reservations.html" data-roles="owner salesperson">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let tab = qs('tab') || 'reservation';
+  // auto-expire (F7: both have an expiry date)
+  let changed = false;
+  S.quotes.forEach(q => { if (q.status === 'active' && q.expires < todayYmd()) { q.status = 'expired'; changed = true; if (q.kind === 'reservation') q.items.forEach(i => { const p = prod(i.productId); if (p.status === 'reserved') p.status = 'in_stock'; }); } });
+  if (changed) Store.save();
+  function render() {
+    const rows = S.quotes.filter(q => q.kind === tab && inBranch(q)).sort((a, b) => b.created.localeCompare(a.created));
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'F · Sales screen', title: 'Reservations & quotations', brd: ['F7'], sub: 'Hold a product for a returning customer, or give a price quotation. Both have an expiry date.', actions: '<a class="btn btn-success" href="pos.html">+ Create from POS</a>' }) +
+      `<div class="row mb"><div class="tabs"><button data-t="reservation" class="${tab === 'reservation' ? 'active' : ''}">Reservations (${S.quotes.filter(q => q.kind === 'reservation' && q.status === 'active').length} active)</button><button data-t="quotation" class="${tab === 'quotation' ? 'active' : ''}">Quotations (${S.quotes.filter(q => q.kind === 'quotation' && q.status === 'active').length} active)</button></div></div>
+      <div class="card">${UI.table([
+        { h: 'No.', f: q => `<span class="mono">${q.id}</span><br><small class="muted">${fmt.date(q.created)}</small>` },
+        { h: 'Items', f: q => q.items.map(i => UI.prodCell(prod(i.productId))).join('<div style="height:6px"></div>') },
+        { h: 'Customer', f: q => { const c = cust(q.customerId) || {}; return `<a href="../j-customers-promotions/customer-profile.html?id=${c.id}">${esc(c.name)}</a><br><small class="muted">${esc(c.country)}</small>`; } },
+        { h: 'Quoted price', num: 1, f: q => `<b>${fmt.lkr(sum(q.items, i => i.price))}</b><br><small class="muted">USD ${fmt.num(fx.from(sum(q.items, i => i.price), 'USD'))}</small>` },
+        { h: tab === 'reservation' ? 'Deposit' : 'By', f: q => tab === 'reservation' ? fmt.lkr(q.deposit) : esc(user(q.by).name) },
+        { h: 'Expires', f: q => { const d = Math.round((new Date(q.expires) - new Date(todayYmd())) / 864e5); return fmt.date(q.expires) + (q.status === 'active' ? `<br><small class="${d <= 1 ? 'text-danger' : 'muted'}">${d <= 0 ? 'today' : 'in ' + d + ' day' + (d > 1 ? 's' : '')}</small>` : ''); } },
+        { h: 'Status', f: q => badge(q.status) },
+        { h: '', f: q => `<div class="row" style="gap:4px">${q.status === 'active' ? `<a class="btn btn-sm btn-success" href="pos.html?quote=${q.id}">Sell now</a><button class="btn btn-sm btn-outline" data-extend="${q.id}">Extend</button><button class="btn btn-sm btn-ghost" data-release="${q.id}">${tab === 'reservation' ? 'Release' : 'Withdraw'}</button>` : ''}${tab === 'quotation' ? `<a class="btn btn-sm btn-outline" href="quotation-print.html?id=${q.id}">Print</a>` : ''}</div>` }
+      ], rows, { cls: 'stack-sm', empty: 'No ' + tab + 's yet. Create one from the POS screen.' })}</div>
+      <div class="mt">${UI.ruleNote(3, 'Reserved products cannot be sold to another customer until the reservation is released or expires.')}</div>`;
+  }
+  $('#page').addEventListener('click', e => {
+    const t = e.target.dataset.t; if (t) { tab = t; render(); return; }
+    const ex = e.target.dataset.extend, rl = e.target.dataset.release;
+    if (ex) { const q = find('quotes', ex); UI.modal({ title: 'Extend ' + ex, body: `<div class="field"><label class="req">New expiry date</label><input class="input" type="date" id="nd" required min="${todayYmd()}" value="${q.expires}"></div>`, actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save', cls: 'btn-sapphire', onClick: ({ el }) => { if (!UI.validate(el)) return false; q.expires = $('#nd', el).value; Log.add('Expiry extended', q.id + ' → ' + fmt.date(q.expires)); Store.save(); toast('Expiry extended', q.id + ' until ' + fmt.date(q.expires), 'success'); render(); } }] }); }
+    if (rl) { const q = find('quotes', rl); UI.confirm((q.kind === 'reservation' ? 'Release ' : 'Withdraw ') + rl + '?', q.kind === 'reservation' ? 'The product goes back to “In stock” and can be sold to anyone.' : 'The quotation will be marked expired.', () => { q.status = 'expired'; if (q.kind === 'reservation') q.items.forEach(i => { const p = prod(i.productId); if (p.status === 'reserved') { p.status = 'in_stock'; Hist.add(p.id, 'Reservation released', q.id); } }); Log.add('Released', q.id); Store.save(); toast('Done', q.id + ' released', 'success'); render(); }); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!-- Screen: WhatsApp campaign builder | BRD: J4, J2, J7 | Rule: 8 | Tech stack §6.2, §6.3 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WhatsApp Campaign · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="j-customers-promotions/whatsapp-campaign.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const wa = S.messaging.wa; const on = wa.enabled && wa.verified;
+  const TPL = {
+    new_arrivals: { l: 'new_arrivals (Marketing)', t: 'Hello {name}! 💎 New arrivals at {shop}, Ella: {text} Reply to reserve. Reply STOP to unsubscribe.' },
+    festive_offer: { l: 'festive_offer (Marketing)', t: 'Season\'s greetings {name}! 🎉 {text} – {shop}, Ella. Reply STOP to unsubscribe.' },
+    thank_you: { l: 'thank_you (Utility)', t: 'Thank you for your purchase at {shop}, {name}! {text}' }
+  };
+  const RATE = { Germany: 0.13, 'United Kingdom': 0.07, France: 0.14, USA: 0.025, Australia: 0.07, Netherlands: 0.16, India: 0.011 };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'J · Customers & promotions', title: 'WhatsApp campaign', brd: ['J4', 'J2'], sub: 'Send promotion messages and new arrivals to customers\' WhatsApp, using Meta-approved templates.', actions: '<a class="btn btn-outline" href="campaign-report.html">Campaign report</a>' }) +
+    `${on ? '' : `<div class="alert warning mb"><div><b>WhatsApp Business (Premium) is ${wa.enabled ? 'on but not verified' : 'switched off'}.</b> Turn it on and verify the connection in <a href="message-settings.html">Message settings</a> to send (J7, tech stack §6.2). You can still prepare the message.</div></div>`}
+    <div class="mb">${UI.ruleNote(8, 'Promotions are sent only to customers who gave permission. Every message includes “Reply STOP to unsubscribe”.')}</div>
+    <div class="grid g2"><form class="card" id="f" novalidate><div class="card-content stack" style="gap:12px">
+      <div class="field"><label class="req">Campaign name</label><input class="input" name="name" required placeholder="e.g. Christmas gift offer"></div>
+      <div class="field"><label class="req">Template</label><select name="tpl">${UI.opts(Object.keys(TPL).map(k => ({ v: k, l: TPL[k].l })), 'new_arrivals')}</select><span class="hint">Marketing templates cost more than utility ones and depend on the customer's country (§6.3)</span></div>
+      <div class="field"><label class="req">Your text</label><textarea name="text" required rows="3">Unheated blue sapphires and rare padparadscha, with lab certificates.</textarea></div>
+      <div class="field"><label>Image</label><select name="img">${UI.opts(['Blue Sapphire', 'Padparadscha', 'Moonstone', 'Ruby', 'None'], 'Blue Sapphire')}</select></div>
+      ${Campaign.audienceUI('w')}<div id="aud"></div>
+    </div><div class="card-footer"><button type="button" class="btn btn-outline" id="test">Send test to my phone</button><button type="submit" class="btn btn-success" ${on ? '' : 'disabled'}>Send WhatsApp campaign</button></div></form>
+    <div class="card"><div class="card-header"><h3>Phone preview</h3></div><div class="card-content"><div style="max-width:320px;margin:0 auto;background:#e5ddd5;border-radius:24px;padding:14px;border:8px solid #1f2937"><div style="background:#075e54;color:#fff;margin:-14px -14px 10px;padding:10px 14px;border-radius:14px 14px 0 0" class="row"><img src="../assets/img/logo.svg" width="26"><b style="font-size:13px">${esc(S.shop.name)}</b><span style="font-size:10px;margin-left:auto">✓ Business</span></div><div id="pv"></div></div></div></div></div>`;
+  const F = $('#f');
+  function preview() {
+    const a = Campaign.audience(Campaign.readAudience(F, 'w'), 'whatsapp');
+    const isUtil = F.tpl.value === 'thank_you';
+    const cost = sum(a.ok, c => isUtil ? 0.005 : (RATE[c.country] || 0.08));
+    $('#aud').innerHTML = `<div class="alert ${a.ok.length ? 'info' : 'warning'}"><div><b>${a.ok.length} recipient(s)</b> · ${a.excluded} excluded (no consent / unsubscribed / no number)<br><small>Estimated Meta cost: <b>US$${cost.toFixed(2)}</b> (paid by the shop to Meta directly). Tip: use email for large campaigns.</small></div></div>`;
+    const first = (a.ok[0] || { name: 'Emma' }).name.split(' ')[0];
+    const msg = TPL[F.tpl.value].t.replace('{name}', first).replace('{shop}', S.shop.name).replace('{text}', F.text.value);
+    $('#pv').innerHTML = `<div style="background:#fff;border-radius:8px;padding:6px;font-size:13px;box-shadow:0 1px 1px rgba(0,0,0,.1)">${F.img.value !== 'None' ? `<div style="background:radial-gradient(circle,#fff,#e8eefa);border-radius:6px;display:grid;place-items:center;height:130px">${gemSVG(F.img.value, 'Loose gem', 100)}</div>` : ''}<p style="margin:6px 4px;white-space:pre-wrap">${esc(msg)}</p><div style="text-align:right;font-size:10px;color:#667">${fmt.time(new Date().toISOString())} ✓✓</div></div>`;
+    return a;
+  }
+  F.addEventListener('input', preview); F.addEventListener('change', preview);
+  $('#test').onclick = () => toast(on ? 'Test message sent' : 'WhatsApp is off', on ? 'Sent to ' + currentUser().phone + ' (demo)' : 'Enable WhatsApp Premium in Message settings.', on ? 'success' : 'error');
+  F.onsubmit = e => {
+    e.preventDefault(); if (!UI.validate(F)) return;
+    const a = preview(); if (!a.ok.length) { toast('No recipients', '', 'error'); return; }
+    UI.confirm('Send to ' + a.ok.length + ' customers on WhatsApp?', 'Only customers with consent are included.', () => { const c = { id: nextId('campaign', 'CP-'), channel: 'whatsapp', name: F.name.value, subject: '', body: TPL[F.tpl.value].t.replace('{text}', F.text.value), image: F.img.value, audience: Campaign.readAudience(F, 'w') }; const n = Campaign.send(c); toast('Campaign sent', n + ' WhatsApp messages (demo).', 'success'); setTimeout(() => location.href = 'campaign-report.html?id=' + c.id, 900); }, { yes: 'Send now' });
+  };
+  preview();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!-- Screen: Commission rules (guide % and staff fixed-amount price slabs) | BRD: A6, H1, H2, H3 | Rule: 5 | NFR-8 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commission Rules · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="a-setup/commission-rules.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let slabs = JSON.parse(JSON.stringify(S.commissionRules.slabs));
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Commission rules', brd: ['A6', 'H1', 'H2'], sub: 'Guide/driver percentage and staff fixed-amount levels. The owner can change them at any time; changes apply to new sales.' }) +
+      `<div class="mb">${UI.ruleNote(5, 'Commission is calculated per sale: a percentage for guides/drivers, a fixed amount by price level for staff.')}</div>
+      <div class="grid g2"><div class="stack">
+        <div class="card"><div class="card-header"><div><h3>Guides & drivers (H1)</h3><p>Percentage of the selling price. Each guide can have their own %.</p></div></div><div class="card-content">
+          <div class="field"><label class="req">Default % for new guides</label><div class="input-group"><input class="input" type="number" id="defPct" min="0" max="50" step="0.5" value="${S.commissionRules.defaultGuidePct}"><span class="addon" style="order:2;border-left:0;border-right:1px solid var(--input);border-radius:0 8px 8px 0">%</span></div></div>
+          <ul class="list mt">${S.guides.map(g => `<li><div style="flex:1">${esc(g.name)} <small class="muted">${esc(g.vehicle)}</small></div><input class="input right" type="number" style="width:80px" min="0" max="50" step="0.5" data-g="${g.id}" value="${g.pct}"><span>%</span></li>`).join('')}</ul></div></div>
+        <div class="card"><div class="card-header"><div><h3>Staff price levels (H2)</h3><p>A fixed amount that depends on the total selling price of the sale.</p></div><button class="btn btn-sm btn-outline" id="addSlab">+ Level</button></div><div class="card-content">
+          <table class="table"><thead><tr><th>Level</th><th>Sale total up to (LKR)</th><th class="num">Fixed commission (LKR)</th><th></th></tr></thead><tbody>${slabs.map((s, i) => `<tr><td>${i + 1}</td><td>${s.upTo == null ? '<b>Above ' + fmt.num(slabs[i - 1] ? slabs[i - 1].upTo : 0, 0) + '</b>' : `<input class="input" type="number" min="1" data-up="${i}" value="${s.upTo}">`}</td><td class="num"><input class="input right" type="number" min="0" data-amt="${i}" value="${s.amount}"></td><td>${s.upTo != null && slabs.length > 2 ? `<button class="btn btn-sm btn-ghost" data-rm="${i}">✕</button>` : ''}</td></tr>`).join('')}</tbody></table>
+        </div><div class="card-footer"><button class="btn btn-outline" id="resetEx">Use BRD example levels</button><button class="btn btn-sapphire" id="save">Save commission rules</button></div></div>
+      </div>
+      <div class="card" style="align-self:start"><div class="card-header"><div><h3>Calculator – worked example</h3><p>BRD page 9: a guide (10%) brings a tourist who buys a ring for LKR 300,000.</p></div></div><div class="card-content stack" style="gap:12px">
+        <div class="field"><label>Sale amount (LKR)</label><input class="input input-lg" type="number" id="cAmt" value="300000"></div>
+        <div class="field"><label>Guide</label><select id="cG">${UI.opts([{ v: '', l: 'Walk-in (no guide)' }].concat(S.guides.map(g => ({ v: g.id, l: g.name + ' · ' + g.pct + '%' }))), 'G-01')}</select></div>
+        <div id="cOut"></div>
+        <p class="muted" style="font-size:12px">Commission is calculated on the final agreed price.</p>
+      </div></div></div>`;
+    calc();
+  }
+  function calc() {
+    const a = +$('#cAmt').value || 0; const g = guide($('#cG').value);
+    const tmp = { commissionRules: { slabs } };
+    const gc = g ? a * g.pct / 100 : 0, sc = Calc.staffComm(a, tmp), lvl = Calc.slabIndex(a, tmp) + 1;
+    $('#cOut').innerHTML = `<table class="table"><tbody><tr><td>Sale amount</td><td class="num">${fmt.lkr(a)}</td></tr><tr><td>Guide commission ${g ? '(' + g.pct + '%)' : ''}</td><td class="num">${fmt.lkr(gc)}</td></tr><tr><td>Staff commission (level ${lvl})</td><td class="num">${fmt.lkr(sc)}</td></tr></tbody><tfoot><tr><td>Total commission on this sale</td><td class="num">${fmt.lkr(gc + sc)}</td></tr></tfoot></table>`;
+  }
+  $('#page').addEventListener('input', e => {
+    const d = e.target.dataset;
+    if (d.up) slabs[+d.up].upTo = +e.target.value; if (d.amt) slabs[+d.amt].amount = +e.target.value;
+    if (e.target.id === 'cAmt' || d.up || d.amt) calc();
+  });
+  $('#page').addEventListener('change', e => { if (e.target.id === 'cG') calc(); });
+  $('#page').addEventListener('click', e => {
+    if (e.target.id === 'addSlab') { const last = slabs[slabs.length - 2]; slabs.splice(slabs.length - 1, 0, { upTo: (last ? last.upTo : 0) + 100000, amount: slabs[slabs.length - 1].amount }); render(); }
+    if (e.target.dataset.rm) { slabs.splice(+e.target.dataset.rm, 1); render(); }
+    if (e.target.id === 'resetEx') { slabs = JSON.parse(JSON.stringify(SEED_RAW.commissionRules.slabs)); render(); toast('BRD example levels loaded', 'Press Save to keep them.'); }
+    if (e.target.id === 'save') {
+      for (let i = 1; i < slabs.length - 1; i++) if (!(slabs[i].upTo > slabs[i - 1].upTo)) { toast('Levels must go up', 'Each “up to” amount must be higher than the one before.', 'error'); return; }
+      S.commissionRules.slabs = slabs; S.commissionRules.defaultGuidePct = +$('#defPct').value;
+      $$('[data-g]').forEach(i => { guide(i.dataset.g).pct = +i.value; });
+      Log.add('Commission rules saved', slabs.map(s => (s.upTo == null ? 'above' : '≤' + s.upTo) + ':' + s.amount).join(' · '), 'all'); Store.save();
+      toast('Commission rules saved', 'Applies to new sales from now on.', 'success'); render();
+    }
+  });
+  render();
+})();
+</script>
+</body>
+</html>

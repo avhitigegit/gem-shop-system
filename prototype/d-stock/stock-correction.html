@@ -1,0 +1,60 @@
+<!-- Screen: Stock correction (mandatory reason + owner approval) | BRD: D7, D5, K3 | Rule: 7 | Roles: Owner, Shop Staff -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Corrections · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="d-stock/stock-correction.html" data-roles="owner staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const KINDS = { status: 'Status (lost / damaged / found)', branch: 'Branch (wrong place)', carat: 'Carat weight (data error)' };
+  function render() {
+    const pre = qs('id') || '';
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Stock corrections', brd: ['D7'], sub: 'Every correction needs a reason and the owner\'s approval, so every change can be traced.' }) +
+      `<div class="grid g-1-2"><form class="card" id="f" novalidate><div class="card-header"><h3>New correction</h3></div><div class="card-content stack" style="gap:12px">
+        <div class="field"><label class="req">Product</label><input class="input mono" name="pid" required list="codes" value="${esc(pre)}" placeholder="Scan or type GEM-…"><datalist id="codes">${S.products.filter(p => p.status !== 'sold').map(p => `<option value="${p.id}">${esc(p.name)} (${(STATUS[p.status] || [p.status])[0]})</option>`).join('')}</datalist><span class="hint" id="pinfo"></span></div>
+        <div class="field"><label class="req">What to correct</label><select name="kind" required>${UI.opts(Object.keys(KINDS).map(k => ({ v: k, l: KINDS[k] })), '', 'Select…')}</select></div>
+        <div class="field"><label class="req">New value</label><div id="toBox"><input class="input" disabled placeholder="Choose what to correct first"></div></div>
+        <div class="field"><label class="req">Reason</label><textarea name="reason" required placeholder="e.g. Found broken during stock check SCK-0002"></textarea><span class="err">A reason is required.</span></div>
+        <button class="btn btn-sapphire" type="submit">Send for owner approval</button>
+        ${UI.ruleNote(7, 'Returns, cancellations and stock corrections need owner approval.')}
+      </div></form>
+      <div class="card"><div class="card-header"><h3>Correction history</h3></div>${UI.table([
+        { h: 'No.', f: c => `<span class="mono">${c.id}</span><br><small class="muted">${fmt.dt(c.at)}</small>` },
+        { h: 'Product', f: c => UI.prodCell(prod(c.productId)) },
+        { h: 'Change', f: c => `${esc(c.field)}: <b>${esc(String(STATUS[c.from] ? STATUS[c.from][0] : branchName(c.from)))}</b> → <b>${esc(String(STATUS[c.to] ? STATUS[c.to][0] : (c.field === 'branch' ? branchName(c.to) : c.to)))}</b>` },
+        { h: 'Reason', f: c => esc(c.reason) + '<br><small class="muted">by ' + esc(user(c.by).name) + '</small>' },
+        { h: 'Status', f: c => badge(c.status) }
+      ], S.corrections.slice().sort((a, b) => b.at.localeCompare(a.at)), { cls: 'stack-sm' })}</div></div>`;
+    const F = $('#f');
+    const pinfo = () => { const p = prod(F.elements.pid.value.trim().toUpperCase()); $('#pinfo').innerHTML = p ? `${esc(p.name)} · ${fmt.ct(p.carat)} · ${esc(branchName(p.branch))} · ${badge(p.status)}` : ''; return p; };
+    F.elements.pid.oninput = () => { pinfo(); toBox(); };
+    function toBox() {
+      const k = F.elements.kind.value, p = pinfo();
+      $('#toBox').innerHTML = k === 'status' ? `<select name="to" required>${UI.opts([{ v: 'written_off', l: 'Written off (lost / damaged)' }, { v: 'in_stock', l: 'In stock (found)' }], '', 'Select…')}</select>`
+        : k === 'branch' ? `<select name="to" required>${UI.opts(S.branches.map(b => ({ v: b.id, l: b.name })), '', 'Select…')}</select>`
+        : k === 'carat' ? `<input class="input" type="number" step="0.01" min="0.01" name="to" required placeholder="${p ? 'currently ' + p.carat : ''}">` : '<input class="input" disabled placeholder="Choose what to correct first">';
+    }
+    F.elements.kind.onchange = toBox;
+    pinfo();
+    F.onsubmit = e => {
+      e.preventDefault(); if (!UI.validate(F)) return;
+      const p = pinfo(); if (!p) { toast('Unknown product code', '', 'error'); return; }
+      const k = F.elements.kind.value, to = F.elements.to.value, from = k === 'status' ? p.status : k === 'branch' ? p.branch : p.carat;
+      if (String(from) === String(to)) { toast('Nothing to change', 'The new value is the same as the current one.', 'error'); return; }
+      const c = { id: nextId('correction', 'SC-'), productId: p.id, kind: k, field: k, from, to: k === 'carat' ? Number(to) : to, reason: F.elements.reason.value.trim(), status: 'pending', at: new Date().toISOString(), by: currentUser().id };
+      const a = Approvals.request({ type: 'stock_correction', title: 'Stock correction: ' + p.id + ' ' + k + ' ' + from + ' → ' + to, detail: c.reason, amount: p.cost, payload: { correctionId: c.id } });
+      c.approvalId = a.id; S.corrections.push(c); Hist.add(p.id, 'Correction requested', k + ' → ' + to + ' (' + c.reason + ')'); Store.save();
+      toast('Sent for owner approval', c.id + ' – nothing changes until the owner approves.', 'warning'); window.renderBell && renderBell();
+      history.replaceState(null, '', 'stock-correction.html'); render();
+    };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

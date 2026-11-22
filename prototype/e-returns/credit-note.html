@@ -1,0 +1,40 @@
+<!-- Screen: Credit notes (list + print preview) | BRD: E2, E1, G6 | Rules: 4, 7 | Roles: Owner, Salesperson, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Note · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="e-returns/credit-note.html" data-roles="owner salesperson accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const id = qs('id');
+  if (!id) {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'E · Returns', title: 'Credit notes', brd: ['E2'], sub: 'Created automatically when the owner approves a return.', actions: UI.exportButtons('#cnT', 'Credit notes') }) + `<div class="card">${UI.table([
+      { h: 'Credit note', f: c => `<a class="mono" href="?id=${c.id}">${c.id}</a>` }, { h: 'Date', f: c => fmt.date(c.date) },
+      { h: 'Product', f: c => UI.prodCell(prod(c.productId)) }, { h: 'Invoice', f: c => `<a class="mono" href="../g-payments/invoice.html?id=${c.saleId}">${c.saleId}</a>` },
+      { h: 'Amount', num: 1, f: c => fmt.cur(c.amount) }, { h: 'Commission', f: c => c.commissionReversed ? '<span class="badge badge-danger">Reversed</span>' : '—' }
+    ], S.creditNotes, { id: 'cnT', cls: 'stack-sm', empty: 'No credit notes yet.' })}</div>`;
+    return;
+  }
+  const c = find('creditNotes', id); const s = sale(c.saleId); const p = prod(c.productId); const cu = cust(s.customerId) || {};
+  const r = find('returns', c.returnId) || {};
+  const t = Calc.split(c.amount);
+  const revs = S.commissions.filter(x => x.saleId === s.id && x.status === 'reversed');
+  $('#page').innerHTML = UI.docToolbar('credit-note.html', 'Credit notes', '<button class="btn btn-outline" id="sendCn">✉ Send to customer</button>') + `
+    <div class="doc">${UI.docHead('CREDIT NOTE', `<div style="font-size:12px;margin-top:6px"><b>No:</b> <span class="mono">${c.id}</span><br><b>Date:</b> ${fmt.dt(c.date)}<br><b>Against invoice:</b> <span class="mono">${s.id}</span> (${fmt.date(s.date)})</div>`)}
+      <p><b>Customer:</b> ${esc(cu.name)}, ${esc(cu.country)}</p>
+      <table><thead><tr><th>Photo</th><th>Returned product</th><th>Reason</th><th style="text-align:right">Credit</th></tr></thead><tbody>
+        <tr><td style="width:70px">${gemPic(p, 56, 60)}</td><td><b>${esc(p.name)}</b><br><span class="mono" style="font-size:11px">${p.id}</span><br><span style="font-size:12px">${fmt.ct(p.carat)} · ${esc(p.treatment)}</span></td><td style="font-size:12px">${esc(r.kind === 'exchange' ? 'Exchange' : 'Refund')}: ${esc(r.reason || '')}</td><td class="right"><b>${fmt.lkr(t.total)}</b></td></tr>
+      </tbody></table>
+      <table class="totals"><tr class="grand"><td>Total credit</td><td class="right">${fmt.lkr(c.amount)}</td></tr></table>
+      <div class="mt" style="font-size:12px"><b>Approved by:</b> ${esc(user(c.by).name)} (owner) · <b>Stock:</b> product returned to stock · <b>Commissions reversed:</b> ${revs.map(x => esc(Commissions.payeeName(x)) + ' ' + fmt.lkr(x.amount)).join(', ') || 'yes'}</div>
+      <div class="foot">This credit note is against the original invoice ${s.id}. The original invoice is kept on record (rule 4).</div></div>`;
+  $('#sendCn').onclick = () => UI.send('credit note ' + c.id, cu);
+})();
+</script>
+</body>
+</html>

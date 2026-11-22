@@ -1,0 +1,170 @@
+<!-- Screen: Customer brings a gem back – step-by-step return / exchange (find the sale → which gem & refund or exchange → reason → check & send → follow the owner's answer) | BRD: E1, E2, D2, K3 | Rules: 3, 7 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customer brings a gem back · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="e-returns/new-return.html" data-roles="owner salesperson" data-denied="Only the Owner and the Salesperson can take a return.">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const owner = isRole('owner');
+  const W = { step: 1, q: '', saleId: null, pid: null, kind: null, reason: '', returnId: qs('id') || null };
+  const STEPS = ['Find the sale', 'Which gem?', 'Why?', 'Check & send'];
+  const REASONS = ['Ring size does not fit', 'Customer changed their mind', 'Wants a different colour', 'Wants a bigger / smaller stone', 'Problem with the stone or setting', 'Bought by mistake'];
+  const daysSince = iso => Math.round((Date.now() - new Date(iso)) / 864e5);
+  const pendingFor = (sid, pid) => S.returns.some(r => r.saleId === sid && r.productId === pid && r.status === 'pending');
+  if (qs('inv')) { const s = sale(qs('inv').toUpperCase()); if (s && s.status === 'completed') { W.saleId = s.id; W.step = 2; } }
+
+  function head() {
+    return `<div class="page-head"><div><h1>Customer brings a gem back</h1><p class="muted" style="margin:4px 0 0">Four short steps. The owner approves every return; after that the gem goes back into stock and a credit note is made.</p></div></div>`;
+  }
+  function stepsBar() {
+    return `<ol class="wiz-steps">${STEPS.map((t, i) => { const n = i + 1; const cls = n === W.step ? 'on' : n < W.step ? 'ok' : ''; return `<li class="${cls}" data-go="${n < W.step ? n : ''}"><span class="fb-n">${n < W.step ? '✓' : n}</span><span class="lbl">${t}</span></li>`; }).join('')}</ol>`;
+  }
+  const foot = (backLabel, nextLabel, nextOk, nextCls) => `<div class="wiz-foot">${backLabel ? `<button class="btn btn-outline btn-lg" data-act="back">← ${backLabel}</button>` : '<a class="btn btn-ghost" href="../hub/sell.html">Cancel</a>'}${nextLabel ? `<button class="btn btn-lg ${nextCls || 'btn-sapphire'}" data-act="next" ${nextOk ? '' : 'disabled'}>${nextLabel}</button>` : ''}</div>`;
+
+  function saleCard(s, sel) {
+    const c = cust(s.customerId) || {}; const p = prod(s.items[0].productId);
+    return `<button class="pick ${sel ? 'sel' : ''}" data-sale="${s.id}">${gemSVG(p.gem, p.type, 44)}<span style="flex:1"><b>${esc(c.name || '—')}</b> <small class="muted">${esc(c.country || '')}</small><br><small class="muted"><span class="mono">${s.id}</span> · ${fmt.date(s.date)} (${daysSince(s.date)} days ago) · ${s.items.map(i => esc(prod(i.productId).name)).join(', ')}</small></span><span class="right"><b>${fmt.lkr(s.total)}</b></span></button>`;
+  }
+
+  /* ---------- step 1: find the sale ---------- */
+  function step1() {
+    const q = W.q.trim().toLowerCase();
+    const all = S.sales.filter(s => s.status === 'completed' && inBranch(s)).sort((a, b) => b.date.localeCompare(a.date));
+    const hits = (q ? all.filter(s => { const c = cust(s.customerId) || {}; return s.id.toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q) || s.items.some(i => i.productId.toLowerCase().includes(q) || prod(i.productId).name.toLowerCase().includes(q)); }) : all).slice(0, 8);
+    return `<div class="card"><div class="card-header"><h2><span class="step-n">1</span>Find the sale</h2></div><div class="card-content">
+      <div class="field"><label>Scan the gem tag, or type the invoice number or customer name</label><input class="input input-lg" id="q" autocomplete="off" value="${esc(W.q)}" placeholder="e.g. GEM-00121, INV-000…, Müller"></div>
+      <div class="label mt">${q ? hits.length + ' sale(s) found' : 'Latest sales'}</div>
+      <div class="pick-list mt-s" id="hits">${hits.map(s => saleCard(s, s.id === W.saleId)).join('') || '<div class="empty">No sale found. Check the invoice number on the customer’s receipt.</div>'}</div>
+    </div></div>${foot(null, 'Next: which gem →', !!W.saleId)}`;
+  }
+
+  /* ---------- step 2: which gem, refund or exchange ---------- */
+  function step2() {
+    const s = sale(W.saleId); const c = cust(s.customerId) || {}; const d = daysSince(s.date); const late = d > S.shop.returnPolicyDays;
+    return `<div class="card"><div class="card-header"><h2><span class="step-n">2</span>Which gem is coming back?</h2></div><div class="card-content">
+      <div class="alert ${late ? 'warning' : 'info'} mb">${late ? '⚠️' : 'ℹ️'} <div><b>${esc(c.name || '')}</b> · invoice <span class="mono">${s.id}</span> · bought ${fmt.date(s.date)} (${d} days ago).${late ? ` <b>This is after the ${S.shop.returnPolicyDays}-day return time.</b> You can still ask – the owner decides.` : ` Inside the ${S.shop.returnPolicyDays}-day return time.`}</div></div>
+      <div class="pick-list">${s.items.map(i => { const p = prod(i.productId); const off = i.returned || pendingFor(s.id, p.id); return `<button class="pick ${W.pid === p.id ? 'sel' : ''}" data-pid="${p.id}" ${off ? 'disabled' : ''}>${gemPic(p, 52, 52)}<span style="flex:1"><b>${esc(p.name)}</b> <span class="mono muted" style="font-size:11px">${p.id}</span><br><small class="muted">${fmt.ct(p.carat)} · ${esc(p.colour)}</small>${off ? `<br><span class="badge badge-default">${i.returned ? 'Already returned' : 'Return already waiting'}</span>` : ''}</span><span class="right">Paid<br><b>${fmt.lkr(i.agreed)}</b></span></button>`; }).join('')}</div>
+      <div class="label mt">What does the customer want?</div>
+      <div class="choice-2 mt-s">
+        <button class="choice ${W.kind === 'refund' ? 'sel' : ''}" data-kind="refund"><span class="ci">💵</span><b>Money back (refund)</b><small>The customer gets the money back with a credit note.</small></button>
+        <button class="choice ${W.kind === 'exchange' ? 'sel' : ''}" data-kind="exchange"><span class="ci">🔄</span><b>Swap for another gem (exchange)</b><small>The credit note is used to pay for the new gem.</small></button>
+      </div>
+    </div></div>${foot('Back', 'Next: why? →', W.pid && W.kind)}`;
+  }
+
+  /* ---------- step 3: reason ---------- */
+  function step3() {
+    return `<div class="card"><div class="card-header"><h2><span class="step-n">3</span>Why is the customer bringing it back?</h2></div><div class="card-content">
+      <div class="label">Tap one, or write your own</div>
+      <div class="chips mt-s">${REASONS.map(r => `<button class="chip" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+      <div class="field mt"><label class="req">Reason (the owner will read this)</label><textarea id="rr" rows="3" placeholder="Write a few words…">${esc(W.reason)}</textarea></div>
+    </div></div>${foot('Back', 'Next: check →', W.reason.trim().length >= 4)}`;
+  }
+
+  /* ---------- step 4: check & send ---------- */
+  function step4() {
+    const s = sale(W.saleId), p = prod(W.pid), line = s.items.find(i => i.productId === W.pid), c = cust(s.customerId) || {};
+    return `<div class="card"><div class="card-header"><h2><span class="step-n">4</span>Check and send to the owner</h2></div><div class="card-content">
+      <div class="grid g2">
+        <div class="row" style="gap:14px;align-items:flex-start">${gemPic(p, 80, 80)}<div class="dl" style="grid-template-columns:auto 1fr">
+          <dt>Gem</dt><dd><b>${esc(p.name)}</b> <span class="mono muted">${p.id}</span></dd>
+          <dt>Customer</dt><dd>${esc(c.name || '')} (${esc(c.country || '')})</dd>
+          <dt>Invoice</dt><dd class="mono">${s.id} · ${fmt.date(s.date)}</dd>
+          <dt>Wants</dt><dd><b>${W.kind === 'exchange' ? '🔄 Exchange' : '💵 Refund'}</b></dd>
+          <dt>Amount</dt><dd><b>${fmt.lkr(line.agreed)}</b></dd>
+          <dt>Reason</dt><dd>${esc(W.reason)}</dd></div></div>
+        <div><div class="label">What happens next</div>${nextSteps(null)}</div>
+      </div>
+    </div></div>${foot('Back', '✓ Send to the owner for approval', true, 'btn-success')}`;
+  }
+
+  function nextSteps(r) {
+    const st = r ? r.status : null;
+    const items = [
+      ['Request sent to the owner', r ? 'done' : '', r ? fmt.dt(r.at) : 'When you press Send'],
+      [st === 'rejected' ? 'Owner said no' : 'Owner approves', st === 'approved' ? 'done' : st === 'pending' ? 'now' : st === 'rejected' ? 'done' : '', st === 'pending' ? 'Waiting… this page updates by itself' : st === 'rejected' ? 'The gem stays sold' : st === 'approved' ? 'Approved' : 'On the phone or in Approvals'],
+      ['Gem goes back into stock', st === 'approved' ? 'done' : '', 'It can be sold again'],
+      ['Credit note is made', st === 'approved' ? 'done' : '', r && r.creditNoteId ? r.creditNoteId : 'Commission for this gem is taken back'],
+      [W.kind === 'exchange' || (r && r.kind === 'exchange') ? 'Sell the new gem' : 'Give the money back', '', W.kind === 'exchange' || (r && r.kind === 'exchange') ? 'Start a new sale for the swap' : 'Hand over the refund with the credit note']
+    ];
+    if (st === 'rejected') items.splice(2);
+    return `<ol class="next-steps">${items.map((x, i) => `<li class="${x[1]}"><span class="fb-n">${x[1] === 'done' ? (st === 'rejected' && i === 1 ? '✖' : '✓') : i + 1}</span><span><b>${x[0]}</b><br><small class="muted">${esc(x[2])}</small></span></li>`).join('')}</ol>`;
+  }
+
+  /* ---------- after sending: follow the answer ---------- */
+  function done() {
+    const r = find('returns', W.returnId); if (!r) { W.returnId = null; return render(); }
+    const p = prod(r.productId), a = find('approvals', r.approvalId);
+    W.kind = r.kind;
+    const hdr = r.status === 'pending' ? ['warning', '⏳', 'Sent – waiting for the owner', 'You can leave this page; the answer also shows in Sell and in the bell.']
+      : r.status === 'approved' ? ['success', '✅', 'Approved – ' + (r.kind === 'exchange' ? 'now sell the new gem' : 'give the refund'), 'Credit note ' + r.creditNoteId + ' is ready to print.']
+      : ['danger', '✖', 'The owner did not approve this return', a && a.note ? '“' + a.note + '”' : 'The gem stays sold to the customer.'];
+    return `<div class="card"><div class="card-content">
+      <div class="alert ${hdr[0]} ${r.status === 'pending' ? 'pending-pulse' : ''}"><div style="font-size:24px">${hdr[1]}</div><div><b style="font-size:16px">${hdr[2]}</b><br>${esc(hdr[3])}</div></div>
+      <div class="grid g2 mt"><div class="row" style="gap:14px;align-items:flex-start">${gemPic(p, 70, 70)}<div><b>${esc(p.name)}</b> <span class="mono muted">${p.id}</span><br><small class="muted">${r.id} · ${r.kind === 'exchange' ? 'Exchange' : 'Refund'} · ${fmt.lkr(r.amount)}</small><br><small>${esc(r.reason)}</small></div></div>
+      <div>${nextSteps(r)}</div></div>
+    </div><div class="card-footer" style="flex-wrap:wrap">
+      ${r.status === 'pending' && owner ? `<button class="btn btn-success" data-act="approve">✓ Approve now (I am the owner)</button><button class="btn btn-outline" data-act="reject">Reject</button>` : ''}
+      ${r.status === 'pending' && !owner ? `<span class="muted" style="font-size:12px">Demo: switch the role to <b>Owner</b> and approve in Approvals, then come back.</span>` : ''}
+      ${r.status === 'approved' ? `<a class="btn btn-sapphire" href="credit-note.html?id=${r.creditNoteId}">🖨 Print credit note</a>${r.kind === 'exchange' ? '<a class="btn btn-success" href="../f-pos/pos.html">💎 Start the new sale</a>' : ''}` : ''}
+      <div style="flex:1"></div><a class="btn btn-outline" href="new-return.html">Another return</a><a class="btn btn-ghost" href="../hub/sell.html">Back to Sell</a>
+    </div></div>`;
+  }
+
+  function render() {
+    const body = W.returnId ? done() : [null, step1, step2, step3, step4][W.step]();
+    $('#page').innerHTML = `<div class="wiz">${head()}${W.returnId ? '' : stepsBar()}${body}</div>`;
+    const q = $('#q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  }
+
+  /* ---------- events ---------- */
+  const P_ = $('#page');
+  P_.addEventListener('input', e => {
+    if (e.target.id === 'q') { W.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.setSelectionRange(pos, pos); }
+    if (e.target.id === 'rr') { W.reason = e.target.value; $('[data-act=next]').disabled = W.reason.trim().length < 4; }
+  });
+  P_.addEventListener('keydown', e => {
+    if (e.target.id === 'q' && e.key === 'Enter') { const first = $('#hits [data-sale]'); if (first) first.click(); }
+  });
+  P_.addEventListener('click', e => {
+    const t = e.target.closest('button, li[data-go]'); if (!t) return;
+    if (t.dataset.go) { W.step = Number(t.dataset.go); return render(); }
+    if (t.dataset.sale) { if (W.saleId !== t.dataset.sale) { W.pid = null; } W.saleId = t.dataset.sale; W.step = 2; return render(); }
+    if (t.dataset.pid) { W.pid = t.dataset.pid; return render(); }
+    if (t.dataset.kind) { W.kind = t.dataset.kind; return render(); }
+    if (t.dataset.reason) { W.reason = t.dataset.reason; return render(); }
+    const act = t.dataset.act;
+    if (act === 'back') { W.step = Math.max(1, W.step - 1); return render(); }
+    if (act === 'next' && W.step < 4) { W.step++; return render(); }
+    if (act === 'next' && W.step === 4) return send();
+    if (act === 'approve' || act === 'reject') {
+      const r = find('returns', W.returnId);
+      if (act === 'approve') { Approvals.decide(r.approvalId, true, ''); toast('Return approved', 'Gem back in stock · credit note ' + find('returns', W.returnId).creditNoteId, 'success'); render(); }
+      else UI.reason('Reject this return?', 'Tell the salesperson why.', note => { Approvals.decide(r.approvalId, false, note); render(); }, { yes: 'Reject' });
+      window.renderBell && renderBell();
+    }
+  });
+
+  function send() {
+    const s = sale(W.saleId), p = prod(W.pid), line = s.items.find(i => i.productId === W.pid);
+    const r = { id: nextId('ret', 'RT-'), saleId: s.id, productId: p.id, kind: W.kind, reason: W.reason.trim(), status: 'pending', at: new Date().toISOString(), by: currentUser().id, amount: line.agreed };
+    const a = Approvals.request({ type: 'return', title: (W.kind === 'exchange' ? 'Exchange' : 'Return') + ': ' + p.name + ' (' + p.id + ')', detail: 'Invoice ' + s.id + ' · ' + r.reason, amount: line.agreed, payload: { returnId: r.id } });
+    r.approvalId = a.id; S.returns.push(r); Store.save();
+    W.returnId = r.id; history.replaceState(null, '', 'new-return.html?id=' + r.id);
+    toast('Sent to the owner', r.id, 'warning'); window.renderBell && renderBell(); render();
+  }
+
+  /* follow the owner's answer while this page is open */
+  let last = (find('returns', W.returnId) || {}).status;
+  poll(() => { const r = find('returns', W.returnId); if (r && r.status !== last) { last = r.status; render(); toast(r.status === 'approved' ? 'Owner approved the return ✓' : 'Owner rejected the return', '', r.status === 'approved' ? 'success' : 'error'); } }, 3000);
+  render();
+})();
+</script>
+</body>
+</html>

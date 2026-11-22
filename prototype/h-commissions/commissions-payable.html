@@ -1,0 +1,61 @@
+<!-- Screen: Commissions payable & payment recording | BRD: H4, H5, I2 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commissions Payable · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="h-commissions/commissions-payable.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let st = 'unpaid', payee = qs('payee') || '';
+  const pkey = c => c.payee + ':' + c.payeeId;
+  function render() {
+    const all = S.commissions.filter(c => inBranch(sale(c.saleId) || {}));
+    const list = all.filter(c => (st === 'all' || c.status === st) && (!payee || c.payeeId === payee)).sort((a, b) => b.date.localeCompare(a.date));
+    const unpaid = all.filter(c => c.status === 'unpaid');
+    const byPayee = Object.entries(groupBy(unpaid, pkey)).map(([k, cs]) => ({ k, c: cs[0], n: cs.length, amt: sum(cs, x => x.amount) })).sort((a, b) => b.amt - a.amt);
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'H · Commissions', title: 'Commissions payable', brd: ['H4', 'H5'], sub: 'Record commission payments (paid / not yet paid) and print a commission slip.', actions: UI.exportButtons('#cpT', 'Commissions payable') }) +
+      `<div class="grid g3 mb">${UI.kpi('Not yet paid', fmt.cur(sum(unpaid, c => c.amount)), unpaid.length + ' commission lines', 'accent')}${UI.kpi('Guides & drivers owed', fmt.cur(sum(unpaid.filter(c => c.payee === 'guide'), c => c.amount)), new Set(unpaid.filter(c => c.payee === 'guide').map(c => c.payeeId)).size + ' people')}${UI.kpi('Staff owed', fmt.cur(sum(unpaid.filter(c => c.payee === 'staff'), c => c.amount)), 'usually paid with salary')}</div>
+      <div class="grid g-1-2"><div class="card"><div class="card-header"><h3>Owed by person</h3></div><div class="card-content"><ul class="list">${byPayee.map(r => `<li><div class="avatar ${r.c.payee === 'guide' ? 'gold' : ''}">${initials(Commissions.payeeName(r.c))}</div><div style="flex:1"><b>${esc(Commissions.payeeName(r.c))}</b><br><small class="muted">${r.c.payee === 'guide' ? 'Guide/driver' : 'Staff'} · ${r.n} sale(s)</small></div><div class="right"><b>${fmt.cur(r.amt)}</b><br><button class="btn btn-sm btn-success mt-s" data-payall="${r.k}">Pay all</button></div></li>`).join('') || '<li class="muted">Everything is paid ✓</li>'}</ul></div></div>
+      <div class="card"><div class="card-content filters"><div class="tabs">${['unpaid', 'paid', 'reversed', 'all'].map(x => `<button data-st="${x}" class="${st === x ? 'active' : ''}">${{ unpaid: 'Not yet paid', paid: 'Paid', reversed: 'Reversed', all: 'All' }[x]}</button>`).join('')}</div>
+        <div class="field"><label>Person</label><select id="pp">${UI.opts(S.guides.map(g => ({ v: g.id, l: g.name + ' (guide)' })).concat(S.users.filter(u => ['salesperson', 'owner'].includes(u.role)).map(u => ({ v: u.id, l: u.name + ' (staff)' }))), payee, 'Everyone')}</select></div></div>
+      ${UI.table([
+        { h: '', f: c => c.status === 'unpaid' ? `<input type="checkbox" data-sel="${c.id}">` : '' },
+        { h: 'Date', f: c => fmt.date(c.date) }, { h: 'Invoice', f: c => `<a class="mono" href="commission-breakdown.html?id=${c.saleId}">${c.saleId}</a>` },
+        { h: 'Payee', f: c => esc(Commissions.payeeName(c)) + '<br><small class="muted">' + (c.payee === 'guide' ? 'Guide ' + (c.pct || '') + '%' : 'Staff slab') + '</small>' },
+        { h: 'Amount', num: 1, f: c => `<b class="${c.amount < 0 ? 'text-danger' : ''}">${fmt.cur(c.amount)}</b>` },
+        { h: 'Status', f: c => badge(c.status) + (c.paidAt && c.status === 'paid' ? '<br><small class="muted">' + fmt.date(c.paidAt) + ' · ' + esc(c.method || '') + '</small>' : '') + (c.note ? '<br><small class="muted">' + esc(c.note) + '</small>' : '') }
+      ], list, { id: 'cpT', cls: 'stack-sm', empty: 'Nothing here.' })}
+      <div class="card-footer"><button class="btn btn-success" id="paySel">Record payment for selected</button></div></div></div>`;
+  }
+  function pay(ids) {
+    const cs = ids.map(id => find('commissions', id)).filter(c => c && c.status === 'unpaid');
+    if (!cs.length) { toast('Select unpaid commissions first', '', 'error'); return; }
+    const total = sum(cs, c => c.amount); const names = [...new Set(cs.map(Commissions.payeeName))].join(', ');
+    UI.modal({ title: 'Record commission payment', desc: esc(names) + ' · ' + cs.length + ' line(s)', body: `<div class="kpi card"><div class="k-label">Amount</div><div class="k-value">${fmt.lkr(total)}</div></div>
+      <div class="form-grid mt"><div class="field"><label class="req">Paid on</label><input type="date" class="input" id="pd" required value="${todayYmd()}"></div><div class="field"><label class="req">Method</label><select id="pm">${UI.opts(['Cash (drawer)', 'Cash (owner)', 'Bank transfer', 'With salary'])}</select><span class="hint">“Cash (drawer)” is included in today’s cash closing (I2)</span></div></div>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Save payment', cls: 'btn-success', onClick: ({ el }) => {
+        const d = $('#pd', el).value; if (guardLocked(d)) return false;
+        const m = $('#pm', el).value; const at = d === todayYmd() ? new Date().toISOString() : d + 'T12:00:00';
+        cs.forEach(c => { c.status = 'paid'; c.paidAt = at; c.method = m; c.branch = c.branch || (sale(c.saleId) || {}).branch; });
+        const pid = nextId('payment', 'CP-'); S.commissionPayments.unshift({ id: pid, ids: cs.map(c => c.id), amount: total, at, method: m, by: currentUser().id, payee: names });
+        Log.add('Commission paid', pid + ' · ' + names + ' · ' + fmt.lkr(total) + ' · ' + m); Store.save();
+        toast('Payment recorded', pid + ' · ' + fmt.lkr(total), 'success'); render();
+        UI.confirm('Print commission slip?', 'Print a slip for ' + esc(names) + ' to sign.', () => { location.href = 'commission-slip.html?pay=' + pid; }, { yes: 'Print slip' });
+      } }] });
+  }
+  $('#page').addEventListener('click', e => {
+    if (e.target.dataset.st) { st = e.target.dataset.st; render(); }
+    if (e.target.dataset.payall) { const k = e.target.dataset.payall; pay(S.commissions.filter(c => c.status === 'unpaid' && pkey(c) === k).map(c => c.id)); }
+    if (e.target.id === 'paySel') pay($$('[data-sel]:checked').map(i => i.dataset.sel));
+  });
+  $('#page').addEventListener('change', e => { if (e.target.id === 'pp') { payee = e.target.value; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

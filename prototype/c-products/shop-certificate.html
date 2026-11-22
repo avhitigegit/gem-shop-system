@@ -1,0 +1,39 @@
+<!-- Screen: Shop certificate print preview | BRD: C10, C7, C9, §08 NGJA | Rule: 6 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop Certificate · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="c-products/shop-certificate.html" data-roles="owner salesperson">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const shopItems = S.products.filter(p => p.cert.type === 'shop' && inBranch(p));
+  let p = prod(qs('id')) || shopItems.find(x => x.status !== 'sold') || shopItems[0];
+  if (!p) return UI.empty('No gem for a shop certificate', 'Add a gem with “Shop certificate” chosen, then print it here.', 'c-products/products.html', 'Go to All gems');
+  function render() {
+    $('#page').innerHTML = UI.docToolbar('products.html', 'Products', `<select id="pp" style="width:auto">${UI.opts(shopItems.map(x => ({ v: x.id, l: x.id + ' · ' + x.name })), p.id)}</select>`) +
+      `${p.cert.type !== 'shop' ? `<div class="doc-toolbar"><div class="alert warning" style="width:100%">${p.id} has a ${p.cert.type === 'lab' ? 'lab certificate' : 'no certificate'} setting. Shop certificates are normally for non-sapphire gems (rule 6).</div></div>` : ''}
+      <div class="doc" style="border:6px double var(--gold);max-width:760px">
+        <div class="center"><img src="../assets/img/logo.svg" width="60" alt=""><h1 style="color:var(--navy);margin-top:6px;letter-spacing:.06em">${esc(S.shop.name.toUpperCase())}</h1><div style="font-size:12px;color:#555">${esc(S.shop.address)} · ${esc(S.shop.phone)}</div>
+        <h2 style="color:var(--gold);margin:16px 0 4px;letter-spacing:.2em;font-size:18px">GEMSTONE CERTIFICATE</h2><div class="mono" style="font-size:12px">No. ${esc(p.cert.no || 'CGH-SC-' + p.id.slice(-5))} · Product ${p.id}</div></div>
+        <div class="row mt" style="flex-wrap:nowrap;gap:24px;align-items:center">
+          <div class="gem-pic" style="width:200px;height:200px;flex-shrink:0;border:1px solid #e5e7eb">${gemSVG(p.gem, p.type, 170)}</div>
+          <table style="font-size:13px"><tbody>
+            ${[['Gem type', p.gem], ['Product', p.type + ' – ' + p.name], ['Weight', fmt.ct(p.carat) + ' (' + fmt.num(p.carat * 0.2, 3) + ' g)'], ['Colour', p.colour], ['Shape / cut', p.shape], ['Treatment', p.treatment], ['Origin', 'Sri Lanka'], ['Description', p.description]].map(r => `<tr><td style="color:#555;width:130px">${r[0]}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}
+          </tbody></table>
+        </div>
+        <p class="mt" style="font-size:12px">We certify that the gemstone described above is a genuine natural ${esc(p.gem.toLowerCase())}, examined by our gemmologist. Treatment status is disclosed as above.</p>
+        <div class="row between mt" style="align-items:flex-end"><div style="font-size:11px;color:#555">Issued ${fmt.date(new Date().toISOString())}<br>NGJA dealer licence ${esc(S.shop.ngjaNo)}<br>Valid until ${fmt.date(S.shop.ngjaExpiry)}</div>${qrSVG(p.id + '|' + (p.cert.no || ''), 70)}<div class="center" style="font-size:11px"><div style="border-top:1px solid #333;width:180px;padding-top:4px">${esc(user('u1').name)}<br>Owner &amp; gemmologist</div></div></div>
+        <div class="foot center">Scan the QR code or call ${esc(S.shop.phone)} to verify this certificate. This shop certificate is not a laboratory report.</div>
+      </div>`;
+    $('#pp').onchange = e => { p = prod(e.target.value); render(); };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

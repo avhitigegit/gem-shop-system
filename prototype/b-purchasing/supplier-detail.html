@@ -1,0 +1,32 @@
+<!-- Screen: Supplier detail & purchase history | BRD: B1, B3, B4 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supplier Detail · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="b-purchasing/supplier-detail.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const s = sup(qs('id')) || S.suppliers[0];
+  if (!s) return UI.empty('No supplier yet', 'Add a supplier first, then open it from the list.', 'b-purchasing/suppliers.html', 'Go to Suppliers');
+  const pur = S.purchases.filter(p => p.supplierId === s.id).sort((a, b) => b.date.localeCompare(a.date));
+  const items = pur.flatMap(p => p.lines.map(l => prod(l.productId)));
+  const rets = S.supplierReturns.filter(r => r.supplierId === s.id);
+  $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="suppliers.html">B · Suppliers</a>', title: esc(s.name), brd: ['B1', 'B3'], sub: esc(s.address) + ' · ' + esc(s.phone), actions: `<a class="btn btn-sapphire" data-roles="owner" href="new-purchase.html?sup=${s.id}">+ New purchase</a><a class="btn btn-outline" data-roles="owner" href="supplier-returns.html?sup=${s.id}">Return to supplier</a>` }) +
+    `<div class="grid g4 mb">${UI.kpi('Purchases', pur.length, 'cash')}${UI.kpi('Total paid', fmt.cur(sum(pur, p => p.total)), '')}${UI.kpi('Products bought', items.length, items.filter(p => p.status === 'sold').length + ' sold so far')}${UI.kpi('Returned', rets.length, fmt.cur(sum(rets, r => r.refund)) + ' refunded')}</div>
+    <div class="grid g-1-2"><div class="card"><div class="card-header"><h3>Details</h3></div><div class="card-content"><dl class="dl" style="grid-template-columns:120px 1fr"><dt>Contact</dt><dd>${esc(s.contact)}</dd><dt>Phone</dt><dd>${esc(s.phone)}</dd><dt>Address</dt><dd>${esc(s.address)}</dd><dt>${s.idType === 'NIC' ? 'NIC' : 'Business reg.'}</dt><dd class="mono">${esc(s.idNo)}</dd><dt>Notes</dt><dd>${esc(s.notes)}</dd></dl></div></div>
+    <div class="card"><div class="card-header"><h3>Purchase history</h3></div>${UI.table([
+      { h: 'Purchase', f: p => `<b class="mono">${p.id}</b><br><small class="muted">${fmt.date(p.date)}</small>` },
+      { h: 'Products', f: p => p.lines.map(l => { const x = prod(l.productId); return `<span class="row" style="gap:4px;display:inline-flex;margin-right:6px">${gemSVG(x.gem, x.type, 20)}<span class="mono" style="font-size:11px">${x.id}</span>${x.status === 'sold' ? '<span class="badge badge-navy" style="font-size:9px">sold</span>' : ''}</span>`; }).join('') },
+      { h: 'Bill photo', f: p => p.billPhoto ? `<button class="btn btn-sm btn-ghost" data-bill="${p.id}">📎 View</button>` : '—' },
+      { h: 'Total (cash)', num: 1, f: p => `<b>${fmt.cur(p.total)}</b>` }
+    ], pur)}</div></div>`;
+  $('#page').addEventListener('click', e => { const id = e.target.dataset.bill; if (!id) return; const p = find('purchases', id); UI.modal({ title: 'Supplier bill – ' + id, body: `<div style="background:#fffdf5;border:1px solid #e5e7eb;padding:18px;font-family:'Courier New',monospace;font-size:12px;transform:rotate(-1deg);box-shadow:var(--shadow)"><b>${esc(s.name.toUpperCase())}</b><br>${esc(s.address)}<br>Bill ${id} · ${fmt.date(p.date)}<hr>${p.lines.map(l => `${l.productId} ${esc(prod(l.productId).gem)} ${fmt.ct(prod(l.productId).carat)}<span style="float:right">${fmt.num(l.cost)}</span>`).join('<br>')}<hr><b>TOTAL CASH<span style="float:right">${fmt.num(p.total)}</span></b></div><p class="muted mt-s" style="font-size:11px">Demo bill photo (${esc(p.billPhoto)})</p>` }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!-- Screen: Product history timeline | BRD: D5, K4 | Roles: Owner, Shop Staff -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product History · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="d-stock/product-history.html" data-roles="owner staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let p = prod(qs('id')) || prod('GEM-00121') || S.products[0];
+  if (!p) return UI.empty('No gem history yet', 'There are no gems in the system yet.', 'c-products/products.html', 'Go to All gems');
+  const CLS = { Added: 'gold', Sold: 'green', Returned: 'red', 'Stock correction': 'red', Moved: '', Received: 'green', Reserved: 'gold', 'On hold': 'gold' };
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Product history', brd: ['D5'], sub: 'Who added, edited, moved or sold the product, and when. History cannot be edited.' }) +
+      `<div class="card mb"><div class="card-content row"><div class="field" style="flex:1;min-width:220px"><label>Product (scan or choose)</label><input class="input mono" id="code" list="codes" value="${p.id}"><datalist id="codes">${S.products.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</datalist></div><button class="btn btn-sapphire" id="go" style="align-self:flex-end">Show</button></div></div>
+      <div class="grid g-1-2"><div class="card"><div class="card-content center">${gemPic(p, 150, 180)}<h2 class="mt-s">${esc(p.name)}</h2><div class="mono muted">${p.id}</div><div class="mt-s">${badge(p.status)} ${certBadge(p.cert)}</div><p class="muted mt-s">${fmt.ct(p.carat)} · ${esc(p.colour)} · ${esc(branchName(p.branch))}</p><a class="btn btn-outline btn-sm" href="../c-products/product-detail.html?id=${p.id}">Product detail</a></div></div>
+      <div class="card"><div class="card-header"><h3>Timeline</h3><span class="muted">${p.history.length} events</span></div><div class="card-content"><ul class="timeline">${p.history.slice().sort((a, b) => b.at.localeCompare(a.at)).map(h => `<li class="${CLS[h.action] || ''}"><div class="t-when">${fmt.dt(h.at)} · ${esc(user(h.user).name)}</div><b>${esc(h.action)}</b><div class="muted" style="font-size:12px">${esc(h.detail)}</div></li>`).join('')}</ul></div></div></div>`;
+    $('#go').onclick = () => { const x = prod($('#code').value.trim().toUpperCase()); if (x) { p = x; history.replaceState(null, '', '?id=' + x.id); render(); } else toast('Not found', '', 'error'); };
+    $('#code').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
+  }
+  render();
+})();
+</script>
+</body>
+</html>
