@@ -301,6 +301,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/gems/tags/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Tags as a PDF the size of the label (or an A4 sheet); adds "Tag printed" to each gem */
+        post: operations["tagsPdf"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/files": {
         parameters: {
             query?: never;
@@ -582,6 +599,57 @@ export interface paths {
         };
         /** Is the API running and can it reach the database? */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems/{code}/shop-certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shop certificate of a gem (screen) */
+        get: operations["certificate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems/{code}/shop-certificate/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shop certificate PDF (download=true saves it, else opens it) */
+        get: operations["certificatePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tag details for the Print tags screen (codes = GEM-00131,GEM-00132) */
+        get: operations["tags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1199,6 +1267,12 @@ export interface components {
             /** @enum {string} */
             status: "ACTIVE" | "OPENING" | "INACTIVE";
         };
+        TagPrintForm: {
+            codes: string[];
+            /** @enum {string} */
+            size: "L60X30" | "L50X25" | "A4_SHEET";
+            showPrice: boolean;
+        };
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
@@ -1351,6 +1425,53 @@ export interface components {
             totalPrice: number;
             /** @description Owner only */
             totalCost?: number;
+        };
+        CertificateView: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            carat: number;
+            colour: string;
+            shape: string;
+            treatment: string;
+            description?: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            /** @description Shop certificate number, e.g. CGH-SC-00131 */
+            certNo: string;
+            /** @description First photo, or null = draw the gem */
+            photoUrl?: string;
+            shopName: string;
+            /** @description The shop's uploaded logo, or null = the standard logo */
+            logoUrl?: string;
+            shopAddress?: string;
+            shopPhone?: string;
+            licenceNo?: string;
+            /** Format: date */
+            licenceExpiry?: string;
+            /** Format: date */
+            issuedOn: string;
+            signedBy: string;
+            /** @description Text in the QR code: gem code | certificate number */
+            qrText: string;
+        };
+        TagSheet: {
+            shopName: string;
+            tags: components["schemas"]["TagView"][];
+        };
+        TagView: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            carat: number;
+            treatment: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            price: number;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
         };
         StockSummary: {
             /** Format: int64 */
@@ -2259,6 +2380,39 @@ export interface operations {
             };
         };
     };
+    tagsPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagPrintForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     uploadFile: {
         parameters: {
             query: {
@@ -2782,6 +2936,101 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    certificate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CertificateView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    certificatePdf: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    tags: {
+        parameters: {
+            query: {
+                codes: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TagSheet"];
                 };
             };
             /** @description Error (ApiError format) */

@@ -2490,4 +2490,45 @@
     border-color: var(--sapphire);
     box-shadow: 0 0 0 2px var(--sapphire-soft);
   }
+  /* P2-02 tags (prototype tag-print.html) and the shop certificate (shop-certificate.html) */
+  .tag-sheet {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .tag-label {
+    width: 260px;
+    max-width: 100%;
+    border: 1px dashed #94a3b8;
+    border-radius: 6px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    gap: 8px;
+    background: #fff;
+    font-size: 11px;
+  }
+  .tag-label .full {
+    grid-column: 1 / -1;
+  }
+  .cert-doc {
+    border: 6px double var(--gold);
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .cert-doc .cert-body {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .cert-doc .cert-body table td {
+    padding: 4px 8px 4px 0;
+    vertical-align: top;
+    border: 0;
+  }
+  @media (max-width: 640px) {
+    .cert-doc .cert-body {
+      flex-direction: column;
+    }
+  }
 }

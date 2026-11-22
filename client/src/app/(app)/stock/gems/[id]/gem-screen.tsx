@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Badge, CertBadge, StatusPill } from "@/components/ui/badge";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Barcode, QrCode } from "@/components/ui/code-picture";
 import { Modal } from "@/components/ui/dialog";
 import { Alert } from "@/components/ui/form";
 import { GemPicture, GemSvg } from "@/components/ui/gem-picture";
@@ -172,6 +173,18 @@ export function GemScreen({ code }: { code: string }) {
                   ? `${photos.length} photo(s) · photos are made smaller (about 300 KB) with thumbnails`
                   : `No photo yet – drawing (${ANGLES[picked][1]})${owner ? " · add photos with Edit" : ""}`}
               </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader title="Tag" level={3} />
+            <CardContent className="row" style={{ flexWrap: "nowrap" }}>
+              <QrCode text={g.code} size={84} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Barcode text={g.code} height={42} />
+                <div className="mono center" style={{ fontSize: 12 }}>
+                  {g.code}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

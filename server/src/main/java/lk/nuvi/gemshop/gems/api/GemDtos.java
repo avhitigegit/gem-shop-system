@@ -119,4 +119,73 @@ public final class GemDtos {
 
     /** For the add form: the code the new gem will get. */
     public record NextCode(@Schema(requiredMode = REQUIRED) String code) {}
+
+    // ------------------------------------------------------------------ P2-02 tags and shop certificate
+
+    /** One gem tag (QR + barcode of the code, name, carat, treatment, price). */
+    public record TagView(
+            @Schema(requiredMode = REQUIRED) String code,
+            @Schema(requiredMode = REQUIRED) String name,
+            @Schema(requiredMode = REQUIRED) String gemType,
+            @Schema(requiredMode = REQUIRED) String productType,
+            @Schema(requiredMode = REQUIRED) BigDecimal carat,
+            @Schema(requiredMode = REQUIRED) String treatment,
+            @Schema(requiredMode = REQUIRED) CertType certType,
+            @Schema(requiredMode = REQUIRED) BigDecimal price,
+            @Schema(requiredMode = REQUIRED) GemStatus status) {}
+
+    public record TagSheet(
+            @Schema(requiredMode = REQUIRED) String shopName,
+            @Schema(requiredMode = REQUIRED) List<TagView> tags) {}
+
+    /** Print tags: which gems, the label size and whether the selling price is on the tag. */
+    public record TagPrintForm(
+            @Schema(requiredMode = REQUIRED) @NotNull @Size(min = 1, max = 200) List<@NotBlank String> codes,
+            @Schema(requiredMode = REQUIRED) @NotNull LabelSize size,
+            @Schema(requiredMode = REQUIRED) @NotNull Boolean showPrice) {}
+
+    /** Label sizes for the tag PDF: one label per page on a label printer, or a sheet of 60 × 30 mm labels on A4. */
+    public enum LabelSize {
+        L60X30("60 × 30 mm label", 60, 30),
+        L50X25("50 × 25 mm label", 50, 25),
+        A4_SHEET("A4 sheet (24 labels of 60 × 30 mm)", 60, 30);
+
+        private final String label;
+        private final float widthMm;
+        private final float heightMm;
+
+        LabelSize(String label, float widthMm, float heightMm) {
+            this.label = label;
+            this.widthMm = widthMm;
+            this.heightMm = heightMm;
+        }
+
+        public String label() { return label; }
+        public float widthMm() { return widthMm; }
+        public float heightMm() { return heightMm; }
+    }
+
+    /** The shop certificate as shown on screen (the PDF has the same content). */
+    public record CertificateView(
+            @Schema(requiredMode = REQUIRED) String code,
+            @Schema(requiredMode = REQUIRED) String name,
+            @Schema(requiredMode = REQUIRED) String gemType,
+            @Schema(requiredMode = REQUIRED) String productType,
+            @Schema(requiredMode = REQUIRED) BigDecimal carat,
+            @Schema(requiredMode = REQUIRED) String colour,
+            @Schema(requiredMode = REQUIRED) String shape,
+            @Schema(requiredMode = REQUIRED) String treatment,
+            String description,
+            @Schema(requiredMode = REQUIRED) CertType certType,
+            @Schema(requiredMode = REQUIRED, description = "Shop certificate number, e.g. CGH-SC-00131") String certNo,
+            @Schema(description = "First photo, or null = draw the gem") String photoUrl,
+            @Schema(requiredMode = REQUIRED) String shopName,
+            @Schema(description = "The shop's uploaded logo, or null = the standard logo") String logoUrl,
+            String shopAddress,
+            String shopPhone,
+            String licenceNo,
+            LocalDate licenceExpiry,
+            @Schema(requiredMode = REQUIRED) LocalDate issuedOn,
+            @Schema(requiredMode = REQUIRED) String signedBy,
+            @Schema(requiredMode = REQUIRED, description = "Text in the QR code: gem code | certificate number") String qrText) {}
 }

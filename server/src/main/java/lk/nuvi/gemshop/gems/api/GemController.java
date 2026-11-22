@@ -6,7 +6,17 @@ import jakarta.validation.Valid;
 import lk.nuvi.gemshop.auth.security.Roles;
 import lk.nuvi.gemshop.common.paging.PageResult;
 import lk.nuvi.gemshop.gems.CertType;
+import java.util.List;
+import lk.nuvi.gemshop.common.error.ApiException;
+import lk.nuvi.gemshop.common.error.ErrorCode;
+import lk.nuvi.gemshop.files.Downloads;
+import lk.nuvi.gemshop.gems.GemPrints;
 import lk.nuvi.gemshop.gems.Gems;
+import lk.nuvi.gemshop.gems.api.GemDtos.CertificateView;
+import lk.nuvi.gemshop.gems.api.GemDtos.TagPrintForm;
+import lk.nuvi.gemshop.gems.api.GemDtos.TagSheet;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import lk.nuvi.gemshop.gems.api.GemDtos.GemForm;
 import lk.nuvi.gemshop.gems.api.GemDtos.GemPage;
 import lk.nuvi.gemshop.gems.api.GemDtos.GemView;
@@ -29,9 +39,50 @@ import org.springframework.web.bind.annotation.RestController;
 public class GemController {
 
     private final Gems gems;
+    private final GemPrints prints;
 
-    public GemController(Gems gems) {
+    public GemController(Gems gems, GemPrints prints) {
         this.gems = gems;
+        this.prints = prints;
+    }
+
+    // ------------------------------------------------------------------ P2-02 tags and shop certificate
+
+    @PreAuthorize(Roles.OWNER_STAFF)
+    @GetMapping("/api/gems/tags")
+    @Operation(summary = "Tag details for the Print tags screen (codes = GEM-00131,GEM-00132)")
+    public TagSheet tags(@RequestParam List<String> codes) {
+        return prints.tags(limit(codes));
+    }
+
+    @PreAuthorize(Roles.OWNER_STAFF)
+    @PostMapping(value = "/api/gems/tags/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Tags as a PDF the size of the label (or an A4 sheet); adds \"Tag printed\" to each gem")
+    public ResponseEntity<byte[]> tagsPdf(@Valid @RequestBody TagPrintForm form) {
+        return Downloads.pdf(prints.tagsPdf(limit(form.codes()), form.size(), form.showPrice()), Downloads.dated("Gem tags"),
+                false);
+    }
+
+    @PreAuthorize(Roles.OWNER_SALES)
+    @GetMapping("/api/gems/{code}/shop-certificate")
+    @Operation(summary = "Shop certificate of a gem (screen)")
+    public CertificateView certificate(@PathVariable String code) {
+        return prints.certificate(code);
+    }
+
+    @PreAuthorize(Roles.OWNER_SALES)
+    @GetMapping(value = "/api/gems/{code}/shop-certificate/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Shop certificate PDF (download=true saves it, else opens it)")
+    public ResponseEntity<byte[]> certificatePdf(@PathVariable String code, @RequestParam(defaultValue = "false") boolean download) {
+        CertificateView c = prints.certificate(code);
+        return Downloads.pdf(prints.certificatePdf(code), "Shop certificate " + c.code(), download);
+    }
+
+    private static List<String> limit(List<String> codes) {
+        if (codes.size() > 200) {
+            throw ApiException.badRequest(ErrorCode.VALIDATION_FAILED, "Print at most 200 tags at a time.");
+        }
+        return codes;
     }
 
     @PreAuthorize(Roles.OWNER_SALES_STAFF_ACCOUNTANT)

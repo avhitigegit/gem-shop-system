@@ -253,6 +253,84 @@ class GemsTest {
         mvc.perform(json(put("/api/settings/lists/values/" + id), Map.of("value", "Cushion"), OWNER)).andExpect(status().isOk());
     }
 
+    // ---------------------------------------------------------------- P2-02 tags and shop certificate
+
+    @Test
+    void printTags() throws Exception {
+        JsonNode sheet = read(get("/api/gems/tags").param("codes", "GEM-00126,gem-128,GEM-00126"), STAFF);
+        assertThat(sheet.path("shopName").asString()).isEqualTo("Ceylon Gem House");
+        assertThat(sheet.path("tags").size()).isEqualTo(2);
+        assertThat(sheet.path("tags").get(1).path("code").asString()).isEqualTo("GEM-00128");
+        mvc.perform(get("/api/gems/tags").param("codes", "GEM-00126").with(who.get(SALES).bearer())).andExpect(status().isForbidden());
+        mvc.perform(get("/api/gems/tags").param("codes", "GEM-99999").with(who.get(OWNER).bearer())).andExpect(status().isNotFound());
+
+        // one label per page on a label printer
+        byte[] pdf = mvc.perform(json(post("/api/gems/tags/pdf"),
+                Map.of("codes", List.of("GEM-00126", "GEM-00128"), "size", "L60X30", "showPrice", true), STAFF))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        com.lowagie.text.pdf.PdfReader r = new com.lowagie.text.pdf.PdfReader(pdf);
+        assertThat(r.getNumberOfPages()).isEqualTo(2);
+        assertThat(r.getPageSize(1).getWidth()).isCloseTo(170.1f, org.assertj.core.data.Offset.offset(0.5f));
+        String text = new com.lowagie.text.pdf.parser.PdfTextExtractor(r).getTextFromPage(1);
+        assertThat(text).contains("GEM-00126").contains("Ceylon Gem House").contains("LKR");
+        assertThat(lastLog()).isEqualTo("Tags printed");
+        JsonNode g = read(get("/api/gems/GEM-00126"), OWNER);
+        assertThat(g.path("history").get(g.path("history").size() - 1).path("action").asString()).isEqualTo("Tag printed");
+
+        // A4 sheet: 24 labels a page; no price when not wanted
+        List<String> many = new ArrayList<>();
+        for (JsonNode x : read(get("/api/gems").param("status", "all").param("size", "30"), OWNER).path("items")) {
+            many.add(x.path("code").asString());
+        }
+        byte[] a4 = mvc.perform(json(post("/api/gems/tags/pdf"), Map.of("codes", many, "size", "A4_SHEET", "showPrice", false), OWNER))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        com.lowagie.text.pdf.PdfReader ra = new com.lowagie.text.pdf.PdfReader(a4);
+        assertThat(ra.getNumberOfPages()).isEqualTo(2);
+        assertThat(new com.lowagie.text.pdf.parser.PdfTextExtractor(ra).getTextFromPage(1)).doesNotContain("LKR");
+        mvc.perform(json(post("/api/gems/tags/pdf"), Map.of("codes", List.of(), "size", "L50X25", "showPrice", true), OWNER))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shopCertificate() throws Exception {
+        JsonNode c = read(get("/api/gems/GEM-00049/shop-certificate"), SALES);
+        assertThat(c.path("certNo").asString()).isEqualTo("CGH-SC-00049");
+        assertThat(c.path("shopName").asString()).isEqualTo("Ceylon Gem House");
+        assertThat(c.path("signedBy").asString()).isEqualTo("Ruwan Perera");
+        assertThat(c.path("qrText").asString()).isEqualTo("GEM-00049|CGH-SC-00049");
+        assertThat(c.path("licenceNo").asString()).isNotBlank();
+        // the certificate QR finds the gem in the search / scan box
+        assertThat(read(get("/api/gems").param("q", c.path("qrText").asString()).param("status", "all"), STAFF)
+                .path("items").get(0).path("code").asString()).isEqualTo("GEM-00049");
+        // a lab-certificate gem still gets a shop number (the screen warns)
+        assertThat(read(get("/api/gems/GEM-00044/shop-certificate"), OWNER).path("certNo").asString()).isEqualTo("CGH-SC-00044");
+
+        byte[] pdf = mvc.perform(get("/api/gems/GEM-00049/shop-certificate/pdf").param("download", "true")
+                .with(who.get(SALES).bearer())).andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
+                .andReturn().getResponse().getContentAsByteArray();
+        String text = new com.lowagie.text.pdf.parser.PdfTextExtractor(new com.lowagie.text.pdf.PdfReader(pdf)).getTextFromPage(1);
+        assertThat(text).contains("GEMSTONE").contains("CGH-SC-00049").contains("GEM-00049")
+                .contains("not a laboratory report").contains("Ruwan Perera");
+        mvc.perform(get("/api/gems/GEM-00049/shop-certificate").with(who.get(STAFF).bearer())).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void gemDrawingForGemsWithoutAPhoto() throws Exception {
+        for (String t : new String[] {"Ruby", "Star Sapphire", "Something new"}) {
+            BufferedImageCheck.check(GemDrawing.png(t, 200));
+        }
+    }
+
+    private static final class BufferedImageCheck {
+        static void check(byte[] png) throws Exception {
+            var img = ImageIO.read(new java.io.ByteArrayInputStream(png));
+            assertThat(img.getWidth()).isEqualTo(200);
+            assertThat(new java.awt.Color(img.getRGB(100, 100))).isNotEqualTo(java.awt.Color.WHITE);
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private static Map<String, Object> form(String name, String branch) {
