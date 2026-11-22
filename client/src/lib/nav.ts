@@ -29,7 +29,7 @@ export type NavGroup = {
   items: NavItem[];
 };
 /** Detail / print pages: not in the menu, the back link goes to the parent page. ":id" = any value. */
-export type HiddenPage = { path: string; parent: string | null; label: string; proto: string };
+export type HiddenPage = { path: string; parent: string | null; label: string; proto: string; roles?: Role[] };
 export type Section = {
   key: string;
   icon: string;
@@ -73,6 +73,13 @@ export const SECTIONS: Section[] = [
     groups: [],
     hidden: [
       { path: "/", parent: null, label: "Home", proto: "dashboard/index.html" },
+      {
+        path: "/accountant",
+        parent: null,
+        label: "Home",
+        proto: "n-accountant/dashboard.html",
+        roles: [ACCOUNTANT, OWNER],
+      },
       { path: "/design", parent: null, label: "Design kit", proto: "assets/css/app.css" },
       { path: "/not-allowed", parent: null, label: "Not allowed", proto: "assets/js/app.js accessDenied" },
     ],
@@ -641,7 +648,7 @@ export function firstPage(s: Section, role: Role): string | null {
 
 /** Where a big menu item goes: Home, the section home, or (no section home) its first page. */
 export function sectionHref(s: Section, role: Role): string | null {
-  if (s.home) return "/";
+  if (s.home) return role === ACCOUNTANT ? "/accountant" : "/";
   if (s.hub && s.groups.some((g) => visibleItems(g.items, role).length)) return s.hub;
   return firstPage(s, role);
 }
@@ -674,7 +681,7 @@ export function pageInfo(path: string): PageInfo {
     const hidden = s.hidden.find((h) => matches(h.path, clean));
     if (hidden) {
       const parent = hidden.parent ? allItems(s).find((i) => i.href === hidden.parent) : undefined;
-      return { section: s, hidden, onHub: false, roles: parent ? parent.roles : s.roles };
+      return { section: s, hidden, onHub: false, roles: hidden.roles ?? (parent ? parent.roles : s.roles) };
     }
   }
   const bySegment =
