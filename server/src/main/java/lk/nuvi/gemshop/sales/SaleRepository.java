@@ -25,6 +25,15 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
               and (:branch is null or s.branch.id = :branch)""")
     List<Sale> since(Long branch, Instant from);
 
+    /** Invoices list: a branch (or all), a period, a status (or all), newest first. */
+    @Query("""
+            select s from Sale s
+            where (:branch is null or s.branch.id = :branch)
+              and s.soldAt >= :from and s.soldAt < :to
+              and (:status is null or s.status = :status)
+            order by s.soldAt desc, s.id desc""")
+    List<Sale> search(Long branch, Instant from, Instant to, Sale.Status status);
+
     /** Sales per customer id (for "N previous purchases"). */
     @Query("select s.customer.id, count(s) from Sale s group by s.customer.id")
     List<Object[]> countPerCustomer();

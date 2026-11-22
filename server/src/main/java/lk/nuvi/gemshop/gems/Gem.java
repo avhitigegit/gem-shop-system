@@ -160,6 +160,13 @@ public class Gem extends BaseEntity {
         this.status = GemStatus.SOLD;
     }
 
+    /** The invoice was cancelled (P3-02) or the gem came back (P3-04): in stock again and may be sold again. */
+    public void unsold() {
+        this.saleNo = null;
+        this.soldAt = null;
+        this.status = GemStatus.IN_STOCK;
+    }
+
     public void setStatus(GemStatus status) {
         this.status = status;
     }

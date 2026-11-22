@@ -51,6 +51,24 @@ public class MailService {
         }
     }
 
+    /** Email with one attachment (an invoice or quotation PDF). Returns false when sending failed (it is logged). */
+    public boolean send(String to, String subject, String text, String fileName, byte[] file, String contentType) {
+        try {
+            MimeMessage m = sender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(m, true, StandardCharsets.UTF_8.name());
+            h.setFrom(from());
+            h.setTo(to);
+            h.setSubject(subject);
+            h.setText(text, html(text));
+            h.addAttachment(fileName, new org.springframework.core.io.ByteArrayResource(file), contentType);
+            sender.send(m);
+            return true;
+        } catch (Exception e) {
+            log.warn("Email to {} not sent ({}): {}", to, subject, e.getMessage());
+            return false;
+        }
+    }
+
     InternetAddress from() throws Exception {
         ShopSettings s = shops.current().orElse(null);
         if (s != null && s.getEmail() != null && !s.getEmail().isBlank()) {

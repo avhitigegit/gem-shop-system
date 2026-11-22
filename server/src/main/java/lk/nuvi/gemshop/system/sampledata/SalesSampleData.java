@@ -123,6 +123,10 @@ class SalesSampleData implements SampleDataPart {
                         money(p.path("fee")));
             }
             x.sent(s.path("sentEmail").asBoolean(false), s.path("sentWhatsapp").asBoolean(false));
+            String cancelAsked = blank(s.path("cancelRequested"));
+            if (cancelAsked != null) {
+                x.cancelAsked(cancelAsked, reason(data, cancelAsked));
+            }
             sales.save(x);
             n++;
         }
@@ -157,5 +161,15 @@ class SalesSampleData implements SampleDataPart {
     private static String blank(JsonNode n) {
         String s = SampleData.text(n);
         return s == null || s.isBlank() ? null : s;
+    }
+
+    /** The reason of a cancellation request = the detail of the prototype's approval. */
+    private static String reason(SampleData data, String approvalNo) {
+        for (JsonNode a : data.node("approvals").values()) {
+            if (approvalNo.equals(a.path("id").asString())) {
+                return blank(a.path("detail"));
+            }
+        }
+        return null;
     }
 }
