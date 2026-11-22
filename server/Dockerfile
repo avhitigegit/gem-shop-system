@@ -8,11 +8,13 @@ COPY src src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
-RUN addgroup -S app && adduser -S app -G app
+RUN addgroup -S app && adduser -S app -G app \n  && mkdir -p /data/files && chown app:app /data/files
 WORKDIR /app
 COPY --from=build /src/target/gemshop-server.jar app.jar
 USER app
-ENV PORT=8080
+ENV PORT=8080 FILES_DIR=/data/files
+# Uploaded photos, bill photos and certificate scans (P1-05) – mount a volume here.
+VOLUME ["/data/files"]
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=5 \
   CMD wget -qO- "http://localhost:${PORT}/actuator/health/readiness" || exit 1

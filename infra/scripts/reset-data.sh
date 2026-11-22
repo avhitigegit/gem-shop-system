@@ -29,6 +29,9 @@ echo "3/4 Emptying the database…"
 docker compose exec -T db psql -v ON_ERROR_STOP=1 -q -U "$DB_USER" -d "$DB_NAME" \
   -c "drop schema public cascade; create schema public authorization \"$DB_USER\";"
 
+echo "   …and the uploaded files"
+docker compose run --rm --no-deps -T --user root --entrypoint sh server -c 'rm -rf /data/files/*' >/dev/null 2>&1 || true
+
 echo "4/4 Starting the backend (tables + sample data)…"
 docker compose up -d server
 

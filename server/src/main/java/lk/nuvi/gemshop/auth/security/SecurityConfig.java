@@ -50,7 +50,8 @@ public class SecurityConfig {
         "/api/auth/reset-password",
         "/api/auth/demo-users",
         "/api/auth/demo-login",
-        "/api/setup/**"
+        "/api/setup/**",
+        "/api/files/*/content" // private links: checked by their signature and expiry (P1-05)
     };
 
     @Bean

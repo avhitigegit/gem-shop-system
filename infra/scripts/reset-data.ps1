@@ -32,6 +32,9 @@ Invoke-Step "3/4 Emptying the database..." {
     docker compose exec -T db psql -v ON_ERROR_STOP=1 -q -U $dbUser -d $dbName `
         -c "drop schema public cascade; create schema public authorization `"$dbUser`";"
 }
+Invoke-Step "   ...and the uploaded files" {
+    docker compose run --rm --no-deps -T --user root --entrypoint sh server -c "rm -rf /data/files/*" | Out-Null
+}
 Invoke-Step "4/4 Starting the backend (tables + sample data)..." { docker compose up -d server }
 
 for ($i = 0; $i -lt 60; $i++) {

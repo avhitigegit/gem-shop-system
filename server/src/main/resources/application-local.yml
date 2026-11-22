@@ -13,6 +13,8 @@ app:
     jwt-secret: ${JWT_SECRET:local-only-secret-change-me-0123456789abcdef}
     cookie-secure: ${COOKIE_SECURE:false}   # http://localhost has no HTTPS
     demo-logins: true
+  crypto:
+    key: ${ENCRYPTION_KEY:local-only-encryption-key-change-me-0123456789}
 logging:
   level:
     lk.nuvi.gemshop: DEBUG

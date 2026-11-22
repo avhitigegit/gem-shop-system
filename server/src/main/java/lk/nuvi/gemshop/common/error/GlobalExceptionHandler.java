@@ -95,6 +95,19 @@ public class GlobalExceptionHandler {
         return build(s, s.name(), e.getReason() != null ? e.getReason() : s.getReasonPhrase(), req, List.of());
     }
 
+    /** Upload over 10 MB (spring.servlet.multipart.max-file-size). */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> tooLarge(Exception e, HttpServletRequest req) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE", "The file is too large. The limit is 10 MB.", req, List.of());
+    }
+
+    /** A form upload without its file. */
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    ResponseEntity<ApiError> missingPart(org.springframework.web.multipart.support.MissingServletRequestPartException e,
+            HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "FILE_EMPTY", "Please choose a file.", req, List.of());
+    }
+
     /** Two people saved the same record at the same moment (e.g. the owner approving on phone and computer). */
     @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
     ResponseEntity<ApiError> changedMeanwhile(Exception e, HttpServletRequest req) {
