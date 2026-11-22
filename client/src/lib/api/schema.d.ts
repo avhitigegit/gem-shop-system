@@ -398,10 +398,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Invoices list (newest first; default the last 30 days) */
+        get: operations["listInvoices"];
         put?: never;
         /** Complete the sale and take payment */
         post: operations["complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/{number}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the invoice PDF by email and / or WhatsApp */
+        post: operations["sendInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/{number}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the owner to cancel an invoice (never deleted) */
+        post: operations["requestInvoiceCancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -904,6 +939,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sales/{number}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The invoice as a PDF (no VAT line, no card fee line) */
+        get: operations["invoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sales/summary": {
         parameters: {
             query?: never;
@@ -947,6 +999,23 @@ export interface paths {
         };
         /** A scanned tag: the gem and whether it can be sold */
         get: operations["scan_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The invoices list as PDF or Excel (same filters) */
+        get: operations["exportInvoices"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1888,6 +1957,16 @@ export interface components {
             payments: components["schemas"]["PaymentForm"][];
             notes?: string;
         };
+        CancelRequest: {
+            number: string;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            reason: string;
+            requestedBy: string;
+            /** Format: date-time */
+            requestedAt: string;
+            note?: string;
+        };
         CustomerPick: {
             code: string;
             name: string;
@@ -1898,6 +1977,21 @@ export interface components {
             consent: boolean;
             /** Format: int64 */
             purchases: number;
+        };
+        DocShop: {
+            name: string;
+            tagline?: string;
+            address?: string;
+            phone?: string;
+            email?: string;
+            /** @description NGJA licence – only when the shop prints it on invoices */
+            licenceNo?: string;
+            /** Format: date */
+            licenceExpiry?: string;
+            /** Format: int32 */
+            returnDays: number;
+            /** @description Uploaded logo, or null = the standard logo */
+            logoUrl?: string;
         };
         GuidePick: {
             code: string;
@@ -1925,6 +2019,18 @@ export interface components {
             listPrice: number;
             agreed: number;
             approvalNo?: string;
+            colour: string;
+            shape: string;
+            treatment: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            certLab?: string;
+            /** @description Lab or shop certificate number */
+            certNo?: string;
+            /** @description Given back (returned, or the invoice was cancelled) */
+            released: boolean;
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
         };
         SaleView: {
             number: string;
@@ -1950,6 +2056,34 @@ export interface components {
             sentEmail: boolean;
             sentWhatsapp: boolean;
             notes?: string;
+            /** @description The day's rate used on this invoice */
+            rateUsd?: number;
+            rateEur?: number;
+            /** Format: date-time */
+            cancelledAt?: string;
+            cancelledBy?: string;
+            cancelReason?: string;
+            /** @description The latest cancellation request, if any */
+            cancel?: components["schemas"]["CancelRequest"];
+            /** @description Shop details for the invoice header and footer */
+            shop: components["schemas"]["DocShop"];
+        };
+        SendForm: {
+            email: boolean;
+            emailTo?: string;
+            whatsapp: boolean;
+            whatsappTo?: string;
+        };
+        SendResult: {
+            email: boolean;
+            whatsapp: boolean;
+            /** @description WhatsApp is not connected yet: the message was only logged */
+            whatsappTestMode: boolean;
+            message: string;
+        };
+        CancelForm: {
+            /** @example Wrong customer selected */
+            reason: string;
         };
         BillForm: {
             /** @description Branch code; empty = the salesperson's branch / the first gem's branch */
@@ -2235,6 +2369,44 @@ export interface components {
             defaultGuidePct: number;
             /** Format: int32 */
             listValues: number;
+        };
+        InvoiceItem: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            /** @description Returned by the customer (not set on cancelled invoices) */
+            released: boolean;
+        };
+        InvoicePage: {
+            items: components["schemas"]["InvoiceRow"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            amount: number;
+        };
+        InvoiceRow: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            branch: string;
+            customer: string;
+            country: string;
+            items: components["schemas"]["InvoiceItem"][];
+            /** @example Cash USD + Card */
+            payment: string;
+            /** @description cash, card or split */
+            payType: string;
+            total: number;
+            sentEmail: boolean;
+            sentWhatsapp: boolean;
+            /** @enum {string} */
+            status: "COMPLETED" | "CANCELLED";
+            /** @description Cancellation waiting for the owner (AP-…) */
+            cancelPending?: string;
         };
         SaleRow: {
             number: string;
@@ -3590,6 +3762,45 @@ export interface operations {
             };
         };
     };
+    listInvoices: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                status?: "COMPLETED" | "CANCELLED";
+                /** @description cash, card or split */
+                pay?: string;
+                /** @description Invoice number, customer, gem code or name */
+                q?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["InvoicePage"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     complete: {
         parameters: {
             query?: never;
@@ -3605,6 +3816,76 @@ export interface operations {
         responses: {
             /** @description Created */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SendResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    requestInvoiceCancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4641,6 +4922,39 @@ export interface operations {
             };
         };
     };
+    invoicePdf: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     summary: {
         parameters: {
             query?: never;
@@ -4717,6 +5031,43 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PosGem"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportInvoices: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                from?: string;
+                to?: string;
+                status?: "COMPLETED" | "CANCELLED";
+                pay?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
             /** @description Error (ApiError format) */

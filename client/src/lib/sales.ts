@@ -10,6 +10,13 @@ export type HeldView = components["schemas"]["HeldView"];
 export type SaleView = components["schemas"]["SaleView"];
 export type SaleRow = components["schemas"]["SaleRow"];
 export type PaymentForm = components["schemas"]["PaymentForm"];
+export type InvoiceRow = components["schemas"]["InvoiceRow"];
+export type InvoicePage = components["schemas"]["InvoicePage"];
+export type SendResult = components["schemas"]["SendResult"];
+
+/** "Card" · "Cash USD" for one payment line. */
+export const payLabel = (p: { method: string; currency: string }) =>
+  p.method === "CARD" ? "Card" : `Cash ${p.currency}`;
 
 export type NewCustomer = {
   name: string;
