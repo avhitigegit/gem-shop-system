@@ -1,0 +1,83 @@
+name: Bug report
+description: Something does not work like the prototype or the demo guide (UAT or local testing).
+title: "[Bug] <screen> – <short description>"
+labels: ["bug", "uat"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One bug per report. Same fields as the paper template (doc/test-plan/BUG_REPORT_TEMPLATE.md).
+  - type: input
+    id: test
+    attributes:
+      label: Test
+      description: Test number from the UAT test plan.
+      placeholder: e.g. S-25 New sale · BR-02 · RL-02
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Screen
+      placeholder: e.g. Sell → New sale (step 4, Payment)
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Role used
+      options: [Owner, Salesperson, Shop Staff, Accountant]
+    validations:
+      required: true
+  - type: dropdown
+    id: branch
+    attributes:
+      label: Branch
+      options: [Ella, Branch 2, All branches]
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / browser
+      placeholder: e.g. shop computer – Chrome · Android phone – Chrome
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How bad?
+      options:
+        - Blocker – cannot work / wrong money
+        - Major – wrong result, there is a way around
+        - Minor – small, work goes on
+        - Look – wording, colour, layout
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What I did
+      description: Steps so NUVI can do it again.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What I expected
+      description: As in the prototype / demo guide.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot / photo
+      description: Drag the picture here.
