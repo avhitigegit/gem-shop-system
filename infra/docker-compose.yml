@@ -1,0 +1,77 @@
+# Local setup – everything in Docker. From the repository root:
+#   docker compose up -d --build
+# Open http://localhost:8100   (Swagger: /swagger-ui.html · Prototype: /prototype/ · Test emails: http://localhost:8025)
+#
+# Host ports are chosen so they do not clash with other projects on this computer:
+#   8100 app (Nginx) · 8081 backend · 5433 database · 8025 MailHog web · 1025 MailHog SMTP
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-gemshop}
+      POSTGRES_USER: ${DB_USER:-gemshop}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gemshop}
+      TZ: Asia/Colombo
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+
+  server:
+    build: ../server
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      APP_ENV: local
+      PORT: "8081"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-gemshop}
+      DB_USER: ${DB_USER:-gemshop}
+      DB_PASSWORD: ${DB_PASSWORD:-gemshop}
+      MAIL_HOST: mailhog
+      MAIL_PORT: "1025"
+      CORS_ORIGINS: http://localhost:3000,http://localhost:8100
+      TZ: Asia/Colombo
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  client:
+    build:
+      context: ../client
+      args:
+        BACKEND_URL: http://server:8081
+    environment:
+      TZ: Asia/Colombo
+    depends_on:
+      - server
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8100:80"
+    volumes:
+      - ./nginx/local.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../prototype:/usr/share/nginx/prototype:ro
+    depends_on:
+      - server
+      - client
+
+volumes:
+  db-data:

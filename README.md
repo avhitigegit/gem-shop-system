@@ -5,12 +5,10 @@ Built to match the approved **prototype v12**, **demo guide v12** (75 screens) a
 
 | Part | Folder | Stack |
 |---|---|---|
-| Backend | `server/` | Spring Boot 3 · Java 21 · PostgreSQL · JPA · Flyway · JWT |
-| Frontend | `client/` | Next.js · TypeScript · Tailwind · shadcn/ui · PWA |
+| Backend | `server/` | Spring Boot 4 · Java 21 · PostgreSQL · JPA · Flyway · JWT |
+| Frontend | `client/` | Next.js 16 · TypeScript · Tailwind · shadcn/ui · PWA |
 | Infrastructure | `infra/` | Docker Compose · Nginx · GitHub Actions · AWS (EC2, S3, SES) |
 | Prototype | `prototype/` | Approved clickable prototype v12 (open `prototype/index.html`) |
-
-The project skeleton is added in `P0-02`. Until then `client/`, `server/` and `infra/` are empty.
 
 The prototype keeps its full history; its versions are tagged `prototype-v3` … `prototype-v12`.
 App releases use `v0.x` and `v1.0.0`.
@@ -45,4 +43,44 @@ When a heading is merged, its tasks are ticked and its **Status** changes.
 
 ## Running locally
 
-Added in `P0-02` (one Docker Compose command starts everything).
+Needs **Docker Desktop**. One command from this folder starts everything:
+
+```sh
+docker compose up -d --build
+```
+
+| Open | What |
+|---|---|
+| http://localhost:8100 | The app (Nginx → frontend and backend) |
+| http://localhost:8100/health | System health page (frontend → backend → database) |
+| http://localhost:8100/swagger-ui.html | API documentation (Swagger) |
+| http://localhost:8100/prototype/ | The approved prototype, to compare screens |
+| http://localhost:8025 | MailHog – every test email the system sends |
+
+Stop: `docker compose down` · Stop and delete the local database: `docker compose down -v`
+
+Ports used on this computer: 8100 app, 8081 backend, 5433 database, 8025 / 1025 MailHog.
+
+### Working on one part (faster)
+
+```sh
+docker compose up -d db mailhog          # database + test email only
+
+cd server && ./mvnw spring-boot:run      # backend on http://localhost:8081
+cd client && npm install && npm run dev  # frontend on http://localhost:3000 (/api goes to :8081)
+```
+
+### Checks
+
+```sh
+cd server && ./mvnw verify               # backend build + tests (needs Docker for the test database)
+cd client && npm run check               # lint + type check + format check
+cd client && npm run build
+```
+
+After changing an API, with the backend running: `cd client && npm run api:generate` (updates `src/lib/api/schema.d.ts`).
+
+### Settings per environment
+
+Backend profiles in `server/src/main/resources`: `application-local.yml` (default), `-dev`, `-uat`, `-prod`.
+Secrets (database, email, WhatsApp keys) always come from environment variables – never from files in git.

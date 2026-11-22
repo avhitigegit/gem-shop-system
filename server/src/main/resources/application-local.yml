@@ -1,0 +1,10 @@
+# Your own computer (Docker Compose, or ./mvnw spring-boot:run with npm run dev). Sample data allowed.
+# Port 8081 locally (8080 is often taken by other projects on this computer).
+server:
+  port: ${PORT:8081}
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:gemshop}
+logging:
+  level:
+    lk.nuvi.gemshop: DEBUG
