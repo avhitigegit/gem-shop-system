@@ -2461,4 +2461,33 @@
     border-radius: 8px;
     border: 1px solid var(--border);
   }
+  /* Gem form: small photo with a remove button */
+  .thumb-x {
+    position: relative;
+    line-height: 0;
+  }
+  .thumb-x button {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  /* Gem page: photo thumbnails under the big picture */
+  .thumbs button {
+    height: 64px;
+    width: 64px;
+    padding: 0;
+    overflow: hidden;
+  }
+  .thumbs button.active {
+    border-color: var(--sapphire);
+    box-shadow: 0 0 0 2px var(--sapphire-soft);
+  }
 }

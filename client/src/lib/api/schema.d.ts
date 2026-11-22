@@ -92,6 +92,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/gems/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One gem (also a scanned tag: GEM-00125, 125) */
+        get: operations["view"];
+        /** Edit a gem and its prices (owner) */
+        put: operations["edit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/setup": {
         parameters: {
             query?: never;
@@ -242,6 +260,41 @@ export interface paths {
         put?: never;
         /** Mark a branch as open, opening or closed (inactive) */
         post: operations["setBranchStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All gems. status: stock (default) | all | IN_STOCK | NOT_READY | …; q: code, name, colour, gem type */
+        get: operations["search"];
+        put?: never;
+        /** Add a gem not bought from a supplier (owner) */
+        post: operations["add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems/{code}/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark ready to sell (gem was Not ready to sell) */
+        post: operations["markReady"];
         delete?: never;
         options?: never;
         head?: never;
@@ -529,6 +582,40 @@ export interface paths {
         };
         /** Is the API running and can it reach the database? */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gems & stock home: counts and the newest gems */
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gems/next-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The code the next new gem gets (add form) */
+        get: operations["nextCode"];
         put?: never;
         post?: never;
         delete?: never;
@@ -926,6 +1013,96 @@ export interface components {
             openedOn?: string;
             staff: components["schemas"]["BranchStaff"][];
         };
+        GemForm: {
+            name: string;
+            productType: string;
+            gemType: string;
+            carat: number;
+            colour: string;
+            shape: string;
+            treatment: string;
+            description?: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            certLab?: string;
+            certNo?: string;
+            /** Format: date */
+            certDate?: string;
+            /** Format: uuid */
+            certScan?: string;
+            photos: string[];
+            cost: number;
+            price: number;
+            min: number;
+            branch: string;
+            /** @description Add only: not ready to sell yet (e.g. needs cutting) */
+            notReady?: boolean;
+        };
+        FileView: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "PRODUCT_PHOTO" | "BILL_PHOTO" | "CERTIFICATE" | "LOGO";
+            contentType: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            name: string;
+            /** Format: int32 */
+            width?: number;
+            /** Format: int32 */
+            height?: number;
+            url: string;
+            thumbUrl?: string;
+            attached: boolean;
+        };
+        GemView: {
+            code: string;
+            name: string;
+            productType: string;
+            gemType: string;
+            carat: number;
+            colour: string;
+            shape: string;
+            treatment: string;
+            description?: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            certLab?: string;
+            /** @description Lab certificate number, or the shop certificate number */
+            certNo?: string;
+            /** Format: date */
+            certDate?: string;
+            certScan?: components["schemas"]["FileView"];
+            photos: components["schemas"]["FileView"][];
+            price: number;
+            /** @description Owner only */
+            cost?: number;
+            /** @description Owner only */
+            min?: number;
+            branch: string;
+            branchName: string;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
+            /** @description Owner only */
+            supplierCode?: string;
+            /** @description Owner only */
+            purchaseNo?: string;
+            saleNo?: string;
+            /** Format: date-time */
+            soldAt?: string;
+            /** Format: date-time */
+            addedAt: string;
+            addedBy: string;
+            canSell: boolean;
+            history: components["schemas"]["HistoryLine"][];
+        };
+        HistoryLine: {
+            /** Format: date-time */
+            at: string;
+            user: string;
+            action: string;
+            detail: string;
+        };
         BranchPart: {
             name: string;
         };
@@ -1021,23 +1198,6 @@ export interface components {
         BranchStatusForm: {
             /** @enum {string} */
             status: "ACTIVE" | "OPENING" | "INACTIVE";
-        };
-        FileView: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            kind: "PRODUCT_PHOTO" | "BILL_PHOTO" | "CERTIFICATE" | "LOGO";
-            contentType: string;
-            /** Format: int64 */
-            sizeBytes: number;
-            name: string;
-            /** Format: int32 */
-            width?: number;
-            /** Format: int32 */
-            height?: number;
-            url: string;
-            thumbUrl?: string;
-            attached: boolean;
         };
         ResetPasswordRequest: {
             token: string;
@@ -1156,6 +1316,53 @@ export interface components {
             database: "UP" | "DOWN";
             /** Format: date-time */
             time: string;
+        };
+        GemCard: {
+            code: string;
+            name: string;
+            productType: string;
+            gemType: string;
+            carat: number;
+            colour: string;
+            shape: string;
+            treatment: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            certLab?: string;
+            price: number;
+            /** @description Owner only */
+            cost?: number;
+            /** @description Owner only */
+            min?: number;
+            branch: string;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
+        };
+        GemPage: {
+            items: components["schemas"]["GemCard"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            totalPrice: number;
+            /** @description Owner only */
+            totalCost?: number;
+        };
+        StockSummary: {
+            /** Format: int64 */
+            inStock: number;
+            /** Format: int64 */
+            notReady: number;
+            /** Format: int64 */
+            returned: number;
+            newest: components["schemas"]["GemCard"][];
+        };
+        NextCode: {
+            code: string;
         };
         DemoUser: {
             name: string;
@@ -1492,6 +1699,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BranchView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GemView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    edit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GemForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GemView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -1872,6 +2145,107 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BranchView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query?: {
+                gemType?: string;
+                productType?: string;
+                status?: string;
+                cert?: "LAB" | "SHOP" | "NONE";
+                q?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GemPage"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GemForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GemView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    markReady: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GemView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -2408,6 +2782,64 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StockSummary"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    nextCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["NextCode"];
                 };
             };
             /** @description Error (ApiError format) */
