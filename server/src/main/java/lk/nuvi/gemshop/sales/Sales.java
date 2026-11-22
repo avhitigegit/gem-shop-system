@@ -95,6 +95,7 @@ public class Sales {
 
     private final SaleRepository sales;
     private final HeldSaleRepository held;
+    private final QuoteRepository quotes;
     private final Gems gems;
     private final Customers customers;
     private final Guides guides;
@@ -111,12 +112,13 @@ public class Sales {
     private final GemPrints prints;
     private final ZoneId zone;
 
-    public Sales(SaleRepository sales, HeldSaleRepository held, Gems gems, Customers customers, Guides guides,
+    public Sales(SaleRepository sales, HeldSaleRepository held, QuoteRepository quotes, Gems gems, Customers customers, Guides guides,
             Commission commission, Rates rates, ShopSettingsRepository shops, Numbers numbers, Approvals approvals,
             ApprovalRepository approvalRepo, ActivityLog log, Alerts alerts, CurrentUser current, EntityManager em,
             AppProperties app, GemPrints prints) {
         this.sales = sales;
         this.held = held;
+        this.quotes = quotes;
         this.gems = gems;
         this.customers = customers;
         this.guides = guides;
@@ -157,7 +159,15 @@ public class Sales {
     /** Totals, commissions and which prices are below the minimum, while the bill is being made. */
     @Transactional(readOnly = true)
     public BillView check(BillForm f) {
-        List<Line> lines = lines(f.items(), branchFor(f.branch(), f.items()), Set.of());
+        Set<Long> kept = new HashSet<>();
+        if (f.held() != null && !f.held().isBlank()) {
+            requireHeld(f.held()).getItems().forEach(i -> kept.add(i.getGem().getId()));
+        }
+        if (f.quote() != null && !f.quote().isBlank()) {
+            quotes.findByNumber(f.quote().trim().toUpperCase(Locale.ROOT)).filter(Quote::isActive)
+                    .ifPresent(q -> q.getItems().forEach(i -> kept.add(i.getGem().getId())));
+        }
+        List<Line> lines = lines(f.items(), branchFor(f.branch(), f.items()), kept);
         Guide guide = guides.orWalkIn(f.guide());
         BigDecimal total = total(lines);
         BigDecimal pct = guide == null ? BigDecimal.ZERO : guide.getPct();
@@ -249,6 +259,7 @@ public class Sales {
         Who w = current.require();
         Instant now = Instant.now();
         HeldSale h = f.held() == null || f.held().isBlank() ? null : requireHeld(f.held());
+        Quote q = h != null || f.quote() == null || f.quote().isBlank() ? null : openQuote(f.quote());
         Branch branch;
         List<Line> lines;
         Customer customer;
@@ -270,8 +281,16 @@ public class Sales {
             customer = h.getCustomer();
             guide = h.getGuide();
         } else {
-            branch = branchFor(f.branch(), f.items());
-            lines = lines(f.items(), branch, Set.of());
+            Set<Long> kept = new HashSet<>();
+            if (q != null) {
+                branch = q.getBranch();
+                if (q.isReservation()) {
+                    q.getItems().forEach(i -> kept.add(i.getGem().getId()));
+                }
+            } else {
+                branch = branchFor(f.branch(), f.items());
+            }
+            lines = lines(f.items(), branch, kept);
             List<Line> below = lines.stream().filter(Line::belowMin).toList();
             if (!below.isEmpty() && w.role() != Role.OWNER) {
                 throw ApiException.conflict(BELOW_MIN, "A price is below the minimum – send the bill to the owner for approval.");
@@ -336,6 +355,19 @@ public class Sales {
         if (h != null) {
             h.completed(no);
         }
+        if (q != null) {
+            s.fromQuote(q.getNumber());
+            q.converted(no);
+            Set<Long> sold = new HashSet<>();
+            lines.forEach(l -> sold.add(l.gem.getId()));
+            for (QuoteItem i : q.getItems()) {
+                Gem g = i.getGem();
+                if (q.isReservation() && !sold.contains(g.getId()) && g.getStatus() == GemStatus.RESERVED) {
+                    g.setStatus(GemStatus.IN_STOCK);
+                    gems.addHistory(g, "Reservation released", q.getNumber() + " sold without this gem (" + no + ")");
+                }
+            }
+        }
         log.add("Sale completed", no + " · " + customer.getName() + " · " + lkr(total), branch.getId());
         alerts.raise(AlertType.SALE, "Sale " + no + " · " + lkr(total) + " · " + customer.getCountry(), INVOICE_LINK + no,
                 branch.getId());
@@ -358,12 +390,13 @@ public class Sales {
         List<Sale> today = sales.since(branch, from);
         BigDecimal total = today.stream().map(Sale::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         List<SaleRow> latest = sales.latest(branch, PageRequest.of(0, 6)).stream().map(Sales::row).toList();
-        return new SellSummary(today.size(), total, heldList(), latest);
+        return new SellSummary(today.size(), total, heldList(), latest, quotes.active(Quote.Kind.RESERVATION, branch),
+                quotes.active(Quote.Kind.QUOTATION, branch));
     }
 
     // ------------------------------------------------------------------ checks
 
-    private record Line(Gem gem, BigDecimal agreed) {
+    record Line(Gem gem, BigDecimal agreed) {
         boolean belowMin() {
             return gem.getMinPrice() != null && agreed.compareTo(gem.getMinPrice()) < 0;
         }
@@ -373,7 +406,7 @@ public class Sales {
             BigDecimal feePct, BigDecimal fee) {}
 
     /** The selling branch: the one asked, else the salesperson's, else the first gem's. */
-    private Branch branchFor(String code, List<LineForm> items) {
+    Branch branchFor(String code, List<LineForm> items) {
         Who w = current.require();
         Branch b;
         if (code != null && !code.isBlank() && !CurrentUser.ALL.equalsIgnoreCase(code)) {
@@ -389,8 +422,8 @@ public class Sales {
         return b;
     }
 
-    /** Each gem once, at this branch, and sellable (or on hold for this held sale). */
-    private List<Line> lines(List<LineForm> items, Branch branch, Set<Long> onHoldOk) {
+    /** Each gem once, at this branch, and sellable (or on hold / reserved for this held sale or reservation). */
+    List<Line> lines(List<LineForm> items, Branch branch, Set<Long> onHoldOk) {
         List<Line> out = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         int i = 0;
@@ -400,7 +433,8 @@ public class Sales {
                 throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, g.getCode() + " is on the bill twice.",
                         "items[" + i + "].gem", "Twice on the bill");
             }
-            boolean held = onHoldOk.contains(g.getId()) && g.getStatus() == GemStatus.ON_HOLD;
+            boolean held = onHoldOk.contains(g.getId())
+                    && (g.getStatus() == GemStatus.ON_HOLD || g.getStatus() == GemStatus.RESERVED);
             if (!held && !g.getStatus().sellable()) {
                 throw ApiException.conflict(g.getStatus() == GemStatus.SOLD ? ALREADY_SOLD : NOT_SELLABLE,
                         g.getCode() + ": " + why(g));
@@ -426,12 +460,24 @@ public class Sales {
         }
     }
 
-    private Customer customer(CustomerForm f, Instant now) {
+    Customer customer(CustomerForm f, Instant now) {
         if (f.code() != null && !f.code().isBlank()) {
             return customers.require(f.code());
         }
         return customers.add(new Customer.Details(f.name(), f.country(), f.email(), f.whatsapp(), f.birthday(),
                 Boolean.TRUE.equals(f.consent())), now);
+    }
+
+    /** A reservation or quotation that can still be sold. */
+    private Quote openQuote(String number) {
+        Quote q = quotes.findByNumber(number.trim().toUpperCase(Locale.ROOT))
+                .orElseThrow(() -> ApiException.notFound("No reservation or quotation " + number + "."));
+        current.checkBranch(q.getBranch().getId());
+        if (!q.isActive()) {
+            throw ApiException.conflict(Quotes.NOT_ACTIVE, q.getNumber() + " is " + q.getStatus().name().toLowerCase(Locale.ROOT)
+                    + " – it cannot be sold.");
+        }
+        return q;
     }
 
     private HeldSale requireHeld(String number) {
@@ -450,7 +496,10 @@ public class Sales {
         return switch (g.getStatus()) {
             case SOLD -> "already sold" + (g.getSoldAt() == null ? "" : " on " + DMY.format(g.getSoldAt().atZone(zone)))
                     + (g.getSaleNo() == null ? "" : " (" + g.getSaleNo() + ")") + " – it cannot be sold again.";
-            case RESERVED -> "reserved for a customer. Open it from Reserved & quotes to sell.";
+            case RESERVED -> quotes.keeping(g.getId()).stream().findFirst()
+                    .map(q -> "reserved for " + q.getCustomer().getName() + " until " + DMY.format(q.getExpires()) + " ("
+                            + q.getNumber() + "). Open it from Reserved & quotes to sell.")
+                    .orElse("reserved for a customer. Open it from Reserved & quotes to sell.");
             case ON_HOLD -> "on hold – a below-minimum price is waiting for the owner.";
             case NOT_READY -> "not ready to sell yet.";
             case IN_TRANSIT -> "on the way to the other branch.";
@@ -458,7 +507,7 @@ public class Sales {
         };
     }
 
-    private Map<Long, Long> purchases() {
+    Map<Long, Long> purchases() {
         Map<Long, Long> m = new HashMap<>();
         for (Object[] r : sales.countPerCustomer()) {
             m.put((Long) r[0], (Long) r[1]);
@@ -486,7 +535,7 @@ public class Sales {
     }
 
     /** Shop details for the invoice header and footer. */
-    private DocShop docShop() {
+    DocShop docShop() {
         ShopSettings sh = shops.current().orElse(null);
         if (sh == null) {
             return new DocShop("Gem Shop", null, null, null, null, null, null, 7, null);
@@ -523,7 +572,7 @@ public class Sales {
                 s.getTotal(), s.getStatus());
     }
 
-    private SaleLine line(Gem g, BigDecimal list, BigDecimal agreed, String approvalNo, boolean released) {
+    SaleLine line(Gem g, BigDecimal list, BigDecimal agreed, String approvalNo, boolean released) {
         return new SaleLine(g.getCode(), g.getName(), g.getGemType(), g.getProductType(), g.getCarat(), list, agreed, approvalNo,
                 g.getColour(), g.getShape(), g.getTreatment(), g.getCertType(), g.getCertLab(), prints.certNo(g), released,
                 gems.card(g).photo());
@@ -538,11 +587,11 @@ public class Sales {
         return new GuidePick(g.getCode(), g.getName(), g.getVehicle(), g.getVehicleNo(), g.getPhone(), g.getPct());
     }
 
-    private static BigDecimal total(List<Line> lines) {
+    static BigDecimal total(List<Line> lines) {
         return lines.stream().map(Line::agreed).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private UserAccount user(Who w) {
+    UserAccount user(Who w) {
         return em.getReference(UserAccount.class, w.id());
     }
 
@@ -560,7 +609,7 @@ public class Sales {
         return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
 
-    private static String blank(String s) {
+    static String blank(String s) {
         return s == null || s.isBlank() ? null : s.trim();
     }
 }

@@ -152,6 +152,11 @@ public class Sale extends BaseEntity {
         payments.add(new SalePayment(this, payments.size() + 1, method, currency, amount, rate, lkr, feePct, fee));
     }
 
+    /** Sold from a reservation or quotation (P3-03). */
+    public void fromQuote(String quoteNo) {
+        this.quoteNo = quoteNo;
+    }
+
     public void sent(boolean email, boolean whatsapp) {
         this.sentEmail = sentEmail || email;
         this.sentWhatsapp = sentWhatsapp || whatsapp;
