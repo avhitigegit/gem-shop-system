@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/suppliers/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One supplier: details, purchase history and returns */
+        get: operations["supplier"];
+        /** Edit a supplier */
+        put: operations["editSupplier"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings/staff/{id}": {
         parameters: {
             query?: never;
@@ -104,6 +122,42 @@ export interface paths {
         /** Edit a gem and its prices (owner) */
         put: operations["edit"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suppliers, with the number of purchases and the total bought */
+        get: operations["suppliers"];
+        put?: never;
+        /** Add a supplier (gets the next SUP- code) */
+        post: operations["addSupplier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/supplier-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gems given back to suppliers, newest first */
+        get: operations["returns"];
+        put?: never;
+        /** Return a gem to its supplier with a reason; the gem leaves stock */
+        post: operations["giveBack"];
         delete?: never;
         options?: never;
         head?: never;
@@ -260,6 +314,24 @@ export interface paths {
         put?: never;
         /** Mark a branch as open, opening or closed (inactive) */
         post: operations["setBranchStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchase history by supplier and date (default: last 180 days), following the branch in the top bar */
+        get: operations["purchases"];
+        put?: never;
+        /** Buy gems from a supplier: saves the cash purchase and adds every gem to stock with its own code */
+        post: operations["buy"];
         delete?: never;
         options?: never;
         head?: never;
@@ -522,6 +594,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/supplier-returns/gems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gems that can go back to their supplier (optionally of one supplier) */
+        get: operations["returnable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/setup/status": {
         parameters: {
             query?: never;
@@ -565,6 +654,40 @@ export interface paths {
         };
         /** Every drop-down list with how many records use each value */
         get: operations["getLists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/purchases/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One purchase with its gems and the bill photo */
+        get: operations["purchase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/purchases/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts for the Gems & stock home */
+        get: operations["summary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -666,7 +789,7 @@ export interface paths {
             cookie?: never;
         };
         /** Gems & stock home: counts and the newest gems */
-        get: operations["summary"];
+        get: operations["summary_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -935,6 +1058,30 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SupplierForm: {
+            name: string;
+            contact?: string;
+            phone: string;
+            address: string;
+            /** @enum {string} */
+            idType: "NIC" | "BR";
+            idNo: string;
+            notes?: string;
+        };
+        SupplierRow: {
+            code: string;
+            name: string;
+            contact?: string;
+            phone: string;
+            address: string;
+            /** @enum {string} */
+            idType: "NIC" | "BR";
+            idNo: string;
+            notes?: string;
+            /** Format: int64 */
+            purchases: number;
+            totalBought: number;
+        };
         StaffForm: {
             name: string;
             /** Format: email */
@@ -1171,6 +1318,29 @@ export interface components {
             action: string;
             detail: string;
         };
+        ReturnForm: {
+            gem: string;
+            reasonType: string;
+            details: string;
+            refund: number;
+            /** @enum {string} */
+            refundMethod: "CASH" | "REPLACEMENT" | "CREDIT";
+        };
+        ReturnRow: {
+            number: string;
+            /** Format: date-time */
+            returnedAt: string;
+            supplierCode: string;
+            supplierName: string;
+            gemCode: string;
+            gemName: string;
+            gemType: string;
+            productType: string;
+            reason: string;
+            refund: number;
+            /** @enum {string} */
+            refundMethod: "CASH" | "REPLACEMENT" | "CREDIT";
+        };
         BranchPart: {
             name: string;
         };
@@ -1267,6 +1437,64 @@ export interface components {
             /** @enum {string} */
             status: "ACTIVE" | "OPENING" | "INACTIVE";
         };
+        PurchaseForm: {
+            /** Format: date */
+            date: string;
+            supplier: string;
+            branch: string;
+            /**
+             * Format: uuid
+             * @description BILL_PHOTO upload id
+             */
+            billPhoto: string;
+            notes?: string;
+            lines: components["schemas"]["PurchaseLineForm"][];
+        };
+        PurchaseLineForm: {
+            name: string;
+            productType: string;
+            gemType: string;
+            carat: number;
+            colour: string;
+            shape: string;
+            treatment: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            certLab?: string;
+            certNo?: string;
+            /** Format: date */
+            certDate?: string;
+            cost: number;
+            price: number;
+            min: number;
+            /** @description Not ready to sell yet (e.g. needs cutting) */
+            notReady?: boolean;
+        };
+        PurchaseGem: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            carat: number;
+            cost: number;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
+        };
+        PurchaseView: {
+            number: string;
+            /** Format: date */
+            date: string;
+            supplierCode: string;
+            supplierName: string;
+            branch: string;
+            branchName: string;
+            paidBy: string;
+            total: number;
+            bill?: components["schemas"]["FileView"];
+            notes?: string;
+            recordedBy: string;
+            gems: components["schemas"]["PurchaseGem"][];
+        };
         TagPrintForm: {
             codes: string[];
             /** @enum {string} */
@@ -1346,6 +1574,39 @@ export interface components {
             /** Format: int32 */
             marked: number;
         };
+        PurchaseRow: {
+            number: string;
+            /** Format: date */
+            date: string;
+            supplierCode: string;
+            supplierName: string;
+            branch: string;
+            gems: components["schemas"]["PurchaseGem"][];
+            hasBill: boolean;
+            total: number;
+        };
+        SupplierView: {
+            supplier: components["schemas"]["SupplierRow"];
+            /** Format: int64 */
+            gemsBought: number;
+            /** Format: int64 */
+            gemsSold: number;
+            /** Format: int64 */
+            returns: number;
+            refunded: number;
+            purchases: components["schemas"]["PurchaseRow"][];
+            returnList: components["schemas"]["ReturnRow"][];
+        };
+        ReturnableGem: {
+            code: string;
+            name: string;
+            supplierCode: string;
+            supplierName: string;
+            cost: number;
+            purchaseNo?: string;
+            /** Format: date-time */
+            addedAt: string;
+        };
         SetupStatus: {
             /** @description true = no logins yet, setup is needed */
             needed: boolean;
@@ -1374,6 +1635,18 @@ export interface components {
             defaultGuidePct: number;
             /** Format: int32 */
             listValues: number;
+        };
+        PurchaseList: {
+            items: components["schemas"]["PurchaseRow"][];
+            /** Format: int64 */
+            gems: number;
+            total: number;
+        };
+        PurchasingSummary: {
+            /** Format: int64 */
+            suppliers: number;
+            /** Format: int64 */
+            purchasesThisMonth: number;
         };
         ListValues: {
             /** @enum {string} */
@@ -1573,6 +1846,72 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    supplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SupplierView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    editSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SupplierRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     editStaff: {
         parameters: {
             query?: never;
@@ -1886,6 +2225,130 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["GemView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    suppliers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SupplierRow"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addSupplier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SupplierRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    returns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnRow"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    giveBack: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnRow"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -2266,6 +2729,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BranchView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    purchases: {
+        parameters: {
+            query?: {
+                supplier?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchaseList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    buy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchaseView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -2804,6 +3333,37 @@ export interface operations {
             };
         };
     };
+    returnable: {
+        parameters: {
+            query?: {
+                supplier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnableGem"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getSetupStatus: {
         parameters: {
             query?: never;
@@ -2878,6 +3438,66 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ListView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    purchase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchaseView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchasingSummary"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -3044,7 +3664,7 @@ export interface operations {
             };
         };
     };
-    summary: {
+    summary_1: {
         parameters: {
             query?: never;
             header?: never;
