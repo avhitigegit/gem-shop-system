@@ -1,3 +1,5 @@
 # Development server (if one is used). Sample data allowed.
 app:
   environment: dev
+  sample-data:
+    enabled: true
