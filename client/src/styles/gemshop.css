@@ -2588,4 +2588,31 @@
     border-color: var(--success);
     background: #f3fbf5;
   }
+
+  /* P3-01 new sale: the payment window. */
+  .pay-due {
+    background: var(--navy);
+    color: #fff;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .pay-big {
+    font-size: 26px;
+    font-weight: 700;
+  }
+  .muted-on-dark {
+    color: #aab8d6;
+  }
+  .pay-line {
+    display: grid;
+    grid-template-columns: 150px 150px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  @media (max-width: 640px) {
+    .pay-line {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
 }

@@ -391,6 +391,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete the sale and take payment */
+        post: operations["complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Totals, commissions and prices below the minimum while the bill is made */
+        post: operations["check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/purchases": {
         parameters: {
             query?: never;
@@ -403,6 +437,41 @@ export interface paths {
         put?: never;
         /** Buy gems from a supplier: saves the cash purchase and adds every gem to stock with its own code */
         post: operations["buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/held-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Held sales: waiting for the owner or approved */
+        get: operations["held"];
+        put?: never;
+        /** Price below the minimum: hold the sale and ask the owner */
+        post: operations["hold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/held-sales/{number}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a new bill instead: the gems go back in stock */
+        post: operations["cancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -818,6 +887,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sales/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One sale (invoice) */
+        get: operations["sale"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sell home: sales today, held sales, latest invoices */
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/guides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guides and drivers (New sale) */
+        get: operations["guides"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/gems/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A scanned tag: the gem and whether it can be sold */
+        get: operations["scan_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sales/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customers who came before (New sale) */
+        get: operations["customers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/purchases/{number}": {
         parameters: {
             query?: never;
@@ -843,7 +997,7 @@ export interface paths {
             cookie?: never;
         };
         /** Counts for the Gems & stock home */
-        get: operations["summary"];
+        get: operations["summary_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -861,6 +1015,23 @@ export interface paths {
         };
         /** Values of every drop-down list, in order (for forms) */
         get: operations["getListValues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/held-sales/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One held sale (the waiting screen asks every few seconds) */
+        get: operations["heldSale"];
         put?: never;
         post?: never;
         delete?: never;
@@ -945,7 +1116,7 @@ export interface paths {
             cookie?: never;
         };
         /** Gems & stock home: counts and the newest gems */
-        get: operations["summary_1"];
+        get: operations["summary_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1680,6 +1851,130 @@ export interface components {
             /** @enum {string} */
             status: "ACTIVE" | "OPENING" | "INACTIVE";
         };
+        CustomerForm: {
+            /** @description C-001 = came before; empty = new customer */
+            code?: string;
+            name?: string;
+            country?: string;
+            email?: string;
+            whatsapp?: string;
+            /**
+             * @description MM-DD, no year
+             * @example 04-17
+             */
+            birthday?: string;
+            /** @description Promotions by email / WhatsApp allowed */
+            consent?: boolean;
+        };
+        LineForm: {
+            /** @example GEM-00125 */
+            gem: string;
+            agreed: number;
+        };
+        PaymentForm: {
+            /** @enum {string} */
+            method: "CASH" | "CARD";
+            /** @enum {string} */
+            currency: "LKR" | "USD" | "EUR";
+            amount: number;
+        };
+        SaleForm: {
+            branch?: string;
+            items: components["schemas"]["LineForm"][];
+            customer: components["schemas"]["CustomerForm"];
+            guide?: string;
+            /** @description HS-0001 when finishing an approved held sale */
+            held?: string;
+            payments: components["schemas"]["PaymentForm"][];
+            notes?: string;
+        };
+        CustomerPick: {
+            code: string;
+            name: string;
+            country: string;
+            email?: string;
+            whatsapp?: string;
+            birthday?: string;
+            consent: boolean;
+            /** Format: int64 */
+            purchases: number;
+        };
+        GuidePick: {
+            code: string;
+            name: string;
+            vehicle?: string;
+            vehicleNo?: string;
+            phone: string;
+            pct: number;
+        };
+        PaymentLine: {
+            /** @enum {string} */
+            method: "CASH" | "CARD";
+            /** @enum {string} */
+            currency: "LKR" | "USD" | "EUR";
+            amount: number;
+            rate: number;
+            lkr: number;
+        };
+        SaleLine: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            carat: number;
+            listPrice: number;
+            agreed: number;
+            approvalNo?: string;
+        };
+        SaleView: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            branch: string;
+            /** @enum {string} */
+            status: "COMPLETED" | "CANCELLED";
+            customer: components["schemas"]["CustomerPick"];
+            guide?: components["schemas"]["GuidePick"];
+            staff: string;
+            items: components["schemas"]["SaleLine"][];
+            payments: components["schemas"]["PaymentLine"][];
+            total: number;
+            paid: number;
+            change: number;
+            guidePct: number;
+            guideComm: number;
+            staffComm: number;
+            /** @description Bank fee on cards, paid by the shop – owner and accountant only */
+            cardFee?: number;
+            heldNo?: string;
+            sentEmail: boolean;
+            sentWhatsapp: boolean;
+            notes?: string;
+        };
+        BillForm: {
+            /** @description Branch code; empty = the salesperson's branch / the first gem's branch */
+            branch?: string;
+            items: components["schemas"]["LineForm"][];
+            /** @description Guide code; empty = walk-in */
+            guide?: string;
+        };
+        BillLine: {
+            gem: string;
+            belowMin: boolean;
+        };
+        BillView: {
+            lines: components["schemas"]["BillLine"][];
+            belowMin: boolean;
+            total: number;
+            guidePct: number;
+            guideComm: number;
+            staffComm: number;
+            /**
+             * Format: int32
+             * @description Staff commission price level, 1 = lowest
+             */
+            level: number;
+        };
         PurchaseForm: {
             /** Format: date */
             date: string;
@@ -1737,6 +2032,32 @@ export interface components {
             notes?: string;
             recordedBy: string;
             gems: components["schemas"]["PurchaseGem"][];
+        };
+        HoldForm: {
+            branch?: string;
+            items: components["schemas"]["LineForm"][];
+            customer: components["schemas"]["CustomerForm"];
+            guide?: string;
+        };
+        HeldView: {
+            number: string;
+            /** Format: date-time */
+            heldAt: string;
+            branch: string;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED" | "CANCELLED";
+            approvalNo?: string;
+            /** @description Owner's note when deciding */
+            note?: string;
+            decidedBy?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            staff: string;
+            customer: components["schemas"]["CustomerPick"];
+            guide?: components["schemas"]["GuidePick"];
+            items: components["schemas"]["SaleLine"][];
+            total: number;
+            saleNo?: string;
         };
         TagPrintForm: {
             codes: string[];
@@ -1915,6 +2236,56 @@ export interface components {
             /** Format: int32 */
             listValues: number;
         };
+        SaleRow: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            customer: string;
+            country: string;
+            /** Format: int32 */
+            items: number;
+            gemType: string;
+            productType: string;
+            total: number;
+            /** @enum {string} */
+            status: "COMPLETED" | "CANCELLED";
+        };
+        SellSummary: {
+            /** Format: int64 */
+            salesToday: number;
+            totalToday: number;
+            held: components["schemas"]["HeldView"][];
+            latest: components["schemas"]["SaleRow"][];
+        };
+        GemCard: {
+            code: string;
+            name: string;
+            productType: string;
+            gemType: string;
+            carat: number;
+            colour: string;
+            shape: string;
+            treatment: string;
+            /** @enum {string} */
+            certType: "LAB" | "SHOP" | "NONE";
+            certLab?: string;
+            price: number;
+            /** @description Owner only */
+            cost?: number;
+            /** @description Owner only */
+            min?: number;
+            branch: string;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
+        };
+        PosGem: {
+            gem: components["schemas"]["GemCard"];
+            sellable: boolean;
+            /** @description Why it cannot be sold, e.g. already sold on 24/10/2026 (INV-000101) */
+            note?: string;
+        };
         PurchaseList: {
             items: components["schemas"]["PurchaseRow"][];
             /** Format: int64 */
@@ -1942,29 +2313,6 @@ export interface components {
             database: "UP" | "DOWN";
             /** Format: date-time */
             time: string;
-        };
-        GemCard: {
-            code: string;
-            name: string;
-            productType: string;
-            gemType: string;
-            carat: number;
-            colour: string;
-            shape: string;
-            treatment: string;
-            /** @enum {string} */
-            certType: "LAB" | "SHOP" | "NONE";
-            certLab?: string;
-            price: number;
-            /** @description Owner only */
-            cost?: number;
-            /** @description Owner only */
-            min?: number;
-            branch: string;
-            /** @enum {string} */
-            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
-            /** @description First photo (small), or null = draw the gem */
-            photo?: string;
         };
         GemPage: {
             items: components["schemas"]["GemCard"][];
@@ -3242,6 +3590,72 @@ export interface operations {
             };
         };
     };
+    complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BillForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BillView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     purchases: {
         parameters: {
             query?: {
@@ -3295,6 +3709,99 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PurchaseView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    held: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HeldView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    hold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HeldView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HeldView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -4103,6 +4610,155 @@ export interface operations {
             };
         };
     };
+    sale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SellSummary"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    guides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuidePick"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    scan_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PosGem"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    customers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerPick"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     purchase: {
         parameters: {
             query?: never;
@@ -4134,7 +4790,7 @@ export interface operations {
             };
         };
     };
-    summary: {
+    summary_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4179,6 +4835,37 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ListValues"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    heldSale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HeldView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -4316,7 +5003,7 @@ export interface operations {
             };
         };
     };
-    summary_1: {
+    summary_2: {
         parameters: {
             query?: never;
             header?: never;
