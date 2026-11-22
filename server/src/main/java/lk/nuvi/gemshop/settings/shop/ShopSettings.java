@@ -70,6 +70,10 @@ public class ShopSettings extends BaseEntity {
         this.name = name;
     }
 
+    public void rename(String name) {
+        this.name = name;
+    }
+
     public ShopSettings contact(String tagline, String address, String phone, String email, String website) {
         this.tagline = tagline;
         this.address = address;
