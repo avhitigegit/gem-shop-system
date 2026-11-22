@@ -8,6 +8,11 @@ spring:
 app:
   sample-data:
     enabled: ${SAMPLE_DATA:true}  # prototype demo data when the database is empty
+    password: ${SAMPLE_PASSWORD:Gem@2026}   # password of the 4 sample logins on your own computer
+  auth:
+    jwt-secret: ${JWT_SECRET:local-only-secret-change-me-0123456789abcdef}
+    cookie-secure: ${COOKIE_SECURE:false}   # http://localhost has no HTTPS
+    demo-logins: true
 logging:
   level:
     lk.nuvi.gemshop: DEBUG

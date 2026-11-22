@@ -63,7 +63,7 @@ class SkeletonTest {
 
     @Test
     void unknownPathUsesErrorFormat() throws Exception {
-        mvc.perform(get("/api/does-not-exist"))
+        mvc.perform(get("/api/does-not-exist").with(SignIn.OWNER_JWT))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"))
@@ -73,7 +73,7 @@ class SkeletonTest {
 
     @Test
     void invalidFormListsTheFields() throws Exception {
-        mvc.perform(post("/api/test/form").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\",\"price\":-5}"))
+        mvc.perform(post("/api/test/form").with(SignIn.OWNER_JWT).contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\",\"price\":-5}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.fieldErrors.length()").value(2));
@@ -81,7 +81,7 @@ class SkeletonTest {
 
     @Test
     void brokenJsonIsBadRequest() throws Exception {
-        mvc.perform(post("/api/test/form").contentType(MediaType.APPLICATION_JSON).content("{oops"))
+        mvc.perform(post("/api/test/form").with(SignIn.OWNER_JWT).contentType(MediaType.APPLICATION_JSON).content("{oops"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
@@ -95,7 +95,7 @@ class SkeletonTest {
 
     @Test
     void businessErrorKeepsItsCode() throws Exception {
-        mvc.perform(get("/api/test/business"))
+        mvc.perform(get("/api/test/business").with(SignIn.OWNER_JWT))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BELOW_MIN_PRICE"))
                 .andExpect(jsonPath("$.message").value("Price is below the minimum."));
@@ -103,7 +103,7 @@ class SkeletonTest {
 
     @Test
     void unexpectedErrorHidesDetails() throws Exception {
-        mvc.perform(get("/api/test/crash"))
+        mvc.perform(get("/api/test/crash").with(SignIn.OWNER_JWT))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
                 .andExpect(jsonPath("$.message").value(containsString("Something went wrong")));

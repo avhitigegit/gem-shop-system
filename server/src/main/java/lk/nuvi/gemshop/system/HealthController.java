@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "System")
+@lk.nuvi.gemshop.auth.security.PublicApi
 @RestController
 @RequestMapping("/api")
 public class HealthController {

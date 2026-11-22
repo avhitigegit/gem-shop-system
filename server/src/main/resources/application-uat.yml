@@ -3,3 +3,4 @@ app:
   environment: uat
   sample-data:
     enabled: true               # UAT has sample data only
+    password: ${SAMPLE_PASSWORD}  # NUVI gives this to the testers

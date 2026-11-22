@@ -13,4 +13,12 @@ public interface SampleDataPart {
 
     /** Saves this part; returns how many records were saved. */
     int load(SampleData data);
+
+    /**
+     * Runs on a database that already has sample data from an earlier version of the app:
+     * adds what this part brings when it is still missing (e.g. rates added in P1-02). Returns how many records were saved.
+     */
+    default int catchUp(SampleData data) {
+        return 0;
+    }
 }
