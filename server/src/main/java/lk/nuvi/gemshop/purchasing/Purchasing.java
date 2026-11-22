@@ -214,7 +214,7 @@ public class Purchasing {
     private static GemForm gemForm(PurchaseLineForm l, String branch) {
         return new GemForm(l.name(), l.productType(), l.gemType(), l.carat(), l.colour(), l.shape(), l.treatment(), null,
                 l.certType(), l.certLab(), l.certNo(), l.certDate(), null, List.of(), l.cost(), l.price(), l.min(), branch,
-                l.notReady());
+                l.notReady(), null);
     }
 
     /** "Gem 3: …" and the field as lines[2].min, so the screen marks the right box. */

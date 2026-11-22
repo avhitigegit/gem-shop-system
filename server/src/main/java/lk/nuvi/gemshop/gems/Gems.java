@@ -219,6 +219,7 @@ public class Gems {
         Who who = current.require();
         GemStatus status = Boolean.TRUE.equals(f.notReady()) ? GemStatus.NOT_READY : GemStatus.IN_STOCK;
         Gem g = gems.save(new Gem(code, d, c, p, branch, status, Instant.now(), user(who)));
+        g.boughtIn(supplier(f), null);
         attachFiles(g, f);
         String note = status == GemStatus.NOT_READY ? " · not ready to sell yet" : "";
         addHistory(g, "Added", "Added by " + who.name() + note);
@@ -246,6 +247,19 @@ public class Gems {
         return g;
     }
 
+    /** The supplier chosen on the gem form, checked; null = not linked. */
+    private String supplier(GemForm f) {
+        if (f.supplier() == null || f.supplier().isBlank()) {
+            return null;
+        }
+        String code = f.supplier().trim().toUpperCase(java.util.Locale.ROOT);
+        if (!gems.supplierExists(code)) {
+            throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Choose a supplier from the list.",
+                    "supplier", "Not in the supplier list.");
+        }
+        return code;
+    }
+
     @Transactional
     public GemView edit(String code, GemForm f) {
         Gem g = visible(code);
@@ -263,6 +277,14 @@ public class Gems {
         }
         if (c.type() != g.getCertType()) {
             changes.add("Certificate " + label(g.getCertType()) + " → " + label(c.type()));
+        }
+        if (g.getPurchaseNo() == null) { // a gem bought in a purchase keeps its supplier
+            String sup = supplier(f);
+            if (!Objects.equals(sup, g.getSupplierCode())) {
+                changes.add("Supplier " + (g.getSupplierCode() == null ? "not linked" : g.getSupplierCode()) + " → "
+                        + (sup == null ? "not linked" : sup));
+                g.boughtIn(sup, null);
+            }
         }
         boolean detailsChanged = !d.equals(g.getDetails()) || !Objects.equals(c.lab(), g.getCertLab())
                 || !Objects.equals(c.number(), g.getCertNo()) || !Objects.equals(c.date(), g.getCertDate())

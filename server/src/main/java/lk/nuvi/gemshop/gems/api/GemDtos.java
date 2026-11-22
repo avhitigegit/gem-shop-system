@@ -108,7 +108,9 @@ public final class GemDtos {
             @Schema(requiredMode = REQUIRED) @NotNull @DecimalMin("1") @DecimalMax("999999999") BigDecimal price,
             @Schema(requiredMode = REQUIRED) @NotNull @DecimalMin("1") @DecimalMax("999999999") BigDecimal min,
             @Schema(requiredMode = REQUIRED) @NotBlank String branch,
-            @Schema(description = "Add only: not ready to sell yet (e.g. needs cutting)") Boolean notReady) {}
+            @Schema(description = "Add only: not ready to sell yet (e.g. needs cutting)") Boolean notReady,
+            @Schema(description = "Supplier code (SUP-01) or empty = not linked; a gem bought in a purchase keeps its supplier")
+            String supplier) {}
 
     /** Gems & stock home: counts and the newest gems (in the chosen branch). */
     public record StockSummary(
