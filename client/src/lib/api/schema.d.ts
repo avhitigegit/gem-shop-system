@@ -128,6 +128,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transfers from or to the branch, newest first */
+        get: operations["transfers"];
+        put?: never;
+        /** Send gems to the other branch: they are On the way until received */
+        post: operations["send"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfers/{number}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The receiving branch confirms every gem (ticked or scanned) */
+        post: operations["receive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/suppliers": {
         parameters: {
             query?: never;
@@ -158,6 +193,42 @@ export interface paths {
         put?: never;
         /** Return a gem to its supplier with a reason; the gem leaves stock */
         post: operations["giveBack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Correction history, newest first */
+        get: operations["corrections"];
+        put?: never;
+        /** Ask the owner to correct a gem's status, branch or carat (nothing changes until approved) */
+        post: operations["requestCorrection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Previous checks, newest first */
+        get: operations["previous"];
+        put?: never;
+        /** Finish the check: saves found / missing / wrong place / unknown and tells the owner */
+        post: operations["finish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -594,6 +665,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/transfers/gems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gems that can be sent from a branch (in stock or back from a customer) */
+        get: operations["sendable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/supplier-returns/gems": {
         parameters: {
             query?: never;
@@ -603,6 +691,74 @@ export interface paths {
         };
         /** Gems that can go back to their supplier (optionally of one supplier) */
         get: operations["returnable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/waiting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Gems & stock home: transfers on the way here and corrections waiting for the owner */
+        get: operations["waiting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock value at cost and selling price, by gem type, product type and branch (owner only) */
+        get: operations["value"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-checks/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The gems that should be on the shelf of a branch */
+        get: operations["start"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock-checks/scan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One scanned tag: found, wrong place or unknown */
+        get: operations["scan"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1320,6 +1476,45 @@ export interface components {
             action: string;
             detail: string;
         };
+        TransferForm: {
+            from: string;
+            to: string;
+            gems: string[];
+            notes?: string;
+        };
+        StockGem: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            carat: number;
+            colour: string;
+            branch: string;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
+            /** @description Owner only */
+            price?: number;
+        };
+        TransferView: {
+            number: string;
+            from: string;
+            to: string;
+            /** @enum {string} */
+            status: "IN_TRANSIT" | "RECEIVED";
+            /** Format: date-time */
+            sentAt: string;
+            sentBy: string;
+            /** Format: date-time */
+            receivedAt?: string;
+            receivedBy?: string;
+            notes?: string;
+            /** @description Can the signed-in person confirm it (on the way to their branch) */
+            canReceive: boolean;
+            gems: components["schemas"]["StockGem"][];
+        };
+        ReceiveForm: {
+            gems: string[];
+        };
         ReturnForm: {
             gem: string;
             reasonType: string;
@@ -1342,6 +1537,52 @@ export interface components {
             refund: number;
             /** @enum {string} */
             refundMethod: "CASH" | "REPLACEMENT" | "CREDIT";
+        };
+        CorrectionForm: {
+            gem: string;
+            /** @enum {string} */
+            kind: "STATUS" | "BRANCH" | "CARAT";
+            /** @description STATUS: WRITTEN_OFF or IN_STOCK · BRANCH: branch code · CARAT: 5.01 */
+            to: string;
+            reason: string;
+        };
+        CorrectionView: {
+            number: string;
+            /** Format: date-time */
+            requestedAt: string;
+            gem: components["schemas"]["StockGem"];
+            /** @enum {string} */
+            kind: "STATUS" | "BRANCH" | "CARAT";
+            from: string;
+            to: string;
+            /** @description e.g. "In stock → Written off" */
+            change: string;
+            reason: string;
+            requestedBy: string;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            approvalNo?: string;
+        };
+        CheckForm: {
+            branch: string;
+            /** @description Everything scanned (codes or tag text) */
+            scanned: string[];
+            notes?: string;
+        };
+        CheckView: {
+            number: string;
+            branch: string;
+            /** Format: date-time */
+            checkedAt: string;
+            checkedBy: string;
+            /** Format: int32 */
+            expected: number;
+            /** Format: int32 */
+            found: number;
+            missing: string[];
+            wrong: string[];
+            unknown: string[];
+            notes?: string;
         };
         BranchPart: {
             name: string;
@@ -1608,6 +1849,42 @@ export interface components {
             purchaseNo?: string;
             /** Format: date-time */
             addedAt: string;
+        };
+        StockWaiting: {
+            /**
+             * Format: int64
+             * @description Transfers on the way to this branch (or any)
+             */
+            transfersOnTheWay: number;
+            /** Format: int64 */
+            correctionsWaiting: number;
+        };
+        StockValue: {
+            total: components["schemas"]["ValueRow"];
+            byGemType: components["schemas"]["ValueRow"][];
+            byProductType: components["schemas"]["ValueRow"][];
+            byBranch: components["schemas"]["ValueRow"][];
+        };
+        ValueRow: {
+            group: string;
+            /** Format: int64 */
+            items: number;
+            carats: number;
+            cost: number;
+            price: number;
+        };
+        CheckStart: {
+            branch: string;
+            branchName: string;
+            expected: components["schemas"]["StockGem"][];
+        };
+        ScanView: {
+            code: string;
+            /** @enum {string} */
+            result: "FOUND" | "WRONG_PLACE" | "UNKNOWN";
+            gem?: components["schemas"]["StockGem"];
+            /** @description e.g. "should be at Branch 2 (In stock)" or "Sold" */
+            note: string;
         };
         SetupStatus: {
             /** @description true = no logins yet, setup is needed */
@@ -2240,6 +2517,103 @@ export interface operations {
             };
         };
     };
+    transfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TransferView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    send: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TransferView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    receive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiveForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TransferView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     suppliers: {
         parameters: {
             query?: never;
@@ -2351,6 +2725,130 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReturnRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    corrections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CorrectionView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    requestCorrection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CorrectionView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    previous: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CheckView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    finish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CheckView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -3335,6 +3833,37 @@ export interface operations {
             };
         };
     };
+    sendable: {
+        parameters: {
+            query: {
+                branch: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StockGem"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     returnable: {
         parameters: {
             query?: {
@@ -3353,6 +3882,127 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReturnableGem"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    waiting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StockWaiting"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    value: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StockValue"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    start: {
+        parameters: {
+            query: {
+                branch: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CheckStart"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    scan: {
+        parameters: {
+            query: {
+                branch: string;
+                code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScanView"];
                 };
             };
             /** @description Error (ApiError format) */

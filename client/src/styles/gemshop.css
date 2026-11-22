@@ -2560,4 +2560,32 @@
       grid-template-columns: minmax(0, 1fr);
     }
   }
+
+  /* P2-04 stock: gem picker in the transfer window, stock-check tiles (green when scanned). */
+  .pick-list {
+    max-height: 40vh;
+    overflow: auto;
+  }
+  .pick-list .check {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 8px;
+  }
+  .check-tile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px;
+    text-align: center;
+    opacity: 0.6;
+    background: var(--card);
+  }
+  .check-tile.ok {
+    opacity: 1;
+    border-color: var(--success);
+    background: #f3fbf5;
+  }
 }
