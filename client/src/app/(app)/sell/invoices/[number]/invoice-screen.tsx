@@ -18,7 +18,7 @@ import { ACCOUNTANT } from "@/lib/roles";
 import { payLabel } from "@/lib/sales";
 import { useSession } from "@/lib/session";
 import { useLoad } from "@/lib/use-load";
-import { SendModal } from "../send-modal";
+import { SendModal } from "../../send-modal";
 import { useCancelInvoice } from "../use-cancel";
 
 export function InvoiceScreen({ number }: { number: string }) {
@@ -359,7 +359,7 @@ export function InvoiceScreen({ number }: { number: string }) {
 
       {sending ? (
         <SendModal
-          sale={s}
+          doc={{ label: "invoice", number: s.number, branch: s.branch, customer: s.customer }}
           onClose={() => setSending(false)}
           onSent={() => {
             setSending(false);
