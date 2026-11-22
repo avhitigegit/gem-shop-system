@@ -146,7 +146,7 @@ public class Invoices {
         return new InvoiceRow(s.getNumber(), s.getSoldAt(), s.getBranch().getCode(), s.getCustomer().getName(),
                 s.getCustomer().getCountry(),
                 s.getItems().stream().map(i -> new InvoiceItem(i.getGem().getCode(), i.getGem().getName(), i.getGem().getGemType(),
-                        i.getGem().getProductType(), i.isReleased())).toList(),
+                        i.getGem().getProductType(), i.isReleased() && s.getStatus() == Sale.Status.COMPLETED)).toList(),
                 payment(s), payType(s), s.getTotal(), s.isSentEmail(), s.isSentWhatsapp(), s.getStatus(), pending(s));
     }
 
@@ -274,7 +274,7 @@ public class Invoices {
                 t.addCell(pic);
                 Paragraph d = new Paragraph();
                 d.add(new Chunk(PdfBody.clean(g.getName()), bold));
-                if (i.isReleased()) {
+                if (i.isReleased() && !cancelled) {
                     d.add(new Chunk("  (returned – see credit note)", small));
                 }
                 d.add(Chunk.NEWLINE);

@@ -125,7 +125,7 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) CertType certType,
             String certLab,
             @Schema(description = "Lab or shop certificate number") String certNo,
-            @Schema(requiredMode = REQUIRED, description = "Returned or invoice cancelled") boolean released,
+            @Schema(requiredMode = REQUIRED, description = "Given back (returned, or the invoice was cancelled)") boolean released,
             @Schema(description = "First photo (small), or null = draw the gem") String photo) {}
 
     public record PaymentLine(
@@ -192,7 +192,7 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) String name,
             @Schema(requiredMode = REQUIRED) String gemType,
             @Schema(requiredMode = REQUIRED) String productType,
-            @Schema(requiredMode = REQUIRED) boolean released) {}
+            @Schema(requiredMode = REQUIRED, description = "Returned by the customer (not set on cancelled invoices)") boolean released) {}
 
     public record InvoiceRow(
             @Schema(requiredMode = REQUIRED) String number,
