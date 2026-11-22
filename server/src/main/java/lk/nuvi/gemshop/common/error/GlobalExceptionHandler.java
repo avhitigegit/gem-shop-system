@@ -95,6 +95,13 @@ public class GlobalExceptionHandler {
         return build(s, s.name(), e.getReason() != null ? e.getReason() : s.getReasonPhrase(), req, List.of());
     }
 
+    /** Two people saved the same record at the same moment (e.g. the owner approving on phone and computer). */
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    ResponseEntity<ApiError> changedMeanwhile(Exception e, HttpServletRequest req) {
+        return build(HttpStatus.CONFLICT, "CHANGED_MEANWHILE", "Someone else changed this just now. Please reload and try again.",
+                req, List.of());
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> unexpected(Exception e, HttpServletRequest req) {
         log.error("Unexpected error on {} {}", req.getMethod(), req.getRequestURI(), e);
