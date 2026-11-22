@@ -383,7 +383,8 @@ public class GemPrints {
                 .findFirst().orElse(null);
     }
 
-    private String logoUrl(ShopSettings shop) {
+    /** Link to the shop's uploaded logo, or null = the standard logo. */
+    public String logoUrl(ShopSettings shop) {
         if (shop == null || shop.getLogoFile() == null) {
             return null;
         }

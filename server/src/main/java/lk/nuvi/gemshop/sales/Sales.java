@@ -44,6 +44,7 @@ import lk.nuvi.gemshop.sales.api.SalesDtos.BillForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.BillLine;
 import lk.nuvi.gemshop.sales.api.SalesDtos.BillView;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CancelRequest;
+import lk.nuvi.gemshop.sales.api.SalesDtos.DocShop;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerPick;
 import lk.nuvi.gemshop.sales.api.SalesDtos.GuidePick;
@@ -480,7 +481,20 @@ public class Sales {
                         p.getLkr())).toList(),
                 s.getTotal(), paid, s.getChangeDue(), s.getGuidePct(), s.getGuideComm(), s.getStaffComm(),
                 money ? s.getCardFee() : null, s.getHeldNo(), s.isSentEmail(), s.isSentWhatsapp(), s.getNotes(),
-                s.getRateUsd(), s.getRateEur(), s.getCancelledAt(), s.getCancelledBy(), s.getCancelReason(), cancelRequest(s));
+                s.getRateUsd(), s.getRateEur(), s.getCancelledAt(), s.getCancelledBy(), s.getCancelReason(), cancelRequest(s),
+                docShop());
+    }
+
+    /** Shop details for the invoice header and footer. */
+    private DocShop docShop() {
+        ShopSettings sh = shops.current().orElse(null);
+        if (sh == null) {
+            return new DocShop("Gem Shop", null, null, null, null, null, null, 7, null);
+        }
+        boolean licence = sh.isPrintLicenceOnInvoice();
+        return new DocShop(sh.getName(), sh.getTagline(), sh.getAddress(), sh.getPhone(), sh.getEmail(),
+                licence ? sh.getNgjaLicenceNo() : null, licence ? sh.getNgjaLicenceExpiry() : null, sh.getReturnPolicyDays(),
+                prints.logoUrl(sh));
     }
 
     /** The latest cancellation request of an invoice and the owner's answer. */

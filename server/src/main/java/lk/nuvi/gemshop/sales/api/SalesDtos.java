@@ -161,7 +161,20 @@ public final class SalesDtos {
             Instant cancelledAt,
             String cancelledBy,
             String cancelReason,
-            @Schema(description = "The latest cancellation request, if any") CancelRequest cancel) {}
+            @Schema(description = "The latest cancellation request, if any") CancelRequest cancel,
+            @Schema(requiredMode = REQUIRED, description = "Shop details for the invoice header and footer") DocShop shop) {}
+
+    /** The shop as printed on documents (invoice header and footer). */
+    public record DocShop(
+            @Schema(requiredMode = REQUIRED) String name,
+            String tagline,
+            String address,
+            String phone,
+            String email,
+            @Schema(description = "NGJA licence – only when the shop prints it on invoices") String licenceNo,
+            java.time.LocalDate licenceExpiry,
+            @Schema(requiredMode = REQUIRED) int returnDays,
+            @Schema(description = "Uploaded logo, or null = the standard logo") String logoUrl) {}
 
     /** A cancellation request of an invoice and the owner's answer. */
     public record CancelRequest(
