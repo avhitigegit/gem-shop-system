@@ -179,12 +179,16 @@ public class Gems {
         }
     }
 
-    /** "GEM-00125", "gem-125", "GEM125", "125" → "GEM-00125" (what a tag scanner or a person types); else null. */
+    /** "GEM-00125", "gem-125", "GEM125", "125", "GEM-00125|CGH-SC-00125" → "GEM-00125" (what a tag scanner or a person types); else null. */
     public static String normaliseCode(String s) {
         if (s == null) {
             return null;
         }
         String t = s.trim().toUpperCase(Locale.ROOT);
+        int bar = t.indexOf('|'); // shop certificate QR: "GEM-00131|CGH-SC-00131"
+        if (bar > 0) {
+            t = t.substring(0, bar).trim();
+        }
         var m = CODE.matcher(t);
         if (m.matches()) {
             return "GEM-%05d".formatted(Integer.parseInt(m.group(1)));
@@ -341,7 +345,7 @@ public class Gems {
     }
 
     /** Shop certificate number: shop initials + SC + gem number, e.g. CGH-SC-00125 (prototype). */
-    String shopCertNo(String code) {
+    public String shopCertNo(String code) {
         String name = shops.current().map(ShopSettings::getName).orElse("Shop");
         StringBuilder initials = new StringBuilder();
         for (String w : name.split("[^\\p{L}\\p{N}]+")) {
