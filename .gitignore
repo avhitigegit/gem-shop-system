@@ -1,0 +1,45 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Secrets – never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# Backend (Java / Maven / Gradle)
+backend/target/
+backend/build/
+backend/.gradle/
+backend/out/
+*.class
+hs_err_pid*.log
+
+# Frontend (Node / Next.js)
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel
+
+# Local data and uploads
+uploads/
+infra/data/
+*.log
+*.dump
+*.sql.gz
