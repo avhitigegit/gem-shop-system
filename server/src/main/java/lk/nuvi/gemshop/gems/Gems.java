@@ -453,6 +453,12 @@ public class Gems {
         return m;
     }
 
+    /** A gem as a list card with its first photo (cost / minimum for the owner only). Used by New sale (P3-01). */
+    @Transactional(readOnly = true)
+    public GemCard card(Gem g) {
+        return card(g, isOwner(), firstPhotos(List.of(g.getCode())).get(g.getCode()));
+    }
+
     private GemCard card(Gem g, boolean owner, String photo) {
         return new GemCard(g.getCode(), g.getName(), g.getProductType(), g.getGemType(), g.getCarat(), g.getColour(),
                 g.getShape(), g.getTreatment(), g.getCertType(), g.getCertLab(), g.getPrice(), owner ? g.getCost() : null,
