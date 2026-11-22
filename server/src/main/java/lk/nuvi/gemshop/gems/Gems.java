@@ -219,11 +219,45 @@ public class Gems {
         Who who = current.require();
         GemStatus status = Boolean.TRUE.equals(f.notReady()) ? GemStatus.NOT_READY : GemStatus.IN_STOCK;
         Gem g = gems.save(new Gem(code, d, c, p, branch, status, Instant.now(), user(who)));
+        g.boughtIn(supplier(f), null);
         attachFiles(g, f);
         String note = status == GemStatus.NOT_READY ? " · not ready to sell yet" : "";
         addHistory(g, "Added", "Added by " + who.name() + note);
         log.add("Gem added", code + " · " + d.name() + " · LKR " + lkr(p.price()) + note, branch.getId());
         return view(g);
+    }
+
+    /**
+     * A gem bought in a purchase (P2-03): the same checks as the gem form, a new code, linked to the supplier and the
+     * purchase, "Added" in its history. Runs inside the purchase's transaction (all gems are saved, or none).
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public Gem addBought(GemForm f, String supplierCode, String purchaseNo, String supplierName) {
+        Branch branch = branch(f.branch());
+        Gem.Details d = details(f);
+        Gem.Prices p = prices(f);
+        String code = numbers.next(Counter.GEM);
+        Gem.Certificate c = certificate(f, code);
+        boolean notReady = Boolean.TRUE.equals(f.notReady());
+        Gem g = gems.save(new Gem(code, d, c, p, branch, notReady ? GemStatus.NOT_READY : GemStatus.IN_STOCK, Instant.now(),
+                user(current.require())));
+        g.boughtIn(supplierCode, purchaseNo);
+        attachFiles(g, f);
+        addHistory(g, "Added", "Bought from " + supplierName + " (" + purchaseNo + ")" + (notReady ? " – not ready to sell yet" : ""));
+        return g;
+    }
+
+    /** The supplier chosen on the gem form, checked; null = not linked. */
+    private String supplier(GemForm f) {
+        if (f.supplier() == null || f.supplier().isBlank()) {
+            return null;
+        }
+        String code = f.supplier().trim().toUpperCase(java.util.Locale.ROOT);
+        if (!gems.supplierExists(code)) {
+            throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Choose a supplier from the list.",
+                    "supplier", "Not in the supplier list.");
+        }
+        return code;
     }
 
     @Transactional
@@ -243,6 +277,14 @@ public class Gems {
         }
         if (c.type() != g.getCertType()) {
             changes.add("Certificate " + label(g.getCertType()) + " → " + label(c.type()));
+        }
+        if (g.getPurchaseNo() == null) { // a gem bought in a purchase keeps its supplier
+            String sup = supplier(f);
+            if (!Objects.equals(sup, g.getSupplierCode())) {
+                changes.add("Supplier " + (g.getSupplierCode() == null ? "not linked" : g.getSupplierCode()) + " → "
+                        + (sup == null ? "not linked" : sup));
+                g.boughtIn(sup, null);
+            }
         }
         boolean detailsChanged = !d.equals(g.getDetails()) || !Objects.equals(c.lab(), g.getCertLab())
                 || !Objects.equals(c.number(), g.getCertNo()) || !Objects.equals(c.date(), g.getCertDate())

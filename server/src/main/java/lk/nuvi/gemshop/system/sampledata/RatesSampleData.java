@@ -39,12 +39,12 @@ class RatesSampleData implements SampleDataPart {
         int n = 0;
         ZoneId colombo = ZoneId.of("Asia/Colombo");
         for (JsonNode h : data.node("rateHistory").values()) {
-            Instant at = data.date(h.path("date")).atTime(LocalTime.of(9, 0)).atZone(colombo).toInstant();
+            Instant at = data.notFuture(data.date(h.path("date")).atTime(LocalTime.of(9, 0)).atZone(colombo).toInstant());
             n += save(h, at);
         }
         JsonNode now = data.node("rates");
         Instant at = data.instant(now.path("updatedAt"));
-        n += save(now, at == null ? Instant.now() : at.plusSeconds(1));
+        n += save(now, at == null ? Instant.now() : data.notFuture(at.plusSeconds(1)));
         return n;
     }
 

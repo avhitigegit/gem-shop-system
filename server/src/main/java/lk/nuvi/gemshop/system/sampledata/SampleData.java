@@ -24,9 +24,16 @@ public final class SampleData {
     private final JsonNode state;
     private final LocalDate exportedOn;
     private final long shiftDays;
+    private final Instant now;
     private final Map<String, Object> refs = new HashMap<>();
 
     public SampleData(JsonNode root, LocalDate today) {
+        this(root, today, Instant.now());
+    }
+
+    /** {@code now}: sample moments after it are moved back to it (tests pass their own). */
+    public SampleData(JsonNode root, LocalDate today, Instant now) {
+        this.now = now;
         this.state = root.path("state");
         this.exportedOn = LocalDate.parse(root.path("exportedOn").asString());
         this.shiftDays = ChronoUnit.DAYS.between(exportedOn, today);
@@ -47,10 +54,18 @@ public final class SampleData {
         return s == null ? null : LocalDate.parse(s.substring(0, 10)).plusDays(shiftDays);
     }
 
-    /** "2026-11-22T03:15:00.000Z" → moved instant, or null. */
+    /**
+     * "2026-11-22T03:15:00.000Z" → moved instant, or null. Never later than now: just after midnight, "today 11:00" in
+     * the sample would otherwise lie in the future and come before what people do today.
+     */
     public Instant instant(JsonNode n) {
         String s = text(n);
-        return s == null ? null : Instant.parse(s).plus(shiftDays, ChronoUnit.DAYS);
+        return s == null ? null : notFuture(Instant.parse(s).plus(shiftDays, ChronoUnit.DAYS));
+    }
+
+    /** The moment, or now if it is still to come. */
+    public Instant notFuture(Instant at) {
+        return at.isAfter(now) ? now : at;
     }
 
     /** Birthday "MM-DD" (no year) → moved "MM-DD", or null. Keeps "birthday this week" in the sample data. */
