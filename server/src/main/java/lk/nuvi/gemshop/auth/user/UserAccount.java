@@ -108,6 +108,12 @@ public class UserAccount extends BaseEntity {
         return lastLoginAt;
     }
 
+    /** Name and login email (Settings → Staff logins). */
+    public void rename(String name, String email) {
+        this.name = name;
+        this.email = normalise(email);
+    }
+
     public UserAccount phone(String phone) {
         this.phone = phone;
         return this;

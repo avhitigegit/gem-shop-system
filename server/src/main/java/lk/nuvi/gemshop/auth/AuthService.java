@@ -217,11 +217,36 @@ public class AuthService {
      */
     @Transactional
     public void forgotPassword(String email) {
-        users.findByEmail(UserAccount.normalise(email)).filter(UserAccount::isActive).ifPresent(u -> {
-            String raw = Tokens.random();
-            resetTokens.save(new PasswordResetToken(u, Tokens.hash(raw),
-                    Instant.now().plus(props.resetLinkMinutes(), ChronoUnit.MINUTES)));
-            String link = props.appUrl().replaceAll("/+$", "") + "/reset-password?token=" + raw;
+        users.findByEmail(UserAccount.normalise(email)).filter(UserAccount::isActive)
+                .ifPresent(u -> sendPasswordLink(u, false));
+    }
+
+    /** Hours a welcome link (new staff login) works – longer than a reset link, the person may read it the next day. */
+    public static final int INVITE_LINK_HOURS = 72;
+
+    /**
+     * Emails a link to choose a password: a welcome for a new login ({@code invite}) or a reset asked by the owner
+     * (Settings → Staff logins) or by the person (Forgot password). Same transaction as the caller.
+     */
+    @Transactional
+    public void sendPasswordLink(UserAccount u, boolean invite) {
+        String raw = Tokens.random();
+        long minutes = invite ? INVITE_LINK_HOURS * 60L : props.resetLinkMinutes();
+        resetTokens.save(new PasswordResetToken(u, Tokens.hash(raw), Instant.now().plus(minutes, ChronoUnit.MINUTES)));
+        String link = props.appUrl().replaceAll("/+$", "") + "/reset-password?token=" + raw;
+        String first = u.getName().split(" ")[0];
+        if (invite) {
+            String shop = shops.current().map(x -> x.getName()).orElse("Gem Shop System");
+            mail.send(u.getEmail(), "Your login for " + shop, """
+                    Hello %s,
+
+                    A login was made for you in the %s system (%s).
+                    Click the link below to choose your password:
+                    %s
+
+                    The link works for %d hours and only once. Your login name is this email address.
+                    """.formatted(first, shop, u.getRole().label(), link, INVITE_LINK_HOURS));
+        } else {
             mail.send(u.getEmail(), "Reset your password", """
                     Hello %s,
 
@@ -230,8 +255,14 @@ public class AuthService {
 
                     The link works for %d minutes and only once.
                     If you did not ask for this, you can ignore this email – your password stays the same.
-                    """.formatted(u.getName().split(" ")[0], link, props.resetLinkMinutes()));
-        });
+                    """.formatted(first, link, props.resetLinkMinutes()));
+        }
+    }
+
+    /** The owner switched a login off or changed it: signed out on every device (the open page stops within minutes). */
+    @Transactional
+    public void signOutEverywhere(UserAccount u) {
+        refreshTokens.revokeAllExcept(u.getId(), -1, Instant.now());
     }
 
     /** Sets a new password with the emailed link. The link then stops working; all devices are signed out. */
