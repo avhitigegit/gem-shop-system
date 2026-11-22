@@ -4,9 +4,10 @@
    navy side menu (8 sections, gold + New sale, the open section's pages), top bar (branch, currency,
    bell, user menu), the "where am I" back bar, the step bar, and the role check for the page. */
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AccessDenied } from "@/components/shell/access-denied";
+import { ChangePasswordDialog } from "@/components/shell/change-password";
 import { FlowBar } from "@/components/ui/steps";
 import { useToast } from "@/components/ui/toast";
 import { CURRENCIES, type Currency, initials } from "@/lib/format";
@@ -21,14 +22,25 @@ import {
   visibleItems,
   type NavItem,
 } from "@/lib/nav";
-import { ALL_ROLES, OWNER, ROLE_LABEL, type Role, SALESPERSON, seesAllBranches } from "@/lib/roles";
-import { ALL_BRANCHES, branchLabel, useSession } from "@/lib/session";
+import { OWNER, ROLE_LABEL, type Role, SALESPERSON, seesAllBranches } from "@/lib/roles";
+import { ALL_BRANCHES, branchLabel, useAuth, useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const NAV_KEY = "gemshop.nav.v1";
 
+/** Signed in → the frame; not signed in → the login page (and back to this page afterwards). */
 export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname() || "/";
+  const { status } = useAuth();
+  const router = useRouter();
+  useEffect(() => {
+    if (status === "signedOut") router.replace(path === "/" ? "/login" : `/login?next=${encodeURIComponent(path)}`);
+  }, [status, path, router]);
+  if (status !== "signedIn") return <div className="app" aria-busy="true" />;
+  return <Frame path={path}>{children}</Frame>;
+}
+
+function Frame({ path, children }: { path: string; children: ReactNode }) {
   const session = useSession();
   const [navOpen, setNavOpen] = useState(false);
 
@@ -38,8 +50,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   // a new page closes the phone menu
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setNavOpen(false), [path]);
-
-  if (!session.ready) return <div className="app" aria-busy="true" />;
 
   const info = pageInfo(path);
   const role = session.role;
@@ -67,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 /* ---------------------------------------------------------------- side menu */
 
 function Sidebar({ path }: { path: string }) {
-  const { role, shop, preview } = useSession();
+  const { role, shop } = useSession();
   const info = pageInfo(path);
   const cur = info.section;
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -173,7 +183,7 @@ function Sidebar({ path }: { path: string }) {
           );
         })}
       </nav>
-      <div className="side-foot">{preview ? "Preview – sample data (login comes next)" : "Gem Shop System"}</div>
+      <div className="side-foot">Gem Shop System</div>
     </aside>
   );
 }
@@ -241,7 +251,10 @@ function WhereBar({ path }: { path: string }) {
 
 function Topbar({ onMenu }: { onMenu: () => void }) {
   const s = useSession();
+  const { signOut } = useAuth();
+  const router = useRouter();
   const toast = useToast();
+  const [changePw, setChangePw] = useState(false);
   const canAll = seesAllBranches(s.role);
   const options = [
     ...(canAll ? [{ v: ALL_BRANCHES, l: "All branches" }] : []),
@@ -290,18 +303,6 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
         ))}
       </select>
       <div className="spacer" />
-      {s.preview && (
-        <div className="demo-role" title="Until login is added: see the app as another person">
-          <b>PREVIEW</b>
-          <select aria-label="Preview as" value={s.role} onChange={(e) => s.setPreviewRole(e.target.value as Role)}>
-            {ALL_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABEL[r]}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
       <Dropdown
         label="Waiting for approval"
         button={
@@ -354,17 +355,25 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
           <br />
           <small className="muted">{s.user.email}</small>
         </div>
-        <button className="dp-item" onClick={() => toast("Change password", "Comes with the login (next step).")}>
+        <button className="dp-item" onClick={() => setChangePw(true)}>
           Change password
         </button>
         <Link className="dp-item" href="/design">
           Design kit <small className="muted">(how the screens look)</small>
         </Link>
         <div className="dp-sep" />
-        <button className="dp-item" onClick={() => toast("Log out", "Comes with the login (next step).")}>
+        <button
+          className="dp-item"
+          onClick={async () => {
+            await signOut();
+            toast("Signed out", "See you next time.");
+            router.replace("/login");
+          }}
+        >
           Log out
         </button>
       </Dropdown>
+      <ChangePasswordDialog open={changePw} onOpenChange={setChangePw} />
     </header>
   );
 }
