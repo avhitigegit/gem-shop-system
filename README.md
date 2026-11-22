@@ -21,6 +21,12 @@ The project skeleton is added in `P0-02`. Until then the folders are empty.
 | `uat` | Client testing. Created near the end (`P6-02`); gets everything from `dev` at once. |
 | `feature/*`, `bugfix/*` | Always start from `dev`, go back to `dev` by pull request. |
 
+After cloning, turn on the guard that blocks direct pushes to `main`, `dev` and `uat`:
+
+```sh
+git config core.hooksPath .githooks
+```
+
 Branch names follow the task breakdown, for example `feature/p3-01-be-new-sale` and `feature/p3-01-fe-new-sale`.
 
 ## How the work is tracked

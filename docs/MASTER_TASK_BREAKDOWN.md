@@ -13,8 +13,8 @@ Status: `To do` → `In progress` → `In review` → `Merged to dev` → `In UA
 
 ## Before the first heading (you do this once)
 
-- [ ] Create an **empty** GitHub repository (no README) and send its link — or sign in with `! gh auth login` and give a name, and Claude creates it.
-- [ ] Tell Claude the folder on this computer for the code.
+- [x] GitHub repository: https://github.com/avhitigegit/gem-shop-system (private).
+- [x] Code folder: `E:\Software Apps\Sales and Inventory Management\Gold House\gem-shop-system`.
 
 Then paste `P0-01 Repository and branches`.
 
@@ -39,11 +39,9 @@ Then paste `P0-01 Repository and branches`.
 
 ## Progress
 
-- [ ] P0-01 Repository and branches
-- [ ] P0-02 Project skeleton
 Paste the headings in this order.
 
-- [ ] P0-01 Repository and branches
+- [x] P0-01 Repository and branches
 - [ ] P0-02 Project skeleton
 - [ ] P0-03 CI checks
 - [ ] P0-04 Test plan
@@ -84,16 +82,16 @@ Paste the headings in this order.
 
 ## P0-01 Repository and branches
 **Branch:** first commit on `main`, then create `dev`
-**Needs from you:** the empty GitHub repository link (or `gh` sign-in) and the code folder
-**Status:** To do
+**Repository:** https://github.com/avhitigegit/gem-shop-system (private) · folder `Gold House\gem-shop-system`
+**Status:** Done
 
 ### Tasks
-- [ ] Create the local repository in the chosen folder with `backend/`, `frontend/`, `infra/`, `docs/`.
-- [ ] Add README, `.gitignore`, `.editorconfig`.
-- [ ] Link it to the GitHub repository and push the first commit to `main`.
-- [ ] Create `dev` from `main`, push it, make `dev` the default branch.
-- [ ] Protect `main` and `dev`: pull request only, checks must pass.
-- [ ] Add a pull request template and copy this file into `docs/`.
+- [x] Create the local repository in the chosen folder with `backend/`, `frontend/`, `infra/`, `docs/`.
+- [x] Add README, `.gitignore`, `.editorconfig` (and `.gitattributes`).
+- [x] Link it to the GitHub repository and push the first commit to `main`.
+- [x] Create `dev` from `main`, push it, make `dev` the default branch (merged branches are deleted automatically).
+- [x] Protect `main` and `dev`: pull request only. GitHub protection needs GitHub Pro for a private repository, so a local guard `.githooks/pre-push` blocks direct pushes to `main`, `dev` and `uat` instead. "Checks must pass" is added with the CI in P0-03.
+- [x] Add a pull request template and copy this file into `docs/`.
 
 ## P0-02 Project skeleton
 **Branch:** `feature/p0-02-skeleton`
