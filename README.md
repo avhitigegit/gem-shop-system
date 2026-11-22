@@ -63,7 +63,8 @@ Stop: `docker compose down` · Stop and delete the local database: `docker compo
 
 ```sh
 sh infra/scripts/reset-data.sh                                   # Git Bash / Linux / macOS
-powershell -ExecutionPolicy Bypass -File infra\scriptseset-data.ps1   # Windows PowerShell
+powershell -ExecutionPolicy Bypass -File infra\scripts
+eset-data.ps1   # Windows PowerShell
 ```
 
 Add `-y` (Bash) or `-Yes` (PowerShell) to skip the question.
@@ -94,6 +95,12 @@ cd client && npm run build
 ```
 
 After changing an API, with the backend running: `cd client && npm run api:generate` (updates `src/lib/api/schema.d.ts`).
+
+### Testing with the client (UAT)
+
+- The UAT test plan, bug report template and sign-off form are kept with the documents in `doc/test-plan/` (not in git):
+  75 screen tests (one per demo guide screen), 13 business rule tests and the role tests.
+- Bugs go in as GitHub issues with the **Bug report** form (Issues → New issue). Fixes use `bugfix/*` branches from `dev`.
 
 ### Settings per environment
 
