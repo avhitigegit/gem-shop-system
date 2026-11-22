@@ -1,6 +1,6 @@
 ## Heading
 
-<!-- Exact heading from doc/MASTER_TASK_BREAKDOWN.md, e.g. P3-01 New sale (POS) -->
+<!-- Exact heading from the master task breakdown, e.g. P3-01 New sale (POS) -->
 
 **Part:** Backend / Frontend / Both
 
@@ -23,7 +23,7 @@
 - [ ] Offers / birthday wishes only to customers with permission
 - [ ] Role and branch checked on every new API; cost and profit hidden from non-owners
 - [ ] Tests added and passing locally
-- [ ] `doc/MASTER_TASK_BREAKDOWN.md` ticked and Status updated
+- [ ] `the master task breakdown` ticked and Status updated
 
 ## How to test locally
 

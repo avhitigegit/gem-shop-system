@@ -9,7 +9,6 @@ Built to match the approved **prototype v12**, **demo guide v12** (75 screens) a
 | Frontend | `client/` | Next.js · TypeScript · Tailwind · shadcn/ui · PWA |
 | Infrastructure | `infra/` | Docker Compose · Nginx · GitHub Actions · AWS (EC2, S3, SES) |
 | Prototype | `prototype/` | Approved clickable prototype v12 (open `prototype/index.html`) |
-| Documents | `doc/` | Master task breakdown, BRD, demo guide, tech stack, test plan |
 
 The project skeleton is added in `P0-02`. Until then `client/`, `server/` and `infra/` are empty.
 
@@ -31,7 +30,7 @@ Branch names follow the task breakdown, for example `feature/p3-01-be-new-sale` 
 
 ## How the work is tracked
 
-Every piece of work is a heading in [`doc/MASTER_TASK_BREAKDOWN.md`](doc/MASTER_TASK_BREAKDOWN.md).
+Every piece of work is a heading in the master task breakdown (`doc/MASTER_TASK_BREAKDOWN.md`, kept outside git).
 One heading = one branch (or one backend and one frontend branch) = one pull request into `dev`.
 When a heading is merged, its tasks are ticked and its **Status** changes.
 

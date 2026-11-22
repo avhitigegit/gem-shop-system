@@ -37,10 +37,10 @@ yarn-error.log*
 pnpm-debug.log*
 .vercel
 
-# Not part of the code repository
-/fb boost/
+# Not part of the code repository (kept on this computer only)
 /input
-/doc/Gem_Shop_Security_and_Data_Agreement.pdf
+/fb boost/
+/doc/
 
 # Local data and uploads
 uploads/
