@@ -6,8 +6,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lk.nuvi.gemshop.auth.security.Roles;
 import lk.nuvi.gemshop.sales.Sales;
-import lk.nuvi.gemshop.sales.api.SalesDtos.CheckForm;
-import lk.nuvi.gemshop.sales.api.SalesDtos.CheckView;
+import lk.nuvi.gemshop.sales.api.SalesDtos.BillForm;
+import lk.nuvi.gemshop.sales.api.SalesDtos.BillView;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerPick;
 import lk.nuvi.gemshop.sales.api.SalesDtos.GuidePick;
 import lk.nuvi.gemshop.sales.api.SalesDtos.HeldView;
@@ -69,7 +69,7 @@ public class SalesController {
     @PostMapping("/sales/check")
     @PreAuthorize(Roles.OWNER_SALES)
     @Operation(summary = "Totals, commissions and prices below the minimum while the bill is made")
-    public CheckView check(@Valid @RequestBody CheckForm form) {
+    public BillView check(@Valid @RequestBody BillForm form) {
         return sales.check(form);
     }
 

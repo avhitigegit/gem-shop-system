@@ -39,9 +39,9 @@ import lk.nuvi.gemshop.customers.Customers;
 import lk.nuvi.gemshop.gems.Gem;
 import lk.nuvi.gemshop.gems.GemStatus;
 import lk.nuvi.gemshop.gems.Gems;
-import lk.nuvi.gemshop.sales.api.SalesDtos.CheckForm;
-import lk.nuvi.gemshop.sales.api.SalesDtos.CheckLine;
-import lk.nuvi.gemshop.sales.api.SalesDtos.CheckView;
+import lk.nuvi.gemshop.sales.api.SalesDtos.BillForm;
+import lk.nuvi.gemshop.sales.api.SalesDtos.BillLine;
+import lk.nuvi.gemshop.sales.api.SalesDtos.BillView;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerPick;
 import lk.nuvi.gemshop.sales.api.SalesDtos.GuidePick;
@@ -151,13 +151,13 @@ public class Sales {
 
     /** Totals, commissions and which prices are below the minimum, while the bill is being made. */
     @Transactional(readOnly = true)
-    public CheckView check(CheckForm f) {
+    public BillView check(BillForm f) {
         List<Line> lines = lines(f.items(), branchFor(f.branch(), f.items()), Set.of());
         Guide guide = guides.orWalkIn(f.guide());
         BigDecimal total = total(lines);
         BigDecimal pct = guide == null ? BigDecimal.ZERO : guide.getPct();
         List<Commission.Level> levels = commission.current().levels();
-        return new CheckView(lines.stream().map(l -> new CheckLine(l.gem.getCode(), l.belowMin())).toList(),
+        return new BillView(lines.stream().map(l -> new BillLine(l.gem.getCode(), l.belowMin())).toList(),
                 lines.stream().anyMatch(Line::belowMin), total, pct, Commission.guideAmount(total, pct),
                 lines.isEmpty() ? BigDecimal.ZERO : commission.staffAmount(total),
                 lines.isEmpty() ? 0 : Commission.levelIndex(levels, total) + 1);

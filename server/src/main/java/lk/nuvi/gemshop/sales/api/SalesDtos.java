@@ -41,7 +41,7 @@ public final class SalesDtos {
             @Schema(description = "Promotions by email / WhatsApp allowed") Boolean consent) {}
 
     /** Prices and commission while the bill is being made (no customer needed). */
-    public record CheckForm(
+    public record BillForm(
             @Schema(description = "Branch code; empty = the salesperson's branch / the first gem's branch") String branch,
             @Schema(requiredMode = REQUIRED) @NotNull @Size(max = 50) List<@Valid @NotNull LineForm> items,
             @Schema(description = "Guide code; empty = walk-in") String guide) {}
@@ -76,12 +76,12 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) boolean sellable,
             @Schema(description = "Why it cannot be sold, e.g. already sold on 24/10/2026 (INV-000101)") String note) {}
 
-    public record CheckLine(
+    public record BillLine(
             @Schema(requiredMode = REQUIRED) String gem,
             @Schema(requiredMode = REQUIRED) boolean belowMin) {}
 
-    public record CheckView(
-            @Schema(requiredMode = REQUIRED) List<CheckLine> lines,
+    public record BillView(
+            @Schema(requiredMode = REQUIRED) List<BillLine> lines,
             @Schema(requiredMode = REQUIRED) boolean belowMin,
             @Schema(requiredMode = REQUIRED) BigDecimal total,
             @Schema(requiredMode = REQUIRED) BigDecimal guidePct,
