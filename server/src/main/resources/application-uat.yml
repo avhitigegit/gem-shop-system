@@ -1,0 +1,3 @@
+# UAT server for client testing (P6-02). Own database, sample data only.
+app:
+  environment: uat

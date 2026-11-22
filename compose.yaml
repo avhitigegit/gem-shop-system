@@ -1,0 +1,7 @@
+# One command starts everything (database, backend, frontend, Nginx, MailHog):
+#   docker compose up -d --build
+# The services are defined in infra/docker-compose.yml.
+name: gemshop
+
+include:
+  - infra/docker-compose.yml

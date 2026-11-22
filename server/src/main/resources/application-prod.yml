@@ -1,0 +1,16 @@
+# Production. All values come from environment variables. No Swagger, no sample data.
+app:
+  environment: prod
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+logging:
+  level:
+    root: INFO
