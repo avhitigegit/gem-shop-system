@@ -75,7 +75,9 @@ public class AuthController {
         try {
             return send(auth.refresh(token, device(req)), res);
         } catch (ApiException e) {
-            clear(res);
+            if (!AuthService.SESSION_RENEWED.equals(e.getCode())) {
+                clear(res); // keep the cookie when another tab just put a new one in it
+            }
             throw e;
         }
     }

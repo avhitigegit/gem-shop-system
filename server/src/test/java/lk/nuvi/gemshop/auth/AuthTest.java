@@ -171,7 +171,9 @@ class AuthTest {
         assertThat(renewed.refresh().getValue()).isNotEqualTo(s.refresh().getValue());
         assertThat(renewed.token()).isNotBlank();
         // the old cookie again right away (another tab renewing too) → refused, but the new one keeps working
-        refresh(s.refresh()).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_ENDED"));
+        MvcResult tab = refresh(s.refresh()).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_RENEWED"))
+                .andReturn();
+        assertThat(tab.getResponse().getHeader("Set-Cookie")).isNull(); // the new cookie is kept
         Signed again = SignIn.signed(refresh(renewed.refresh()).andExpect(status().isOk()).andReturn());
         // the old cookie again later (copied?) → refused, and the newest one stops working too
         jdbc.update("update refresh_token set revoked_at = now() - interval '2 minutes' where revoked_at is not null");

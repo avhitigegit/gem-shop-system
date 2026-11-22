@@ -51,6 +51,8 @@ public class AuthService {
     public static final String ACCOUNT_LOCKED = "ACCOUNT_LOCKED";
     public static final String ACCOUNT_DISABLED = "ACCOUNT_DISABLED";
     public static final String SESSION_ENDED = "SESSION_ENDED";
+    /** Another tab renewed a moment ago; the browser already has the new cookie, so just try again. */
+    public static final String SESSION_RENEWED = "SESSION_RENEWED";
     public static final String WRONG_PASSWORD = "WRONG_PASSWORD";
     public static final String RESET_LINK_INVALID = "RESET_LINK_INVALID";
 
@@ -148,6 +150,10 @@ public class AuthService {
                 // (Within a minute it is just two tabs renewing at the same time – the other tab already has the new cookie.)
                 log.warn("Old sign-in token used again for {} – signing out everywhere", u.getEmail());
                 refreshTokens.revokeAllExcept(u.getId(), -1, now);
+                throw ended("Please sign in again.");
+            }
+            if (t.isReplaced()) {
+                throw new ApiException(HttpStatus.UNAUTHORIZED, SESSION_RENEWED, "Already renewed in another tab – try again.");
             }
             throw ended("Please sign in again.");
         }
