@@ -102,6 +102,17 @@ public class Sale extends BaseEntity {
     @Column(length = 500)
     private String notes;
 
+    @Column(length = 20)
+    private String cancelApprovalNo;
+
+    @Column(length = 500)
+    private String cancelReason;
+
+    private Instant cancelledAt;
+
+    @Column(length = 120)
+    private String cancelledBy;
+
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("lineNo")
     private List<SaleItem> items = new ArrayList<>();
@@ -146,6 +157,19 @@ public class Sale extends BaseEntity {
         this.sentWhatsapp = sentWhatsapp || whatsapp;
     }
 
+    /** Cancellation asked (rule 7): the owner decides request {@code approvalNo}. */
+    public void cancelAsked(String approvalNo, String reason) {
+        this.cancelApprovalNo = approvalNo;
+        this.cancelReason = reason;
+    }
+
+    /** The owner approved the cancellation: the invoice stays on record, marked CANCELLED (rule 4). */
+    public void cancel(Instant at, String by) {
+        this.status = Status.CANCELLED;
+        this.cancelledAt = at;
+        this.cancelledBy = by;
+    }
+
     public String getNumber() { return number; }
     public Instant getSoldAt() { return soldAt; }
     public Branch getBranch() { return branch; }
@@ -166,6 +190,10 @@ public class Sale extends BaseEntity {
     public boolean isSentEmail() { return sentEmail; }
     public boolean isSentWhatsapp() { return sentWhatsapp; }
     public String getNotes() { return notes; }
+    public String getCancelApprovalNo() { return cancelApprovalNo; }
+    public String getCancelReason() { return cancelReason; }
+    public Instant getCancelledAt() { return cancelledAt; }
+    public String getCancelledBy() { return cancelledBy; }
     public List<SaleItem> getItems() { return items; }
     public List<SalePayment> getPayments() { return payments; }
 }

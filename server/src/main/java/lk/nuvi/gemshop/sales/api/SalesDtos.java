@@ -12,7 +12,10 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import lk.nuvi.gemshop.audit.approval.ApprovalStatus;
 import lk.nuvi.gemshop.common.money.Currency;
+import lk.nuvi.gemshop.gems.CertType;
 import lk.nuvi.gemshop.gems.api.GemDtos.GemCard;
 import lk.nuvi.gemshop.sales.HeldSale;
 import lk.nuvi.gemshop.sales.Sale;
@@ -115,7 +118,15 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) BigDecimal carat,
             @Schema(requiredMode = REQUIRED) BigDecimal listPrice,
             @Schema(requiredMode = REQUIRED) BigDecimal agreed,
-            String approvalNo) {}
+            String approvalNo,
+            @Schema(requiredMode = REQUIRED) String colour,
+            @Schema(requiredMode = REQUIRED) String shape,
+            @Schema(requiredMode = REQUIRED) String treatment,
+            @Schema(requiredMode = REQUIRED) CertType certType,
+            String certLab,
+            @Schema(description = "Lab or shop certificate number") String certNo,
+            @Schema(requiredMode = REQUIRED, description = "Returned or invoice cancelled") boolean released,
+            @Schema(description = "First photo (small), or null = draw the gem") String photo) {}
 
     public record PaymentLine(
             @Schema(requiredMode = REQUIRED) SalePayment.Method method,
@@ -144,7 +155,72 @@ public final class SalesDtos {
             String heldNo,
             @Schema(requiredMode = REQUIRED) boolean sentEmail,
             @Schema(requiredMode = REQUIRED) boolean sentWhatsapp,
-            String notes) {}
+            String notes,
+            @Schema(description = "The day's rate used on this invoice") BigDecimal rateUsd,
+            BigDecimal rateEur,
+            Instant cancelledAt,
+            String cancelledBy,
+            String cancelReason,
+            @Schema(description = "The latest cancellation request, if any") CancelRequest cancel) {}
+
+    /** A cancellation request of an invoice and the owner's answer. */
+    public record CancelRequest(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) ApprovalStatus status,
+            @Schema(requiredMode = REQUIRED) String reason,
+            @Schema(requiredMode = REQUIRED) String requestedBy,
+            @Schema(requiredMode = REQUIRED) Instant requestedAt,
+            String note) {}
+
+    // ------------------------------------------------------------------ invoices (P3-02)
+
+    public record InvoiceItem(
+            @Schema(requiredMode = REQUIRED) String code,
+            @Schema(requiredMode = REQUIRED) String name,
+            @Schema(requiredMode = REQUIRED) String gemType,
+            @Schema(requiredMode = REQUIRED) String productType,
+            @Schema(requiredMode = REQUIRED) boolean released) {}
+
+    public record InvoiceRow(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) Instant soldAt,
+            @Schema(requiredMode = REQUIRED) String branch,
+            @Schema(requiredMode = REQUIRED) String customer,
+            @Schema(requiredMode = REQUIRED) String country,
+            @Schema(requiredMode = REQUIRED) List<InvoiceItem> items,
+            @Schema(requiredMode = REQUIRED, example = "Cash USD + Card") String payment,
+            @Schema(requiredMode = REQUIRED, description = "cash, card or split") String payType,
+            @Schema(requiredMode = REQUIRED) BigDecimal total,
+            @Schema(requiredMode = REQUIRED) boolean sentEmail,
+            @Schema(requiredMode = REQUIRED) boolean sentWhatsapp,
+            @Schema(requiredMode = REQUIRED) Sale.Status status,
+            @Schema(description = "Cancellation waiting for the owner (AP-…)") String cancelPending) {}
+
+    /** One page of invoices, with the count and the total of the completed ones in the whole search. */
+    public record InvoicePage(
+            @Schema(requiredMode = REQUIRED) List<InvoiceRow> items,
+            @Schema(requiredMode = REQUIRED) long total,
+            @Schema(requiredMode = REQUIRED) int page,
+            @Schema(requiredMode = REQUIRED) int size,
+            @Schema(requiredMode = REQUIRED) BigDecimal amount) {}
+
+    /** Send an invoice to the customer by email and / or WhatsApp (BRD G4). */
+    public record SendForm(
+            @Schema(requiredMode = REQUIRED) boolean email,
+            @Size(max = 160) String emailTo,
+            @Schema(requiredMode = REQUIRED) boolean whatsapp,
+            @Size(max = 40) String whatsappTo) {}
+
+    public record SendResult(
+            @Schema(requiredMode = REQUIRED) boolean email,
+            @Schema(requiredMode = REQUIRED) boolean whatsapp,
+            @Schema(requiredMode = REQUIRED, description = "WhatsApp is not connected yet: the message was only logged")
+            boolean whatsappTestMode,
+            @Schema(requiredMode = REQUIRED) String message) {}
+
+    /** Ask the owner to cancel an invoice. */
+    public record CancelForm(
+            @Schema(requiredMode = REQUIRED, example = "Wrong customer selected") @NotBlank @Size(max = 500) String reason) {}
 
     public record HeldView(
             @Schema(requiredMode = REQUIRED) String number,

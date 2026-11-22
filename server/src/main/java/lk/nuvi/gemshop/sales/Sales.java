@@ -38,10 +38,12 @@ import lk.nuvi.gemshop.customers.Customer;
 import lk.nuvi.gemshop.customers.Customers;
 import lk.nuvi.gemshop.gems.Gem;
 import lk.nuvi.gemshop.gems.GemStatus;
+import lk.nuvi.gemshop.gems.GemPrints;
 import lk.nuvi.gemshop.gems.Gems;
 import lk.nuvi.gemshop.sales.api.SalesDtos.BillForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.BillLine;
 import lk.nuvi.gemshop.sales.api.SalesDtos.BillView;
+import lk.nuvi.gemshop.sales.api.SalesDtos.CancelRequest;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CustomerPick;
 import lk.nuvi.gemshop.sales.api.SalesDtos.GuidePick;
@@ -105,12 +107,13 @@ public class Sales {
     private final Alerts alerts;
     private final CurrentUser current;
     private final EntityManager em;
+    private final GemPrints prints;
     private final ZoneId zone;
 
     public Sales(SaleRepository sales, HeldSaleRepository held, Gems gems, Customers customers, Guides guides,
             Commission commission, Rates rates, ShopSettingsRepository shops, Numbers numbers, Approvals approvals,
             ApprovalRepository approvalRepo, ActivityLog log, Alerts alerts, CurrentUser current, EntityManager em,
-            AppProperties app) {
+            AppProperties app, GemPrints prints) {
         this.sales = sales;
         this.held = held;
         this.gems = gems;
@@ -126,6 +129,7 @@ public class Sales {
         this.alerts = alerts;
         this.current = current;
         this.em = em;
+        this.prints = prints;
         this.zone = ZoneId.of(app.timezone());
     }
 
@@ -463,18 +467,30 @@ public class Sales {
 
     // ------------------------------------------------------------------ views
 
-    private SaleView view(Sale s) {
+    SaleView view(Sale s) {
         Role role = CurrentUser.role().orElse(null);
         boolean money = role == Role.OWNER || role == Role.ACCOUNTANT;
         BigDecimal paid = s.getPayments().stream().map(SalePayment::getLkr).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new SaleView(s.getNumber(), s.getSoldAt(), s.getBranch().getCode(), s.getStatus(),
                 pick(s.getCustomer(), purchases().getOrDefault(s.getCustomer().getId(), 0L)),
                 s.getGuide() == null ? null : pick(s.getGuide()), name(s.getStaff()),
-                s.getItems().stream().map(i -> line(i.getGem(), i.getListPrice(), i.getAgreed(), i.getApprovalNo())).toList(),
+                s.getItems().stream().map(i -> line(i.getGem(), i.getListPrice(), i.getAgreed(), i.getApprovalNo(), i.isReleased()))
+                        .toList(),
                 s.getPayments().stream().map(p -> new PaymentLine(p.getMethod(), p.getCurrency(), p.getAmount(), p.getRate(),
                         p.getLkr())).toList(),
                 s.getTotal(), paid, s.getChangeDue(), s.getGuidePct(), s.getGuideComm(), s.getStaffComm(),
-                money ? s.getCardFee() : null, s.getHeldNo(), s.isSentEmail(), s.isSentWhatsapp(), s.getNotes());
+                money ? s.getCardFee() : null, s.getHeldNo(), s.isSentEmail(), s.isSentWhatsapp(), s.getNotes(),
+                s.getRateUsd(), s.getRateEur(), s.getCancelledAt(), s.getCancelledBy(), s.getCancelReason(), cancelRequest(s));
+    }
+
+    /** The latest cancellation request of an invoice and the owner's answer. */
+    CancelRequest cancelRequest(Sale s) {
+        Approval a = s.getCancelApprovalNo() == null ? null : approvalRepo.findByNumber(s.getCancelApprovalNo()).orElse(null);
+        if (a == null) {
+            return null;
+        }
+        return new CancelRequest(a.getNumber(), a.getStatus(), s.getCancelReason() == null ? a.getDetail() : s.getCancelReason(),
+                name(a.getRequestedBy()), a.getRequestedAt(), a.isPending() ? null : a.getNote());
     }
 
     private HeldView view(HeldSale h, Approval a) {
@@ -482,7 +498,7 @@ public class Sales {
         return new HeldView(h.getNumber(), h.getHeldAt(), h.getBranch().getCode(), h.getStatus(), h.getApprovalNo(),
                 decided ? a.getNote() : null, decided ? name(a.getDecidedBy()) : null, decided ? a.getDecidedAt() : null,
                 name(h.getStaff()), pick(h.getCustomer(), 0L), h.getGuide() == null ? null : pick(h.getGuide()),
-                h.getItems().stream().map(i -> line(i.getGem(), i.getListPrice(), i.getAgreed(), null)).toList(),
+                h.getItems().stream().map(i -> line(i.getGem(), i.getListPrice(), i.getAgreed(), null, false)).toList(),
                 h.getItems().stream().map(HeldSaleItem::getAgreed).reduce(BigDecimal.ZERO, BigDecimal::add), h.getSaleNo());
     }
 
@@ -493,8 +509,10 @@ public class Sales {
                 s.getTotal(), s.getStatus());
     }
 
-    private static SaleLine line(Gem g, BigDecimal list, BigDecimal agreed, String approvalNo) {
-        return new SaleLine(g.getCode(), g.getName(), g.getGemType(), g.getProductType(), g.getCarat(), list, agreed, approvalNo);
+    private SaleLine line(Gem g, BigDecimal list, BigDecimal agreed, String approvalNo, boolean released) {
+        return new SaleLine(g.getCode(), g.getName(), g.getGemType(), g.getProductType(), g.getCarat(), list, agreed, approvalNo,
+                g.getColour(), g.getShape(), g.getTreatment(), g.getCertType(), g.getCertLab(), prints.certNo(g), released,
+                gems.card(g).photo());
     }
 
     static CustomerPick pick(Customer c, long purchases) {
@@ -514,12 +532,12 @@ public class Sales {
         return em.getReference(UserAccount.class, w.id());
     }
 
-    private static String name(UserAccount u) {
+    static String name(UserAccount u) {
         return u == null ? "—" : u.getName();
     }
 
     /** "LKR 448,000.00". */
-    static String lkr(BigDecimal v) {
+    public static String lkr(BigDecimal v) {
         DecimalFormat f = new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         return "LKR " + f.format(v == null ? BigDecimal.ZERO : v);
     }

@@ -211,7 +211,7 @@ public class GemPrints {
     public CertificateView certificate(String code) {
         Gem g = gems.visible(code);
         ShopSettings shop = shops.current().orElse(null);
-        String certNo = certNo(g);
+        String certNo = shopCertNo(g);
         String photo = photo(g) == null ? null : files.link(photo(g), false);
         return new CertificateView(g.getCode(), g.getName(), g.getGemType(), g.getProductType(), g.getCarat(), g.getColour(),
                 g.getShape(), g.getTreatment(), g.getDescription(), g.getCertType(), certNo, photo, shopName(), logoUrl(shop),
@@ -362,7 +362,19 @@ public class GemPrints {
     }
 
     /** The shop certificate number (gems with a lab or no certificate get one made the same way). */
-    private String certNo(Gem g) {
+    /** The gem's first photo, or a drawing of the gem – for documents such as the invoice PDF (P3-02). */
+    public byte[] picture(Gem g, int size) {
+        StoredFile photo = photo(g);
+        return photo != null && storage.exists(photo.getStorageKey()) ? storage.read(photo.getStorageKey())
+                : GemDrawing.png(g.getGemType(), size);
+    }
+
+    /** Certificate number shown on documents: the lab number, or the shop certificate number. */
+    public String certNo(Gem g) {
+        return g.getCertType() == CertType.LAB ? g.getCertNo() : g.getCertType() == CertType.SHOP ? shopCertNo(g) : null;
+    }
+
+    private String shopCertNo(Gem g) {
         return g.getCertType() == CertType.SHOP && g.getCertNo() != null ? g.getCertNo() : gems.shopCertNo(g.getCode());
     }
 
