@@ -43,7 +43,10 @@ services:
       MAIL_HOST: mailhog
       MAIL_PORT: "1025"
       CORS_ORIGINS: http://localhost:3000,http://localhost:8100
+      FILES_DIR: /data/files
       TZ: Asia/Colombo
+    volumes:
+      - files-data:/data/files   # uploaded photos, bill photos, certificate scans
     ports:
       - "127.0.0.1:8081:8081"
     depends_on:
@@ -75,3 +78,4 @@ services:
 
 volumes:
   db-data:
+  files-data:

@@ -6,3 +6,5 @@ app:
     password: ${SAMPLE_PASSWORD:Gem@2026}
   auth:
     demo-logins: true
+  crypto:
+    key: ${ENCRYPTION_KEY:local-only-encryption-key-change-me-0123456789}

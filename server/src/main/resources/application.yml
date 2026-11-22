@@ -59,6 +59,12 @@ app:
     from: ${MAIL_FROM:Gem Shop System <no-reply@localhost>}   # used until Shop details has an email
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+  crypto:
+    key: ${ENCRYPTION_KEY:}         # required: 32+ random characters. KEEP A SAFE COPY – without it passport / phone / email cannot be read again
+  files:
+    dir: ${FILES_DIR:./data/files}  # photos, bill photos, certificate scans (Docker volume on servers; nightly copy to S3)
+    link-minutes: 60                # private download links stop working after this
+    keep-unattached-hours: 24       # uploads never saved with a record are removed after this
 
 management:
   endpoints:
