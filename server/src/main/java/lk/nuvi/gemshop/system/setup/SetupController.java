@@ -38,7 +38,9 @@ public class SetupController {
         this.auth = auth;
     }
 
-    public record SetupStatus(@Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "true = no logins yet, setup is needed") boolean needed) {}
+    public record SetupStatus(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "true = no logins yet, setup is needed") boolean needed,
+            @Schema(description = "Shop name for the login page; empty before setup") String shopName) {}
 
     public record OwnerPart(
             @NotBlank(message = "Full name is required.") @Size(max = 120) String name,
@@ -69,7 +71,7 @@ public class SetupController {
     @GetMapping("/status")
     @Operation(operationId = "getSetupStatus", summary = "Is the owner first-time setup still needed?")
     public SetupStatus status() {
-        return new SetupStatus(setup.needed());
+        return new SetupStatus(setup.needed(), setup.shopName());
     }
 
     @PublicApi

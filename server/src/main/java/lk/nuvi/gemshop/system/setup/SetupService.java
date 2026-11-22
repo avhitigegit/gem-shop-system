@@ -53,6 +53,11 @@ public class SetupService {
         return users.count() == 0;
     }
 
+    @Transactional(readOnly = true)
+    public String shopName() {
+        return shops.current().map(ShopSettings::getName).orElse(null);
+    }
+
     @Transactional
     public AuthService.Result run(SetupRequest r, String device) {
         if (!needed()) {

@@ -54,6 +54,9 @@ public class AuthService {
     public static final String WRONG_PASSWORD = "WRONG_PASSWORD";
     public static final String RESET_LINK_INVALID = "RESET_LINK_INVALID";
 
+    /** Two browser tabs may renew at the same moment; an old token used again this soon is not treated as copied. */
+    static final long REUSE_GRACE_SECONDS = 60;
+
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserAccountRepository users;
@@ -140,8 +143,9 @@ public class AuthService {
         RefreshToken t = refreshTokens.findByTokenHash(Tokens.hash(raw)).orElseThrow(() -> ended("Please sign in."));
         UserAccount u = t.getUser();
         if (t.getRevokedAt() != null) {
-            if (t.isReplaced()) {
+            if (t.isReplaced() && t.getRevokedAt().isBefore(now.minusSeconds(REUSE_GRACE_SECONDS))) {
                 // An old token was used again: someone may have copied it. Sign this person out everywhere.
+                // (Within a minute it is just two tabs renewing at the same time – the other tab already has the new cookie.)
                 log.warn("Old sign-in token used again for {} – signing out everywhere", u.getEmail());
                 refreshTokens.revokeAllExcept(u.getId(), -1, now);
             }

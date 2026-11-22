@@ -53,7 +53,7 @@ class SetupTest {
     @Test
     @Order(1)
     void emptySystemNeedsSetup() throws Exception {
-        mvc.perform(get("/api/setup/status")).andExpect(jsonPath("$.needed").value(true));
+        mvc.perform(get("/api/setup/status")).andExpect(jsonPath("$.needed").value(true)).andExpect(jsonPath("$.shopName").doesNotExist());
     }
 
     @Test
@@ -77,7 +77,8 @@ class SetupTest {
                 .andExpect(jsonPath("$.me.rates.usd").value(300.0));
         assertThat(jdbc.queryForObject("select ngja_licence_no from shop_settings", String.class)).isEqualTo("NGJA/DL/2024/0457");
         assertThat(jdbc.queryForObject("select count(*) from exchange_rate", Integer.class)).isEqualTo(2);
-        mvc.perform(get("/api/setup/status")).andExpect(jsonPath("$.needed").value(false));
+        mvc.perform(get("/api/setup/status")).andExpect(jsonPath("$.needed").value(false))
+                .andExpect(jsonPath("$.shopName").value("Ceylon Gem House"));
         // the owner can sign in with the new password
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"ruwan@shop.lk\",\"password\":\"Strong2026\",\"remember\":false}"))

@@ -170,9 +170,13 @@ class AuthTest {
         Signed renewed = SignIn.signed(refresh(s.refresh()).andExpect(status().isOk()).andReturn());
         assertThat(renewed.refresh().getValue()).isNotEqualTo(s.refresh().getValue());
         assertThat(renewed.token()).isNotBlank();
-        // the old cookie again (copied?) → refused, and the new one stops working too
+        // the old cookie again right away (another tab renewing too) → refused, but the new one keeps working
         refresh(s.refresh()).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_ENDED"));
-        refresh(renewed.refresh()).andExpect(status().isUnauthorized());
+        Signed again = SignIn.signed(refresh(renewed.refresh()).andExpect(status().isOk()).andReturn());
+        // the old cookie again later (copied?) → refused, and the newest one stops working too
+        jdbc.update("update refresh_token set revoked_at = now() - interval '2 minutes' where revoked_at is not null");
+        refresh(s.refresh()).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("SESSION_ENDED"));
+        refresh(again.refresh()).andExpect(status().isUnauthorized());
     }
 
     @Test
