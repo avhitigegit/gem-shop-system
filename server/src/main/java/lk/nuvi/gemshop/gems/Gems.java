@@ -272,6 +272,10 @@ public class Gems {
         money(changes, "Selling price", was.price(), p.price());
         money(changes, "Minimum price", was.min(), p.min());
         money(changes, "Cost price", was.cost(), p.cost());
+        if (!g.getBranch().getId().equals(branch.getId()) && g.getStatus() == GemStatus.IN_TRANSIT) {
+            throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
+                    g.getCode() + " is on the way to another branch – receive the transfer first.", "branch", "On the way.");
+        }
         if (!g.getBranch().getId().equals(branch.getId())) {
             changes.add("Branch " + g.getBranch().getDisplayName() + " → " + branch.getDisplayName());
         }
@@ -399,7 +403,8 @@ public class Gems {
         return pre + "-" + code.substring(code.indexOf('-') + 1);
     }
 
-    private Branch branch(String code) {
+    /** An open branch by code (field error "branch" otherwise). */
+    public Branch branch(String code) {
         Branch b = branches.findByCode(code == null ? "" : code.trim()).orElseThrow(() -> ApiException.field(
                 HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Choose a branch.", "branch", "Choose a branch."));
         if (b.getStatus() == BranchStatus.INACTIVE) {

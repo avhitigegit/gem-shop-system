@@ -10,6 +10,12 @@ public interface GemRepository extends JpaRepository<Gem, Long>, JpaSpecificatio
 
     Optional<Gem> findByCode(String code);
 
+    /** Gems at a branch in these statuses (stock check, transfers). */
+    java.util.List<Gem> findByBranch_IdAndStatusInOrderByCodeAsc(Long branchId, java.util.Collection<GemStatus> statuses);
+
+    /** Gems in these statuses in every branch (stock value). */
+    java.util.List<Gem> findByStatusInOrderByCodeAsc(java.util.Collection<GemStatus> statuses);
+
     /** The supplier drop-down on the gem form (suppliers live in purchasing, which builds on gems). */
     @org.springframework.data.jpa.repository.Query(value = "select count(*) > 0 from supplier where code = :code", nativeQuery = true)
     boolean supplierExists(String code);
