@@ -36,6 +36,7 @@ export function GemScreen({ code }: { code: string }) {
     error,
     setData,
   } = useLoad(() => api.GET("/api/gems/{code}", { params: { path: { code } } }), [code]);
+  const { data: suppliers } = useLoad(async () => (owner ? api.GET("/api/suppliers") : { data: null }), [owner]);
   const [sel, setSel] = useState(0);
   const [scanOpen, setScanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -218,8 +219,17 @@ export function GemScreen({ code }: { code: string }) {
                 </dd>
                 {owner ? (
                   <>
-                    <dt>Bought</dt>
-                    <dd>{g.purchaseNo ? `${g.purchaseNo}${g.supplierCode ? " · " + g.supplierCode : ""}` : "—"}</dd>
+                    <dt>Supplier</dt>
+                    <dd>
+                      {g.supplierCode ? (
+                        <Link href={`/stock/suppliers/${g.supplierCode}`}>
+                          {suppliers?.find((x) => x.code === g.supplierCode)?.name ?? g.supplierCode}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                      {g.purchaseNo ? ` · ${g.purchaseNo}` : ""}
+                    </dd>
                   </>
                 ) : null}
                 <dt>Added</dt>

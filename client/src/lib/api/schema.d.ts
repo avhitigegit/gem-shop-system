@@ -1252,6 +1252,8 @@ export interface components {
             branch: string;
             /** @description Add only: not ready to sell yet (e.g. needs cutting) */
             notReady?: boolean;
+            /** @description Supplier code (SUP-01) or empty = not linked; a gem bought in a purchase keeps its supplier */
+            supplier?: string;
         };
         FileView: {
             /** Format: uuid */

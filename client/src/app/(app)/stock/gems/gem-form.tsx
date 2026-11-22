@@ -40,6 +40,7 @@ type Form = {
   min: string;
   branch: string;
   notReady: boolean;
+  supplier: string;
 };
 
 const REQUIRED: (keyof Form)[] = [
@@ -72,6 +73,8 @@ function GemFormInner({ gem }: { gem: GemView | null }) {
   const lists = useLists();
   const { branch, branches } = useSession();
   const open = branches.filter((b) => b.status !== "INACTIVE");
+  const { data: suppliers } = useLoad(() => api.GET("/api/suppliers"), []);
+  const bought = !!gem?.purchaseNo;
   const { data: next } = useLoad(async () => (gem ? { data: null } : api.GET("/api/gems/next-code")), [gem]);
   const code = gem?.code ?? next?.code ?? "GEM-…";
 
@@ -93,6 +96,7 @@ function GemFormInner({ gem }: { gem: GemView | null }) {
     min: gem?.min != null ? String(gem.min) : "",
     branch: gem?.branch ?? (branch !== ALL_BRANCHES ? branch : (open.find((b) => b.status === "ACTIVE")?.code ?? "")),
     notReady: false,
+    supplier: gem?.supplierCode ?? "",
   }));
   const [photos, setPhotos] = useState<Photo[]>(() =>
     (gem?.photos ?? []).map((p) => ({ id: p.id, url: p.thumbUrl ?? p.url, isNew: false })),
@@ -180,6 +184,7 @@ function GemFormInner({ gem }: { gem: GemView | null }) {
       min,
       branch: f.branch,
       notReady: gem ? undefined : f.notReady,
+      supplier: bought ? undefined : f.supplier,
     };
     setBusy(true);
     const { data, error } = gem
@@ -507,15 +512,32 @@ function GemFormInner({ gem }: { gem: GemView | null }) {
                   <Options items={open.map((b) => ({ value: b.code, label: branchLabel(b) }))} placeholder="Select…" />
                 </Select>
               </Field>
+              <Field
+                label="Supplier"
+                htmlFor="supplier"
+                error={errors.supplier}
+                hint={
+                  bought
+                    ? `Bought in ${gem?.purchaseNo} – linked automatically.`
+                    : "Gems bought in a purchase are linked automatically."
+                }
+              >
+                <Select
+                  id="supplier"
+                  value={f.supplier}
+                  disabled={bought}
+                  onChange={(e) => set("supplier", e.target.value)}
+                >
+                  <Options
+                    items={(suppliers ?? []).map((s) => ({ value: s.code, label: s.name }))}
+                    placeholder="Not linked"
+                  />
+                </Select>
+              </Field>
               {!gem ? (
                 <Check checked={f.notReady} onChange={(v) => set("notReady", v)}>
                   Not ready to sell yet <small className="muted">(e.g. needs cutting or polishing)</small>
                 </Check>
-              ) : gem.purchaseNo ? (
-                <p className="muted" style={{ fontSize: 12 }}>
-                  Bought in {gem.purchaseNo}
-                  {gem.supplierCode ? ` from ${gem.supplierCode}` : ""}.
-                </p>
               ) : null}
             </CardContent>
           </Card>
