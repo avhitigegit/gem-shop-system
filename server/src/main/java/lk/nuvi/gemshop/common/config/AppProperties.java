@@ -9,7 +9,12 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record AppProperties(
         @DefaultValue("Gem Shop System") String name,
         @DefaultValue("local") String environment,
-        @DefaultValue Cors cors) {
+        @DefaultValue("Asia/Colombo") String timezone,
+        @DefaultValue Cors cors,
+        @DefaultValue SampleData sampleData) {
 
     public record Cors(@DefaultValue("http://localhost:3000") List<String> allowedOrigins) {}
+
+    /** Prototype demo data on an empty database: local, dev and uat only – never prod. */
+    public record SampleData(@DefaultValue("false") boolean enabled) {}
 }

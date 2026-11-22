@@ -5,6 +5,9 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:gemshop}
+app:
+  sample-data:
+    enabled: ${SAMPLE_DATA:true}  # prototype demo data when the database is empty
 logging:
   level:
     lk.nuvi.gemshop: DEBUG
