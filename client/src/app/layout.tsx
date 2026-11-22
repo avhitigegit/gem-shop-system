@@ -1,12 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Providers } from "./providers";
 import "./globals.css";
 
-// Same font as the prototype (prototype/assets/css/app.css). Full theme comes in P1-03.
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+// Fonts: the same list as the prototype (prototype/assets/css/app.css) – "Inter", then the computer's own
+// font (Segoe UI on Windows). No web font is downloaded, so it looks exactly like the approved prototype.
 
 export const metadata: Metadata = {
   title: {
@@ -14,16 +11,21 @@ export const metadata: Metadata = {
     template: "%s · Gem Shop System",
   },
   description: "Sales, stock and money system for the gem shop.",
+  icons: { icon: "/logo.svg" },
 };
 
 export const viewport: Viewport = {
   themeColor: "#13213f",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+    <html lang="en" className="antialiased">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

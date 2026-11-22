@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Alert } from "@/components/ui/form";
+import { dateTime } from "@/lib/format";
 import { api, errorMessage, type HealthResponse } from "@/lib/api/client";
 
 type State = { kind: "loading" } | { kind: "ok"; data: HealthResponse } | { kind: "error"; message: string };
@@ -11,7 +13,7 @@ type State = { kind: "loading" } | { kind: "ok"; data: HealthResponse } | { kind
 function StatusBadge({ value }: { value?: string }) {
   const up = value === "UP";
   return (
-    <Badge variant={up ? "default" : "destructive"} data-testid="status-badge">
+    <Badge tone={up ? "success" : "danger"}>
       {up ? "✓ " : "✕ "}
       {value ?? "DOWN"}
     </Badge>
@@ -39,36 +41,34 @@ export function HealthCheck() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Backend API</CardTitle>
-        <CardDescription>GET /api/health</CardDescription>
-      </CardHeader>
+      <CardHeader title="Backend API" />
       <CardContent>
-        {state.kind === "loading" && <p className="text-sm text-muted-foreground">Checking…</p>}
+        {state.kind === "loading" && <p className="muted">Checking…</p>}
 
         {state.kind === "error" && (
-          <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
-            <b className="block">The backend did not answer</b>
+          <Alert tone="danger" icon="✕">
+            <b>The backend did not answer</b>
+            <br />
             {state.message}
-          </div>
+          </Alert>
         )}
 
         {state.kind === "ok" && (
-          <dl className="grid grid-cols-[140px_1fr] gap-y-2 text-sm">
-            <dt className="text-muted-foreground">API</dt>
+          <dl className="dl">
+            <dt>API</dt>
             <dd>
               <StatusBadge value={state.data.status} />
             </dd>
-            <dt className="text-muted-foreground">Database</dt>
+            <dt>Database</dt>
             <dd>
               <StatusBadge value={state.data.database} />
             </dd>
-            <dt className="text-muted-foreground">Environment</dt>
+            <dt>Environment</dt>
             <dd>{state.data.environment}</dd>
-            <dt className="text-muted-foreground">Version</dt>
+            <dt>Version</dt>
             <dd>{state.data.version}</dd>
-            <dt className="text-muted-foreground">Checked at</dt>
-            <dd>{state.data.time ? new Date(state.data.time).toLocaleString("en-GB") : "—"}</dd>
+            <dt>Checked at</dt>
+            <dd>{dateTime(state.data.time)}</dd>
           </dl>
         )}
       </CardContent>

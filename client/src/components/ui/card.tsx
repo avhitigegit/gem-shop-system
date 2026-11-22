@@ -1,69 +1,135 @@
-import * as React from "react";
-import { cn } from "cn";
+import type { ComponentProps, ReactNode } from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-function Card({ className, size = "default", ...props }: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+/* Cards, number tiles and section tiles – prototype .card, .kpi, .home-tile, .hub-card. */
+
+export function Card({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn("card", className)} {...props} />;
+}
+
+/** Card title row, with optional buttons on the right. */
+export function CardHeader({
+  title,
+  actions,
+  level = 2,
+  className,
+  children,
+}: {
+  title?: ReactNode;
+  actions?: ReactNode;
+  level?: 2 | 3;
+  className?: string;
+  children?: ReactNode;
+}) {
+  const H = level === 3 ? "h3" : "h2";
   return (
-    <div
-      data-slot="card"
-      data-size={size}
-      className={cn(
-        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
-        className,
-      )}
-      {...props}
-    />
+    <div className={cn("card-header", className)}>
+      {title != null && <H>{title}</H>}
+      {children}
+      {actions != null && <div className="row">{actions}</div>}
+    </div>
   );
 }
 
-function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+export function CardContent({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn("card-content", className)} {...props} />;
+}
+
+export function CardFooter({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn("card-footer", className)} {...props} />;
+}
+
+/** Number tile: label, big value, small line under it. accent = gold line on top. */
+export function Kpi({
+  label,
+  value,
+  sub,
+  accent,
+  className,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  sub?: ReactNode;
+  accent?: boolean;
+  className?: string;
+}) {
   return (
-    <div
-      data-slot="card-header"
-      className={cn(
-        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
-        className,
-      )}
-      {...props}
-    />
+    <div className={cn("card kpi", accent && "accent", className)}>
+      <div className="k-label">{label}</div>
+      <div className="k-value">{value}</div>
+      {sub != null && <div className="k-sub">{sub}</div>}
+    </div>
   );
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+/** Home-page number card (prototype home: "Today's sales", "Cash in drawer"). */
+export function BigNumber({ label, value, sub }: { label: ReactNode; value: ReactNode; sub?: ReactNode }) {
   return (
-    <div
-      data-slot="card-title"
-      className={cn("font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm", className)}
-      {...props}
-    />
+    <div className="card">
+      <div className="card-content">
+        <div className="muted" style={{ fontSize: 13 }}>
+          {label}
+        </div>
+        <div className="big-num">{value}</div>
+        {sub != null && <small className="muted">{sub}</small>}
+      </div>
+    </div>
   );
 }
 
-function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="card-description" className={cn("text-sm text-muted-foreground", className)} {...props} />;
-}
-
-function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+/** Big "do this" tile (home and section homes). The first one is navy. */
+export function HomeTile({
+  href,
+  icon,
+  title,
+  sub,
+  primary,
+  badge,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: ReactNode;
+  sub?: ReactNode;
+  primary?: boolean;
+  badge?: ReactNode;
+}) {
   return (
-    <div
-      data-slot="card-action"
-      className={cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className)}
-      {...props}
-    />
+    <Link className={cn("home-tile", primary && "primary")} href={href}>
+      {badge ? <span className="ht-badge">{badge}</span> : null}
+      <span className="ht-i">{icon}</span>
+      <b>{title}</b>
+      {sub ? <small>{sub}</small> : null}
+    </Link>
   );
 }
 
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="card-content" className={cn("px-(--card-spacing)", className)} {...props} />;
-}
+export type Count = { text: string; tone?: "warning" } | string | null | undefined;
 
-function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+/** "Look up" card with a live count on the right. */
+export function HubCard({
+  href,
+  icon,
+  title,
+  sub,
+  count,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: ReactNode;
+  sub?: ReactNode;
+  count?: Count;
+}) {
+  const c = typeof count === "string" ? { text: count } : count;
   return (
-    <div
-      data-slot="card-footer"
-      className={cn("flex items-center rounded-b-xl border-t bg-muted/50 p-(--card-spacing)", className)}
-      {...props}
-    />
+    <Link className="hub-card" href={href}>
+      <span className="hc-i">{icon}</span>
+      <span className="hc-t">
+        <b>{title}</b>
+        {sub ? <small>{sub}</small> : null}
+      </span>
+      {c?.text ? <span className={cn("hc-count", c.tone)}>{c.text}</span> : null}
+      <span className="hc-go">›</span>
+    </Link>
   );
 }
-
-export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent };

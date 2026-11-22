@@ -11,3 +11,13 @@ npm run api:generate   # refresh src/lib/api/schema.d.ts from the running backen
 
 - `src/lib/api/client.ts` – typed API client (`api.GET("/api/health")`) and the `ApiError` type.
 - `src/components/ui/` – shadcn/ui components.
+
+## Screens and design (P1-03)
+
+- The look is copied from the prototype: `src/styles/gemshop.css` = `prototype/assets/css/app.css`
+  (same colours, sizes, spacing, fonts). Tailwind colours use the same names (`bg-navy`, `text-sapphire`, `border-gold` …).
+- Building blocks in `src/components/ui` – see them all on the **Design kit** page (`/design`, user menu).
+- The menu is defined once in `src/lib/nav.ts` (8 sections, pages per role, step bars).
+  Pages not built yet show "built in a later step" with a link to the same prototype screen.
+- Formats in `src/lib/format.ts`: `LKR 1,234.00`, `dd/mm/yyyy`, Sri Lanka time.
+- Until login (P1-02) the top bar has a **PREVIEW** box to see the app as each role.
