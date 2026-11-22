@@ -226,6 +226,26 @@ public class Gems {
         return view(g);
     }
 
+    /**
+     * A gem bought in a purchase (P2-03): the same checks as the gem form, a new code, linked to the supplier and the
+     * purchase, "Added" in its history. Runs inside the purchase's transaction (all gems are saved, or none).
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public Gem addBought(GemForm f, String supplierCode, String purchaseNo, String supplierName) {
+        Branch branch = branch(f.branch());
+        Gem.Details d = details(f);
+        Gem.Prices p = prices(f);
+        String code = numbers.next(Counter.GEM);
+        Gem.Certificate c = certificate(f, code);
+        boolean notReady = Boolean.TRUE.equals(f.notReady());
+        Gem g = gems.save(new Gem(code, d, c, p, branch, notReady ? GemStatus.NOT_READY : GemStatus.IN_STOCK, Instant.now(),
+                user(current.require())));
+        g.boughtIn(supplierCode, purchaseNo);
+        attachFiles(g, f);
+        addHistory(g, "Added", "Bought from " + supplierName + " (" + purchaseNo + ")" + (notReady ? " – not ready to sell yet" : ""));
+        return g;
+    }
+
     @Transactional
     public GemView edit(String code, GemForm f) {
         Gem g = visible(code);

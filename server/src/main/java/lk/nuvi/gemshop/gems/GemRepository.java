@@ -10,6 +10,9 @@ public interface GemRepository extends JpaRepository<Gem, Long>, JpaSpecificatio
 
     Optional<Gem> findByCode(String code);
 
+    /** Gems bought from a supplier that are in one of these statuses (returns to supplier). */
+    java.util.List<Gem> findBySupplierCodeIsNotNullAndStatusInOrderByCodeDesc(java.util.Collection<GemStatus> statuses);
+
     @Query("select count(g) from Gem g where g.gemType = :v")
     long countGemType(String v);
 
