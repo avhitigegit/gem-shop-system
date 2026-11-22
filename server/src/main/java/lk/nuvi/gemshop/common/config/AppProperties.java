@@ -16,5 +16,5 @@ public record AppProperties(
     public record Cors(@DefaultValue("http://localhost:3000") List<String> allowedOrigins) {}
 
     /** Prototype demo data on an empty database: local, dev and uat only – never prod. */
-    public record SampleData(@DefaultValue("false") boolean enabled) {}
+    public record SampleData(@DefaultValue("false") boolean enabled, String password) {}
 }

@@ -13,7 +13,7 @@ class SampleDataLoaderGuardTest {
     @Test
     void refusesInProduction() {
         AppProperties prod = new AppProperties("Gem Shop System", "prod", "Asia/Colombo",
-                new AppProperties.Cors(List.of()), new AppProperties.SampleData(true));
+                new AppProperties.Cors(List.of()), new AppProperties.SampleData(true, null));
         SampleDataLoader loader = new SampleDataLoader(List.of(), null, prod, JsonMapper.builder().build());
         assertThatThrownBy(loader::load)
                 .isInstanceOf(IllegalStateException.class)

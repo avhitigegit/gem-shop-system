@@ -45,6 +45,15 @@ public class UserAccount extends BaseEntity {
 
     private Instant lastLoginAt;
 
+    /** Wrong passwords in a row (reset after a good sign-in). */
+    @Column(nullable = false)
+    private int failedLogins;
+
+    /** Locked after too many wrong passwords, until this time. */
+    private Instant lockedUntil;
+
+    private Instant passwordChangedAt;
+
     protected UserAccount() {}
 
     public UserAccount(String name, String email, Role role, Branch branch) {
@@ -114,5 +123,48 @@ public class UserAccount extends BaseEntity {
 
     public void loggedIn(Instant at) {
         this.lastLoginAt = at;
+        this.failedLogins = 0;
+        this.lockedUntil = null;
+    }
+
+    public int getFailedLogins() {
+        return failedLogins;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public Instant getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public boolean isLocked(Instant now) {
+        return lockedUntil != null && lockedUntil.isAfter(now);
+    }
+
+    /** Counts a wrong password; returns true when this locks the login. */
+    public boolean wrongPassword(int maxTries, Instant lockUntil) {
+        failedLogins++;
+        if (failedLogins >= maxTries) {
+            failedLogins = 0;
+            lockedUntil = lockUntil;
+            return true;
+        }
+        return false;
+    }
+
+    /** New password (BCrypt hash); also unlocks the login. */
+    public void changePassword(String hash, Instant at) {
+        this.passwordHash = hash;
+        this.passwordChangedAt = at;
+        this.failedLogins = 0;
+        this.lockedUntil = null;
+    }
+
+    /** The owner unlocks a locked login (Settings → Staff logins). */
+    public void unlock() {
+        this.failedLogins = 0;
+        this.lockedUntil = null;
     }
 }

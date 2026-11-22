@@ -52,7 +52,8 @@ public class SampleDataLoader {
     @Transactional
     public void loadOnStartup() {
         if (branches.count() > 0) {
-            log.info("Sample data: database already has data – nothing loaded");
+            Map<String, Integer> added = catchUp();
+            log.info("Sample data: database already has data{}", added.isEmpty() ? " – nothing loaded" : " – added what was missing: " + added);
             return;
         }
         Map<String, Integer> counts = load();
@@ -69,6 +70,23 @@ public class SampleDataLoader {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (SampleDataPart part : parts) {
             counts.put(part.name(), part.load(data));
+        }
+        return counts;
+    }
+
+    /** Parts added after the database was filled (P1-02 rates and sample passwords). */
+    @Transactional
+    public Map<String, Integer> catchUp() {
+        if ("prod".equalsIgnoreCase(app.environment())) {
+            return Map.of();
+        }
+        SampleData data = new SampleData(read(), SampleData.today(ZoneId.of(app.timezone())));
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (SampleDataPart part : parts) {
+            int n = part.catchUp(data);
+            if (n > 0) {
+                counts.put(part.name(), n);
+            }
         }
         return counts;
     }

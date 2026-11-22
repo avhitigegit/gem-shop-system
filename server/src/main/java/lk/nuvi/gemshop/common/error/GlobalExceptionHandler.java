@@ -29,7 +29,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ApiError> api(ApiException e, HttpServletRequest req) {
-        return build(e.getStatus(), e.getCode(), e.getMessage(), req, List.of());
+        return build(e.getStatus(), e.getCode(), e.getMessage(), req, e.getFieldErrors());
+    }
+
+    /** A role check (@PreAuthorize) said no. */
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    ResponseEntity<ApiError> denied(Exception e, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN, "Your login cannot do this.", req, List.of());
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    ResponseEntity<ApiError> accessDenied(Exception e, HttpServletRequest req) {
+        return build(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN, "Your login cannot do this.", req, List.of());
+    }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    ResponseEntity<ApiError> notSignedIn(Exception e, HttpServletRequest req) {
+        return build(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "Please sign in.", req, List.of());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

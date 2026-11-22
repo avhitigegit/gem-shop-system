@@ -3,3 +3,6 @@ app:
   environment: dev
   sample-data:
     enabled: true
+    password: ${SAMPLE_PASSWORD:Gem@2026}
+  auth:
+    demo-logins: true

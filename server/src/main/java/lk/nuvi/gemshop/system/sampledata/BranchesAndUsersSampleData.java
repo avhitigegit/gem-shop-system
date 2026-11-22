@@ -7,6 +7,8 @@ import lk.nuvi.gemshop.auth.user.UserAccountRepository;
 import lk.nuvi.gemshop.settings.branch.Branch;
 import lk.nuvi.gemshop.settings.branch.BranchRepository;
 import lk.nuvi.gemshop.settings.branch.BranchStatus;
+import lk.nuvi.gemshop.common.config.AppProperties;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
@@ -16,10 +18,14 @@ class BranchesAndUsersSampleData implements SampleDataPart {
 
     private final BranchRepository branches;
     private final UserAccountRepository users;
+    private final PasswordEncoder encoder;
+    private final String password;
 
-    BranchesAndUsersSampleData(BranchRepository branches, UserAccountRepository users) {
+    BranchesAndUsersSampleData(BranchRepository branches, UserAccountRepository users, PasswordEncoder encoder, AppProperties app) {
         this.branches = branches;
         this.users = users;
+        this.encoder = encoder;
+        this.password = app.sampleData().password();
     }
 
     @Override
@@ -30,6 +36,22 @@ class BranchesAndUsersSampleData implements SampleDataPart {
     @Override
     public String name() {
         return "branches + users";
+    }
+
+    @Override
+    public int catchUp(SampleData data) {
+        if (password == null || password.isBlank()) {
+            return 0;
+        }
+        int n = 0;
+        for (JsonNode u : data.node("users").values()) {
+            var user = users.findByEmail(lk.nuvi.gemshop.auth.user.UserAccount.normalise(u.path("email").asString())).orElse(null);
+            if (user != null && user.getPasswordHash() == null) {
+                user.changePassword(encoder.encode(password), java.time.Instant.now());
+                n++;
+            }
+        }
+        return n;
     }
 
     @Override
@@ -50,6 +72,9 @@ class BranchesAndUsersSampleData implements SampleDataPart {
             UserAccount user = new UserAccount(u.path("name").asString(), u.path("email").asString(), role, branch)
                     .phone(SampleData.text(u.path("phone")));
             user.setActive(u.path("active").asBoolean(true));
+            if (password != null && !password.isBlank()) {
+                user.changePassword(encoder.encode(password), java.time.Instant.now()); // same sample password for all 4
+            }
             user.loggedIn(data.instant(u.path("lastLogin")));
             data.ref(u.path("id").asString(), users.save(user));
             n++;
