@@ -165,6 +165,12 @@ public class FileService {
         return files.findByOwnerTypeAndOwnerRefOrderByIdAsc(ownerType, ownerRef);
     }
 
+    /** Files of many records at once (e.g. the first photo of each gem on a page). */
+    @Transactional(readOnly = true)
+    public List<StoredFile> ofOwners(String ownerType, java.util.Collection<String> ownerRefs) {
+        return ownerRefs.isEmpty() ? List.of() : files.findByOwnerTypeAndOwnerRefInOrderByIdAsc(ownerType, ownerRefs);
+    }
+
     /** Removes a file (row now, bytes once the transaction has been saved). */
     @Transactional
     public void remove(StoredFile f) {

@@ -14,6 +14,8 @@ public interface StoredFileRepository extends JpaRepository<StoredFile, Long> {
 
     List<StoredFile> findByOwnerTypeAndOwnerRefOrderByIdAsc(String ownerType, String ownerRef);
 
+    List<StoredFile> findByOwnerTypeAndOwnerRefInOrderByIdAsc(String ownerType, java.util.Collection<String> ownerRefs);
+
     @Query("select f from StoredFile f where f.ownerType is null and f.createdAt < :before")
     List<StoredFile> findUnattachedBefore(@Param("before") Instant before);
 }
