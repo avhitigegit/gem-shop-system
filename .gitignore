@@ -18,24 +18,29 @@ desktop.ini
 *.jks
 
 # Backend (Java / Maven / Gradle)
-backend/target/
-backend/build/
-backend/.gradle/
-backend/out/
+server/target/
+server/build/
+server/.gradle/
+server/out/
 *.class
 hs_err_pid*.log
 
 # Frontend (Node / Next.js)
 node_modules/
-frontend/.next/
-frontend/out/
-frontend/coverage/
-frontend/next-env.d.ts
+client/.next/
+client/out/
+client/coverage/
+client/next-env.d.ts
 *.tsbuildinfo
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .vercel
+
+# Not part of the code repository
+/fb boost/
+/input
+/doc/Gem_Shop_Security_and_Data_Agreement.pdf
 
 # Local data and uploads
 uploads/
