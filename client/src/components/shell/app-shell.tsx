@@ -10,7 +10,8 @@ import { AccessDenied } from "@/components/shell/access-denied";
 import { ChangePasswordDialog } from "@/components/shell/change-password";
 import { FlowBar } from "@/components/ui/steps";
 import { useToast } from "@/components/ui/toast";
-import { CURRENCIES, type Currency, initials } from "@/lib/format";
+import { useApprovalsWaiting } from "@/lib/approvals";
+import { ago, CURRENCIES, type Currency, initials } from "@/lib/format";
 import {
   allItems,
   firstPage,
@@ -201,16 +202,11 @@ function subList(s: Section, role: Role): (NavItem | null)[] {
   return list;
 }
 
-/** Red count on "Approvals" in the menu. Approvals come in P1-04; until then nothing is waiting. */
+/** Red count on "Approvals" in the menu: requests waiting for the owner. */
 function ApprovalCount() {
-  const waiting = useApprovalsWaiting();
-  return waiting.length ? <span className="nav-count">{waiting.length}</span> : null;
-}
-
-type Waiting = { id: string; type: string; title: string; ago: string; by: string };
-/** Requests waiting for the owner. P1-04 connects this to the approvals API. */
-function useApprovalsWaiting(): Waiting[] {
-  return [];
+  const { branch } = useSession();
+  const { count } = useApprovalsWaiting(branch);
+  return count ? <span className="nav-count">{count}</span> : null;
 }
 
 /* ---------------------------------------------------------------- "where am I" bar */
@@ -260,7 +256,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
     ...(canAll ? [{ v: ALL_BRANCHES, l: "All branches" }] : []),
     ...s.branches.filter((b) => canAll || b.code === s.user.branch).map((b) => ({ v: b.code, l: branchLabel(b) })),
   ];
-  const waiting = useApprovalsWaiting();
+  const waiting = useApprovalsWaiting(s.branch);
   const owner = s.role === OWNER;
 
   return (
@@ -311,22 +307,22 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
               <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
               <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
             </svg>
-            {waiting.length > 0 && <span className="count">{waiting.length}</span>}
+            {waiting.count > 0 && <span className="count">{waiting.count}</span>}
           </span>
         }
       >
-        <div className="dp-head">Waiting for the owner ({waiting.length})</div>
-        {waiting.length ? (
-          waiting.slice(0, 6).map((a) => (
-            <Link key={a.id} className="dp-item" href={`/approvals#${a.id}`}>
-              <b style={{ fontSize: 12 }}>{a.type}</b>
+        <div className="dp-head">Waiting for the owner ({waiting.count})</div>
+        {waiting.latest.length ? (
+          waiting.latest.map((a) => (
+            <Link key={a.number} className="dp-item" href={`/approvals#${a.number}`}>
+              <b style={{ fontSize: 12 }}>{a.typeLabel}</b>
               <br />
               <span className="muted" style={{ fontSize: 12 }}>
                 {a.title}
               </span>
               <br />
               <small className="muted">
-                {a.ago} · {a.by}
+                {ago(a.requestedAt)} · {a.requestedBy.name}
               </small>
             </Link>
           ))

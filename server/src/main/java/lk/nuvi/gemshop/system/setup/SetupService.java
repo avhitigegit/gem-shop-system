@@ -3,6 +3,7 @@ package lk.nuvi.gemshop.system.setup;
 import java.text.Normalizer;
 import java.time.Instant;
 import java.util.Locale;
+import lk.nuvi.gemshop.audit.log.ActivityLog;
 import lk.nuvi.gemshop.auth.AuthService;
 import lk.nuvi.gemshop.auth.PasswordRules;
 import lk.nuvi.gemshop.auth.user.Role;
@@ -36,9 +37,11 @@ public class SetupService {
     private final PasswordEncoder encoder;
     private final AuthService auth;
     private final MailService mail;
+    private final ActivityLog activity;
 
     public SetupService(UserAccountRepository users, BranchRepository branches, ShopSettingsRepository shops,
-            ExchangeRateRepository rates, PasswordEncoder encoder, AuthService auth, MailService mail) {
+            ExchangeRateRepository rates, PasswordEncoder encoder, AuthService auth, MailService mail, ActivityLog activity) {
+        this.activity = activity;
         this.users = users;
         this.branches = branches;
         this.shops = shops;
@@ -78,6 +81,8 @@ public class SetupService {
         UserAccount owner = new UserAccount(r.owner().name().trim(), r.owner().email(), Role.OWNER, null).phone(r.owner().phone().trim());
         owner.changePassword(encoder.encode(r.owner().password()), now);
         users.save(owner);
+        activity.addFor(owner, "Shop set up", r.shop().name().trim() + " · first branch " + branch.getName() + " · USD "
+                + r.rates().usd().toPlainString() + " · EUR " + r.rates().eur().toPlainString(), null);
         mail.send(owner.getEmail(), "Your owner account is ready", """
                 Hello %s,
 

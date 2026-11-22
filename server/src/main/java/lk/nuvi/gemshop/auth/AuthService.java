@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import lk.nuvi.gemshop.audit.log.ActivityLog;
 import lk.nuvi.gemshop.auth.api.AuthDtos.BranchInfo;
 import lk.nuvi.gemshop.auth.api.AuthDtos.Me;
 import lk.nuvi.gemshop.auth.api.AuthDtos.RatesInfo;
@@ -71,10 +72,12 @@ public class AuthService {
     private final TokenService tokens;
     private final MailService mail;
     private final AuthProperties props;
+    private final ActivityLog activity;
 
     public AuthService(UserAccountRepository users, RefreshTokenRepository refreshTokens, PasswordResetTokenRepository resetTokens,
             BranchRepository branches, ShopSettingsRepository shops, ExchangeRateRepository rates, PasswordEncoder encoder,
-            TokenService tokens, MailService mail, AuthProperties props) {
+            TokenService tokens, MailService mail, AuthProperties props, ActivityLog activity) {
+        this.activity = activity;
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.resetTokens = resetTokens;
@@ -107,6 +110,10 @@ public class AuthService {
         if (u.getPasswordHash() == null || !encoder.matches(password, u.getPasswordHash())) {
             boolean nowLocked = u.wrongPassword(props.maxFailedLogins(), now.plus(props.lockMinutes(), ChronoUnit.MINUTES));
             log.info("Wrong password for {}{}", u.getEmail(), nowLocked ? " – login locked" : "");
+            if (nowLocked) {
+                activity.addSystem("Login locked", u.getName() + " · " + props.maxFailedLogins() + " wrong passwords – locked for "
+                        + props.lockMinutes() + " minutes", branchOf(u));
+            }
             throw nowLocked ? locked() : badLogin();
         }
         if (!u.isActive()) {
@@ -201,6 +208,7 @@ public class AuthService {
         long keep = currentRefresh == null ? -1
                 : refreshTokens.findByTokenHash(Tokens.hash(currentRefresh)).map(RefreshToken::getId).orElse(-1L);
         refreshTokens.revokeAllExcept(u.getId(), keep, now);
+        activity.addFor(u, "Password changed", "Other devices signed out", branchOf(u));
     }
 
     /**
@@ -238,6 +246,11 @@ public class AuthService {
         UserAccount u = t.getUser();
         u.changePassword(encoder.encode(next), now);
         refreshTokens.revokeAllExcept(u.getId(), -1, now);
+        activity.addFor(u, "Password reset", "With the emailed link · all devices signed out", branchOf(u));
+    }
+
+    private static Long branchOf(UserAccount u) {
+        return u.getBranch() == null ? null : u.getBranch().getId();
     }
 
     // ------------------------------------------------------------------ who is signed in

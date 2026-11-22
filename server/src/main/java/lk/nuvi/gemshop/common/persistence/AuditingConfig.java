@@ -1,6 +1,7 @@
 package lk.nuvi.gemshop.common.persistence;
 
 import java.util.Optional;
+import lk.nuvi.gemshop.auth.security.CurrentUser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -13,12 +14,10 @@ public class AuditingConfig {
 
     public static final String SYSTEM = "system";
 
-    /**
-     * Who is saving. Until login exists (P1-02) everything is saved as {@code system};
-     * P1-02 replaces this with the logged-in user's email.
-     */
+    /** Who is saving: the signed-in person's email, or {@code system} for automatic jobs, sign-in and the sample data. */
     @Bean
     AuditorAware<String> auditor() {
-        return () -> Optional.of(SYSTEM);
+        return () -> Optional.of(CurrentUser.get().map(CurrentUser.Who::email).filter(e -> e != null && !e.isBlank())
+                .orElse(SYSTEM));
     }
 }
