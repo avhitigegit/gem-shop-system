@@ -1,0 +1,91 @@
+<!-- Screen: Message settings (SMTP, SES, WhatsApp Business Premium, automatic messages) | BRD: J5, J7, J8, G4 | Tech stack §6.1, §6.2 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Message Settings · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="j-customers-promotions/message-settings.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const M = S.messaging;
+  if (!M.birthday) M.birthday = { on: true, email: true, whatsapp: true, time: '09:00', subject: 'Happy birthday from {shop}!', text: 'Happy birthday, {name}! 🎂 Warm wishes from all of us at {shop}.' };
+  const BD = M.birthday;
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'J · Customers & promotions', title: 'Message settings', brd: ['J5', 'J7', 'J8'], sub: 'The owner can turn email and WhatsApp messages on or off at any time.' }) + `
+    <div class="grid g2">
+      <div class="stack">
+        <form class="card" id="smtp" novalidate><div class="card-header"><div><h3>✉ Email – shop's own SMTP</h3><p>Invoices, quotations, password reset, reports to the owner (§6.1)</p></div><label class="switch" title="Email on/off (J7)"><input type="checkbox" id="emailOn" ${M.emailOn ? 'checked' : ''}><span></span></label></div>
+          <div class="card-content form-grid">
+            <div class="field"><label class="req">SMTP host</label><input class="input" name="host" required value="${esc(M.smtp.host)}"></div>
+            <div class="field"><label class="req">Port</label><input class="input" type="number" name="port" required value="${M.smtp.port}"></div>
+            <div class="field"><label>Security</label><select name="security">${UI.opts(['STARTTLS', 'SSL/TLS', 'None'], M.smtp.security)}</select></div>
+            <div class="field"><label class="req">Username</label><input class="input" name="user" required value="${esc(M.smtp.user)}"></div>
+            <div class="field"><label class="req">App password</label><input class="input" type="password" name="password" required value="${esc(M.smtp.password)}"><span class="hint">Gmail: use an App Password</span></div>
+            <div class="field"><label class="req">From</label><input class="input" name="from" required value="${esc(M.smtp.from)}"></div>
+          </div>
+          <div class="card-footer"><button type="button" class="btn btn-outline" id="testMail">Send test email</button><button class="btn btn-sapphire" type="submit">Save SMTP</button></div></form>
+        <div class="card"><div class="card-header"><div><h3>✉ Campaign email – Amazon SES</h3><p>Bulk promotions (J3). Gmail does not allow bulk marketing (§6.1).</p></div>${badge(M.ses.enabled ? 'active' : 'draft', M.ses.enabled ? 'Connected' : 'Off')}</div><div class="card-content"><dl class="dl"><dt>Sending domain</dt><dd>${esc(M.ses.domain)}</dd><dt>Region</dt><dd>${esc(M.ses.region)} (Mumbai)</dd><dt>SPF / DKIM</dt><dd>${M.ses.spf ? '✓' : '✗'} SPF · ${M.ses.dkim ? '✓' : '✗'} DKIM</dd><dt>Unsubscribe link</dt><dd>✓ Added to every campaign (J2)</dd></dl></div></div>
+        <div class="card"><div class="card-header"><h3>Automatic messages (J5)</h3></div><div class="card-content stack" style="gap:12px">
+          ${[['invoiceEmail', 'Email the invoice PDF after every purchase'], ['invoiceWhatsapp', 'WhatsApp the invoice PDF after every purchase (needs Premium)'], ['thankYou', 'Send a thank-you message the day after purchase'], ['ownerClosing', 'Send the day-end closing report to the owner (I4)']].map(x => `<label class="row between" style="flex-wrap:nowrap"><span>${x[1]}</span><label class="switch"><input type="checkbox" data-auto="${x[0]}" ${M.auto[x[0]] ? 'checked' : ''}><span></span></label></label>`).join('')}
+        </div></div>
+        <form class="card" id="bdF" novalidate><div class="card-header"><div><h3>🎂 Birthday wishes (J8)</h3><p>Sent automatically on the customer's birthday – only to customers who agreed to promotions (rule 8). Once a year.</p></div><label class="switch" title="Birthday wishes on/off"><input type="checkbox" id="bdOn" ${BD.on ? 'checked' : ''}><span></span></label></div>
+          <div class="card-content form-grid">
+            <div class="field full"><label>Send by</label><div class="row" style="gap:24px"><label class="check"><input type="checkbox" name="email" ${BD.email ? 'checked' : ''}> ✉ Email</label><label class="check"><input type="checkbox" name="whatsapp" ${BD.whatsapp ? 'checked' : ''}> 💬 WhatsApp</label></div>${M.wa.enabled && M.wa.verified ? '' : '<span class="hint">WhatsApp wishes go out only when WhatsApp Premium is on and verified.</span>'}</div>
+            <div class="field"><label class="req">Send at</label><input class="input" type="time" name="time" required value="${esc(BD.time)}"><span class="hint">Sri Lanka time, every day</span></div>
+            <div class="field"><label class="req">Email subject</label><input class="input" name="subject" required value="${esc(BD.subject)}"></div>
+            <div class="field full"><label class="req">Message</label><textarea class="input" name="text" rows="3" required>${esc(BD.text)}</textarea><span class="hint">{name} = customer's first name · {shop} = shop name. WhatsApp uses a Meta-approved template with this text.</span></div>
+            <div class="field full"><label>Preview</label><div class="alert info" id="bdPrev" style="white-space:pre-wrap">${esc(Birthday.text({ name: 'Anna Müller' }))}</div></div>
+          </div>
+          <div class="card-content" style="border-top:1px solid var(--border)"><div class="row between"><b>Next 30 days</b><span class="muted" style="font-size:12px">${(S.birthdayWishes || []).filter(w => new Date(w.at).getFullYear() === new Date().getFullYear()).length} wish(es) sent this year</span></div>
+            ${UI.table([
+              { h: 'Customer', f: c => `<a href="customer-profile.html?id=${c.id}">${esc(c.name)}</a><br><small class="muted">${esc(c.country)}</small>` },
+              { h: 'Birthday', f: c => Birthday.cell(c) },
+              { h: 'Wish', f: c => { const w = Birthday.isToday(c.birthday) && Birthday.sentThisYear(c); return !Birthday.canSend(c) ? '<span class="badge badge-default">Not sent – no permission</span>' : w ? '<span class="badge badge-success">✓ Sent ' + fmt.time(w.at) + '</span>' : !BD.on ? '<span class="badge badge-default">Birthday wishes off</span>' : '<span class="badge badge-outline">Will send at ' + esc(BD.time) + '</span>'; } }
+            ], Birthday.upcoming(30), { empty: 'No birthdays in the next 30 days.' })}</div>
+          <div class="card-footer"><button type="button" class="btn btn-outline" id="bdNow">Send today's wishes now</button><button class="btn btn-sapphire" type="submit">Save birthday wishes</button></div></form>
+      </div>
+      <form class="card" id="waF" novalidate style="align-self:start"><div class="card-header"><div><h3>💬 WhatsApp Business – Premium</h3><p>Optional. The shop owns the account and pays Meta directly (§6.2).</p></div><label class="switch" title="WhatsApp on/off (J7)"><input type="checkbox" id="waOn" ${M.wa.enabled ? 'checked' : ''}><span></span></label></div>
+        <div class="card-content stack" style="gap:12px">
+          <div class="alert ${M.wa.enabled ? (M.wa.verified ? 'success' : 'warning') : 'info'}" id="waStatus">${M.wa.enabled ? (M.wa.verified ? '✓ Connected and verified. Invoices, quotations, thank-you messages, promotions and owner alerts can be sent.' : 'Enter the details below and press “Verify Connection”.') : 'WhatsApp Premium is off. Turn it on to send bills and promotions by WhatsApp.'}</div>
+          <fieldset id="waFields" ${M.wa.enabled ? '' : 'disabled'} style="border:0;padding:0;margin:0" class="stack">
+            <div class="field"><label class="req">Business Phone Number</label><input class="input" name="phone" required value="${esc(M.wa.phone)}" placeholder="+94 77 123 4567"></div>
+            <div class="field"><label class="req">Business Account ID</label><input class="input mono" name="accountId" required value="${esc(M.wa.accountId)}" placeholder="e.g. 102938475610293"></div>
+            <div class="field"><label class="req">Access Token</label><input class="input mono" type="password" name="token" required value="${esc(M.wa.token)}" placeholder="EAAG…"><span class="hint">Permanent system-user token from Meta Business Manager</span></div>
+            <button type="submit" class="btn btn-success">Verify Connection</button>
+          </fieldset>
+          <div class="sep"></div>
+          <div class="label">Message types</div>
+          <ul class="list" style="font-size:12px"><li><span class="badge badge-blue">Utility</span> Invoice · quotation · thank-you message (~US$0.005 each)</li><li><span class="badge badge-gold">Marketing</span> promotions, new arrivals &amp; birthday wishes – Meta-approved templates, consent only</li><li><span class="badge badge-outline">Owner alerts</span> daily closing summary</li><li class="muted">Not used: purchase order, payment reminder, delivery notification (cash purchases, no credit, no delivery)</li></ul>
+        </div></form>
+    </div>`;
+    if (location.hash === '#birthday') { const g = $('#page .grid.g2'); g.parentNode.insertBefore($('#bdF'), g); $('#bdF').classList.add('mb'); } // direct link: birthday card first
+    $('#emailOn').onchange = e => { M.emailOn = e.target.checked; Log.add('Email messages ' + (M.emailOn ? 'on' : 'off'), ''); Store.save(); toast('Email messages ' + (M.emailOn ? 'turned ON' : 'turned OFF'), 'J7', M.emailOn ? 'success' : 'warning'); };
+    $('#waOn').onchange = e => { M.wa.enabled = e.target.checked; if (!M.wa.enabled) M.wa.verified = false; Log.add('WhatsApp Premium ' + (M.wa.enabled ? 'on' : 'off'), ''); Store.save(); render(); if (M.wa.enabled && !M.wa.phone) { M.wa.phone = '+94 77 123 4567'; M.wa.accountId = '102938475610293'; M.wa.token = 'EAAGdemoTOKEN1234567890'; render(); toast('Demo details filled in', 'Press Verify Connection.'); } };
+    $('#bdOn').onchange = e => { BD.on = e.target.checked; Log.add('Birthday wishes ' + (BD.on ? 'on' : 'off'), ''); Store.save(); toast('Birthday wishes ' + (BD.on ? 'turned ON' : 'turned OFF'), 'J8', BD.on ? 'success' : 'warning'); render(); };
+    $('#bdF [name=text]').oninput = e => { $('#bdPrev').textContent = e.target.value.replace(/\{name\}/g, 'Anna').replace(/\{shop\}/g, S.shop.name); };
+    $('#bdF').onsubmit = e => { e.preventDefault(); const f = e.target; if (!UI.validate(f)) return; Object.assign(BD, { email: f.email.checked, whatsapp: f.whatsapp.checked, time: f.time.value, subject: f.subject.value, text: f.text.value }); Log.add('Birthday wish settings saved', 'at ' + BD.time); Store.save(); toast('Birthday wish settings saved', '', 'success'); render(); };
+    $('#bdNow').onclick = () => { if (!BD.on) return toast('Birthday wishes are off', 'Turn them on first.', 'error'); const n = Birthday.run(true); toast(n ? n + ' birthday wish(es) sent' : 'Nothing to send', n ? 'Today\'s birthdays have their wish.' : 'No new birthdays today with permission.', n ? 'success' : 'info'); render(); };
+    $$('[data-auto]').forEach(i => i.onchange = () => { M.auto[i.dataset.auto] = i.checked; Store.save(); toast('Saved', '', 'success'); });
+    $('#testMail').onclick = () => toast(M.emailOn ? 'Test email sent' : 'Email is off', M.emailOn ? 'Sent to ' + currentUser().email + ' via ' + M.smtp.host : 'Turn email on first.', M.emailOn ? 'success' : 'error');
+    $('#smtp').onsubmit = e => { e.preventDefault(); const f = e.target; if (!UI.validate(f)) return; Object.assign(M.smtp, { host: f.host.value, port: +f.port.value, security: f.security.value, user: f.user.value, password: f.password.value, from: f.from.value }); Store.save(); toast('SMTP settings saved', '', 'success'); };
+    $('#waF').onsubmit = e => {
+      e.preventDefault(); const f = e.target; if (!UI.validate(f)) return;
+      const btn = $('button[type=submit]', f); btn.disabled = true; btn.textContent = 'Verifying with Meta…';
+      setTimeout(() => {
+        const ok = f.token.value.length >= 10 && /^\d{6,}$/.test(f.accountId.value.trim());
+        Object.assign(M.wa, { phone: f.phone.value, accountId: f.accountId.value.trim(), token: f.token.value, verified: ok });
+        Log.add('WhatsApp connection ' + (ok ? 'verified' : 'failed'), M.wa.phone); Store.save();
+        toast(ok ? 'Connection verified ✓' : 'Verification failed', ok ? 'WhatsApp Business ' + M.wa.phone + ' is ready (demo).' : 'Account ID must be numeric and the token valid.', ok ? 'success' : 'error');
+        render();
+      }, 1100);
+    };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

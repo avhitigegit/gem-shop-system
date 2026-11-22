@@ -1,0 +1,52 @@
+<!-- Screen: Add / correct expense | BRD: M2, M3, M4, M6, N2, N6 | Rule: 11 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add Expense · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="m-expenses/add-expense.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const ed = find('expenses', qs('id'));
+  const x = ed || { date: new Date().toISOString(), branch: activeBranch(), category: '', amount: '', paidTo: '', method: 'Bank transfer', billPhoto: '', note: '' };
+  const lim = S.shop.largeExpenseLimit;
+  $('#page').innerHTML = UI.pageHead({ crumbs: '<a href="expenses.html">M · Shop expenses</a>', title: ed ? 'Correct expense ' + ed.id : 'Add expense', brd: ['M2', 'M3', 'M6'], sub: ed ? 'The accountant can record and correct expenses (N2). Every change is kept in the activity log.' : 'Record every shop cost with its bill photo.' }) +
+    `${ed && isLocked(ed.date) ? `<div class="alert danger mb">🔒 ${fmt.month(monthKey(ed.date))} is closed. This expense cannot be changed without owner approval (N6, rule 11). <a href="../n-accountant/month-closing.html">Month closing →</a></div>` : ''}
+    <form id="f" novalidate class="grid g-2-1"><div class="card"><div class="card-content form-grid">
+      <div class="field"><label class="req">Date</label><input class="input" type="date" name="date" required value="${ymd(x.date)}" max="${todayYmd()}"></div>
+      <div class="field"><label class="req">Branch</label><select name="branch" required>${UI.opts(S.branches.map(b => ({ v: b.id, l: b.name })), x.branch)}</select></div>
+      <div class="field"><label class="req">Expense type</label><select name="category" required>${UI.opts(S.lists.expenseCategories, x.category, 'Select…')}</select>${isRole('owner') ? '<span class="hint"><a href="../a-setup/lists.html?tab=expenseCategories">Edit expense types</a></span>' : ''}</div>
+      <div class="field"><label class="req">Paid to</label><input class="input" name="paidTo" required value="${esc(x.paidTo)}" placeholder="e.g. Ceylon Electricity Board"></div>
+      <div class="field"><label class="req">Amount (LKR, total on bill)</label><input class="input" type="number" min="1" step="0.01" name="amount" required value="${x.amount}"><span class="hint" id="limHint"></span></div>
+      <div class="field"><label class="req">Payment method</label><select name="method" required>${UI.opts((x.method === 'Cash (drawer)' ? ['Cash (drawer)'] : []).concat(['Bank transfer', 'Card']), x.method)}</select><span class="hint">Paid in cash from the drawer? Use <a href="../i-daily-closing/drawer-expenses.html">Pay out cash from the drawer</a>.</span></div>
+      <div class="field"><label>Note</label><input class="input" name="note" value="${esc(x.note)}"></div>
+      <div class="field full"><label class="req">Bill photo</label><div class="upload" id="up">${x.billPhoto ? '✔ ' + esc(x.billPhoto) : '⇪ Take a photo of the bill / upload PDF'}</div><span class="err">Every expense needs a bill photo (rule 11).</span></div>
+    </div><div class="card-footer"><a class="btn btn-outline" href="expenses.html">Cancel</a><button class="btn btn-sapphire" type="submit">${ed ? 'Save correction' : 'Save expense'}</button></div></div>
+    <div class="stack"><div class="alert info"><div><b>Approval limit: ${fmt.lkr(lim)}</b><br>Expenses above this limit are sent to the owner for approval (M6). The owner sets the limit in <a href="../a-setup/shop-vat.html">Shop settings</a>.</div></div>${UI.ruleNote(11, 'Every expense has an expense type and a bill photo.')}<div class="card"><div class="card-header"><h3>Repeating?</h3></div><div class="card-content"><p class="muted" style="font-size:12px">Monthly costs like rent are added automatically.</p><a class="btn btn-outline btn-sm" href="recurring.html">Repeating expenses →</a></div></div></div></form>`;
+  const F = $('#f'); UI.bindUpload($('#up')); if (x.billPhoto) $('#up').dataset.file = x.billPhoto;
+  const hint = () => { const a = +F.amount.value; $('#limHint').innerHTML = a > lim ? `<span class="text-warning">Above ${fmt.lkr(lim)} – needs owner approval</span>` : ''; };
+  F.amount.oninput = hint; hint();
+  F.onsubmit = e => {
+    e.preventDefault(); let ok = UI.validate(F);
+    if (!$('#up').dataset.file) { $('#up').closest('.field').classList.add('invalid'); if (ok) toast('Bill photo required', 'Rule 11', 'error'); ok = false; }
+    if (!ok) return;
+    if (guardLocked(F.date.value) || (ed && guardLocked(ed.date))) return;
+    const amt = +F.amount.value; const big = amt > lim && !isRole('owner');
+    const at = F.date.value === todayYmd() ? new Date().toISOString() : F.date.value + 'T12:00:00';
+    const d = { date: at, branch: F.branch.value, category: F.category.value, paidTo: F.paidTo.value, amount: amt, vat: 0, method: F.method.value, note: F.note.value, billPhoto: $('#up').dataset.file };
+    let rec;
+    if (ed) { const before = fmt.lkr(ed.amount); Object.assign(ed, d); rec = ed; Log.add('Expense corrected', ed.id + ' · ' + before + ' → ' + fmt.lkr(amt)); }
+    else { rec = Object.assign({ id: nextId('expense', 'EXP-'), status: 'approved', by: currentUser().id, recurringId: null }, d); S.expenses.push(rec); Log.add('Expense recorded', rec.id + ' · ' + rec.category + ' · ' + fmt.lkr(amt)); }
+    if (big) { rec.status = 'pending'; const a = Approvals.request({ type: 'expense', title: 'Large expense: ' + rec.category + ' ' + fmt.lkr(amt), detail: rec.paidTo + ' · ' + rec.method + ' (limit ' + fmt.lkr(lim) + ')', amount: amt, payload: { expenseId: rec.id } }); rec.approvalId = a.id; }
+    Store.save();
+    toast(big ? 'Sent for owner approval' : 'Expense saved', rec.id + ' · ' + fmt.lkr(amt), big ? 'warning' : 'success');
+    setTimeout(() => location.href = 'expenses.html', 700);
+  };
+})();
+</script>
+</body>
+</html>

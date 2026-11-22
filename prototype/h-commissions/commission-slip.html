@@ -1,0 +1,36 @@
+<!-- Screen: Commission slip print preview | BRD: H4 | Roles: Owner, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commission Slip · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="h-commissions/commission-slip.html" data-roles="owner accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let cs, title, pay = find('commissionPayments', qs('pay'));
+  if (pay) { cs = pay.ids.map(id => find('commissions', id)); title = pay.payee; }
+  else {
+    if (!qs('id') && !S.guides.length) return UI.empty('No commission slip yet', 'Add a guide or driver and make a sale first.', 'h-commissions/commissions-payable.html', 'Go to Pay guides & drivers');
+    const id = qs('id') || S.guides[0].id, payee = qs('payee') || 'guide';
+    cs = S.commissions.filter(c => c.payee === payee && c.payeeId === id && c.date >= daysAgoYmd(30));
+    const c0 = { payee, payeeId: id }; title = Commissions.payeeName(c0);
+  }
+  const g = cs[0] && cs[0].payee === 'guide' ? guide(cs[0].payeeId) : null;
+  const total = sum(cs, c => c.amount);
+  $('#page').innerHTML = UI.docToolbar('commissions-payable.html', 'Commissions payable') + `
+    <div class="doc" style="max-width:640px">${UI.docHead('COMMISSION SLIP', `<div style="font-size:12px;margin-top:6px"><b>Slip:</b> <span class="mono">${pay ? pay.id : 'STATEMENT'}</span><br><b>Date:</b> ${fmt.date(pay ? pay.at : new Date().toISOString())}${pay ? '<br><b>Paid by:</b> ' + esc(pay.method) : ''}</div>`)}
+      <p><b>Paid to:</b> ${esc(title)}${g ? ` · ${esc(g.vehicle)} ${esc(g.vehicleNo)} · ${esc(g.phone)} · ${g.pct}%` : ''}</p>
+      <table><thead><tr><th>Date</th><th>Invoice</th><th style="text-align:right">Sale amount</th><th style="text-align:right">Commission</th><th>Status</th></tr></thead><tbody>
+      ${cs.map(c => `<tr><td>${fmt.date(c.date)}</td><td class="mono">${c.saleId}</td><td class="right">${fmt.lkr(sale(c.saleId).net)}</td><td class="right">${fmt.lkr(c.amount)}</td><td>${(STATUS[c.status] || [c.status])[0]}</td></tr>`).join('')}
+      </tbody></table>
+      <table class="totals"><tr class="grand"><td>Total</td><td class="right">${fmt.lkr(total)}</td></tr></table>
+      <div class="row between" style="margin-top:50px"><div style="border-top:1px solid #333;width:200px;padding-top:4px;font-size:11px;text-align:center">Received by: ${esc(title)}</div><div style="border-top:1px solid #333;width:200px;padding-top:4px;font-size:11px;text-align:center">Paid by: ${esc(currentUser().name)}</div></div>
+      <div class="foot">Commission is calculated per sale (rule 5). Keep this slip for the daily cash closing and the accountant.</div></div>`;
+})();
+</script>
+</body>
+</html>

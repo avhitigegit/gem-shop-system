@@ -1,0 +1,59 @@
+<!-- Screen: Invoice list & cancellation | BRD: G3, G4, G6 | Rules: 4, 7 | Roles: Owner, Salesperson, Accountant -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoices · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="g-payments/invoices.html" data-roles="owner salesperson accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { q: '', status: '', from: daysAgoYmd(30), to: todayYmd(), pay: '' };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'G · Payments & invoices', title: 'Invoices', brd: ['G3', 'G4', 'G6'], sub: 'Running invoice numbers. Invoices can be viewed, printed and sent – never edited or deleted.', actions: (isRole('owner', 'salesperson') ? '<a class="btn btn-success" href="../f-pos/pos.html">+ New sale</a>' : '') + UI.exportButtons('#invTable', 'Invoices') }) +
+    `<div class="mb">${UI.ruleNote(4, 'Every sale gets an invoice with a running number. Invoices are never deleted – there is no delete button. Cancelling needs owner approval and the invoice stays on record as CANCELLED.')}</div>
+    <div class="card"><div class="card-content filters">
+      <div class="field" style="flex:1;min-width:200px"><label>Search</label><input class="input" id="fq" placeholder="Invoice no, customer, product code…"></div>
+      <div class="field"><label>From</label><input class="input" type="date" id="ffrom" value="${f.from}"></div>
+      <div class="field"><label>To</label><input class="input" type="date" id="fto" value="${f.to}"></div>
+      <div class="field"><label>Status</label><select id="fst">${UI.opts([{ v: '', l: 'All' }, { v: 'completed', l: 'Completed' }, { v: 'cancelled', l: 'Cancelled' }])}</select></div>
+      <div class="field"><label>Payment</label><select id="fpay">${UI.opts([{ v: '', l: 'All' }, { v: 'card', l: 'Card' }, { v: 'cash', l: 'Cash' }, { v: 'split', l: 'Split' }])}</select></div>
+    </div><div id="list"></div></div>`;
+  function payType(s) { const m = new Set(s.payments.map(p => p.method)); return m.size > 1 || s.payments.length > 1 ? 'split' : [...m][0]; }
+  function render() {
+    const q = f.q.toLowerCase();
+    const rows = S.sales.filter(inBranch).filter(s => ymd(s.date) >= f.from && ymd(s.date) <= f.to && (!f.status || s.status === f.status) && (!f.pay || payType(s) === f.pay))
+      .filter(s => !q || s.id.toLowerCase().includes(q) || (cust(s.customerId) || {}).name.toLowerCase().includes(q) || s.items.some(i => i.productId.toLowerCase().includes(q)))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    const pend = id => S.approvals.find(a => a.type === 'cancel_invoice' && a.status === 'pending' && a.payload.saleId === id);
+    $('#list').innerHTML = UI.table([
+      { h: 'Invoice', f: s => `<a class="mono" href="invoice.html?id=${s.id}">${s.id}</a><br><small class="muted">${fmt.dt(s.date)}</small>` },
+      { h: 'Items', f: s => s.items.map(i => { const p = prod(i.productId); return `<div class="row" style="gap:6px">${gemSVG(p.gem, p.type, 24)}<span>${esc(p.name)}</span>${i.returned ? '<span class="badge badge-blue">returned</span>' : ''}</div>`; }).join('') },
+      { h: 'Customer', f: s => { const c = cust(s.customerId) || {}; return esc(c.name) + '<br><small class="muted">' + esc(c.country) + '</small>'; } },
+      { h: 'Payment', f: s => s.payments.map(p => p.method === 'card' ? 'Card' : 'Cash ' + p.currency).join(' + ') },
+      { h: 'Total', num: 1, f: s => `<b>${fmt.cur(s.total)}</b>` },
+      { h: 'Sent', f: s => (s.sentEmail ? '✉' : '') + (s.sentWhatsapp ? ' 💬' : '') || '–' },
+      { h: 'Status', f: s => badge(s.status) + (pend(s.id) ? '<br><span class="badge badge-warning">Cancel requested</span>' : '') },
+      { h: '', f: s => `<div class="row" style="gap:4px;flex-wrap:nowrap"><a class="btn btn-sm btn-outline" href="invoice.html?id=${s.id}&print=1">Print</a>${isRole('owner', 'salesperson') && s.status === 'completed' && !pend(s.id) ? `<button class="btn btn-sm btn-ghost" data-cancel="${s.id}" style="color:var(--danger)">Cancel…</button>` : ''}</div>` }
+    ], rows, { id: 'invTable', cls: 'stack-sm', empty: 'No invoices match the filters.', foot: ['Total ' + rows.length, '', '', '', fmt.cur(sum(rows.filter(s => s.status !== 'cancelled'), s => s.total)), '', '', ''] });
+  }
+  $('#fq').oninput = e => { f.q = e.target.value; render(); };
+  $('#ffrom').onchange = e => { f.from = e.target.value; render(); };
+  $('#fto').onchange = e => { f.to = e.target.value; render(); };
+  $('#fst').onchange = e => { f.status = e.target.value; render(); };
+  $('#fpay').onchange = e => { f.pay = e.target.value; render(); };
+  $('#list').addEventListener('click', e => {
+    const id = e.target.dataset.cancel; if (!id) return; const s = sale(id);
+    if (guardLocked(s.date)) return;
+    UI.reason('Request cancellation of ' + id, 'Owner approval is needed. The invoice stays on record (rule 4).', reason => {
+      Approvals.request({ type: 'cancel_invoice', title: 'Cancel invoice ' + id, detail: reason, amount: s.total, payload: { saleId: id, reason } });
+      toast('Sent for owner approval', id, 'warning'); render(); window.renderBell && renderBell();
+    });
+  });
+  render();
+})();
+</script>
+</body>
+</html>

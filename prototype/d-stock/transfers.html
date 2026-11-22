@@ -1,0 +1,62 @@
+<!-- Screen: Branch transfers (send & receive) | BRD: D3, D5, A1 | Rule: 9 | Roles: Owner, Shop Staff -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Branch Transfers · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="d-stock/transfers.html" data-roles="owner staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'D · Stock & branches', title: 'Branch transfers', brd: ['D3'], sub: 'Send products from one branch to the other; the receiving branch confirms each item.', actions: '<button class="btn btn-sapphire" id="newT">+ New transfer</button>' }) +
+      `<div class="stack">${S.transfers.slice().sort((a, b) => b.sentAt.localeCompare(a.sentAt)).map(t => `<div class="card"><div class="card-header"><div><h3><span class="mono">${t.id}</span> · ${esc(branchName(t.from))} → ${esc(branchName(t.to))}</h3><p>Sent ${fmt.dt(t.sentAt)} by ${esc(user(t.sentBy).name)}${t.receivedAt ? ' · received ' + fmt.dt(t.receivedAt) + ' by ' + esc(user(t.receivedBy).name) : ''}${t.notes ? ' · ' + esc(t.notes) : ''}</p></div>${badge(t.status === 'in_transit' ? 'in_transit' : 'received')}</div>
+        <div class="card-content"><div class="stepper"><span class="on">1 · Sent</span><span class="${t.status !== 'in_transit' ? 'on' : ''}">2 · On the way</span><span class="${t.status === 'received' ? 'on' : ''}">3 · Received &amp; confirmed</span></div>
+        ${UI.table([{ h: 'Product', f: id => UI.prodCell(prod(id)) }, { h: 'Details', f: id => { const p = prod(id); return fmt.ct(p.carat) + ' · ' + esc(p.colour); } }, { h: 'Value', num: 1, roles: 'owner', f: id => fmt.cur(prod(id).price) }, { h: t.status === 'in_transit' ? 'Scan to confirm' : 'Status', f: id => t.status === 'in_transit' ? `<label class="check"><input type="checkbox" data-rc="${t.id}" value="${id}"> received</label>` : badge('received') }], t.items)}
+        ${t.status === 'in_transit' ? `<div class="row mt"><input class="input" style="max-width:260px" placeholder="Scan tag to tick…" data-scan="${t.id}"><button class="btn btn-success" data-recv="${t.id}">Confirm receipt at ${esc(branchName(t.to))}</button></div>` : ''}</div></div>`).join('') || '<div class="card"><div class="empty">No transfers yet.</div></div>'}</div>
+      <div class="mt">${UI.ruleNote(9, 'Each branch has its own stock and cash. Products only count at the receiving branch after it confirms.')}</div>`;
+  }
+  $('#page').addEventListener('click', e => {
+    if (e.target.id === 'newT') return newTransfer();
+    const id = e.target.dataset.recv; if (!id) return;
+    const t = find('transfers', id);
+    const ticked = $$(`[data-rc="${id}"]:checked`).map(i => i.value);
+    if (ticked.length !== t.items.length) { toast('Tick every item first', ticked.length + ' of ' + t.items.length + ' confirmed. Missing items must be reported as a stock correction.', 'error'); return; }
+    t.status = 'received'; t.receivedAt = new Date().toISOString(); t.receivedBy = currentUser().id;
+    t.items.forEach(pid => { const p = prod(pid); p.branch = t.to; p.status = 'in_stock'; Hist.add(pid, 'Received', t.id + ' at ' + branchName(t.to)); });
+    Log.add('Transfer received', t.id + ' · ' + t.items.length + ' items at ' + branchName(t.to), t.to);
+    Alerts.add('stock', 'Transfer ' + t.id + ' received at ' + branchName(t.to), 'd-stock/transfers.html', t.to);
+    Store.save(); toast('Transfer received', t.id, 'success'); render();
+  });
+  $('#page').addEventListener('keydown', e => {
+    const id = e.target.dataset.scan; if (!id || e.key !== 'Enter') return;
+    const v = e.target.value.trim().toUpperCase(); const cb = $(`[data-rc="${id}"][value="${v}"]`);
+    if (cb) { cb.checked = true; toast('✓ ' + v, 'ticked'); } else toast('Not in this transfer', v, 'error');
+    e.target.value = '';
+  });
+  function newTransfer() {
+    const from = activeBranch();
+    const to = S.branches.find(b => b.id !== from).id;
+    const avail = S.products.filter(p => p.branch === from && ['in_stock', 'returned'].includes(p.status));
+    UI.modal({ title: 'New transfer', desc: esc(branchName(from)) + ' → ' + esc(branchName(to)), size: 'lg', body: `
+      <div class="form-grid mb"><div class="field"><label>From</label><input class="input" readonly value="${esc(branchName(from))}"></div><div class="field"><label>To</label><input class="input" readonly value="${esc(branchName(to))}"></div><div class="field full"><label>Note</label><input class="input" id="tn" placeholder="e.g. Display stock for opening"></div></div>
+      <div class="label mb-s">Choose products (only available stock can be sent)</div>
+      <div style="max-height:40vh;overflow:auto">${avail.map(p => `<label class="check" style="padding:6px 0;border-bottom:1px solid var(--border)"><input type="checkbox" value="${p.id}">${gemSVG(p.gem, p.type, 28)}<span><b class="mono">${p.id}</b> ${esc(p.name)} · ${fmt.ct(p.carat)}</span></label>`).join('')}</div>`,
+      actions: [{ label: 'Cancel', cls: 'btn-outline' }, { label: 'Send transfer', cls: 'btn-sapphire', onClick: ({ el }) => {
+        const ids = $$('input[type=checkbox]:checked', el).map(i => i.value);
+        if (!ids.length) { toast('Choose at least one product', '', 'error'); return false; }
+        const t = { id: nextId('transfer', 'TR-'), from, to, items: ids, sentAt: new Date().toISOString(), sentBy: currentUser().id, status: 'in_transit', notes: $('#tn', el).value };
+        S.transfers.push(t);
+        ids.forEach(pid => { prod(pid).status = 'in_transit'; Hist.add(pid, 'Moved', 'Sent ' + branchName(from) + ' → ' + branchName(to) + ' (' + t.id + ')'); });
+        Log.add('Transfer sent', t.id + ' · ' + ids.length + ' items'); Alerts.add('stock', 'Transfer ' + t.id + ' sent: ' + ids.length + ' items to ' + branchName(to), 'd-stock/transfers.html');
+        Store.save(); toast('Transfer sent', t.id + ' – the receiving branch must confirm.', 'success'); render();
+      } }] });
+  }
+  render();
+})();
+</script>
+</body>
+</html>

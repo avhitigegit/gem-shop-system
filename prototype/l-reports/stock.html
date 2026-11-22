@@ -1,0 +1,42 @@
+<!-- Screen: Stock report with photos, value & slow-moving stock | BRD: L3, D6, L6 | Rule: 1 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Report · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="l-reports/stock.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const f = { branch: branchScope(), gem: '', tab: qs('tab') || 'all', days: 60 };
+  const age = p => Math.round((Date.now() - new Date(p.addedAt)) / 864e5);
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'L · Reports', title: 'Stock report', brd: ['L3', 'L6'], sub: 'Stock with photos and value; slow-moving stock (items not sold for a long time).', actions: '<a class="btn btn-outline" href="../d-stock/stock-value.html">Value by gem type</a>' + UI.exportButtons('#rT', 'Stock report') }) +
+    `<div class="card mb"><div class="card-content filters"><div class="tabs" id="tabs"><button data-t="all">All stock</button><button data-t="slow">Slow-moving</button></div>
+      <div class="field"><label>Branch</label><select data-f="branch">${UI.opts([{ v: 'all', l: 'All branches' }].concat(S.branches.map(b => ({ v: b.id, l: b.name }))), f.branch)}</select></div>
+      <div class="field"><label>Gem type</label><select data-f="gem">${UI.opts(S.lists.gemTypes, '', 'All')}</select></div>
+      <div class="field" id="daysF"><label>Not sold for more than (days)</label><input class="input" type="number" min="1" data-f="days" value="${f.days}"></div></div></div><div id="out"></div>`;
+  function render() {
+    $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.t === f.tab));
+    $('#daysF').classList.toggle('hidden', f.tab !== 'slow');
+    let rows = Metrics.stock(f.branch).items.filter(p => !f.gem || p.gem === f.gem);
+    if (f.tab === 'slow') rows = rows.filter(p => age(p) > +f.days);
+    rows.sort((a, b) => age(b) - age(a));
+    $('#out').innerHTML = `<div class="grid g4 mb">${UI.kpi('Items', rows.length, '')}${UI.kpi('Value at cost', fmt.cur(sum(rows, p => p.cost)), '')}${UI.kpi('Value at selling price', fmt.cur(sum(rows, p => p.price)), '')}${UI.kpi('Average age', Math.round(sum(rows, age) / Math.max(1, rows.length)) + ' days', f.tab === 'slow' ? 'consider a promotion' : '')}</div>
+      ${f.tab === 'slow' && rows.length ? `<div class="alert warning mb">${rows.length} item(s) have not sold for more than ${f.days} days. <a href="../j-customers-promotions/email-campaign.html">Create a promotion →</a></div>` : ''}
+      <div class="card">${UI.table([
+        { h: 'Photo / product', f: p => UI.prodCell(p) }, { h: 'Gem / type', f: p => esc(p.gem) + '<br><small class="muted">' + esc(p.type) + ' · ' + fmt.ct(p.carat) + '</small>' },
+        { h: 'Branch', f: p => esc(branchName(p.branch)) }, { h: 'Status', f: p => badge(p.status) },
+        { h: 'In stock since', f: p => fmt.date(p.addedAt) }, { h: 'Days', num: 1, f: p => `<b class="${age(p) > 60 ? 'text-warning' : ''}">${age(p)}</b>` },
+        { h: 'Cost', num: 1, f: p => fmt.cur(p.cost) }, { h: 'Selling', num: 1, f: p => fmt.cur(p.price) }
+      ], rows, { id: 'rT', cls: 'stack-sm', empty: 'No items.', foot: [rows.length + ' items', '', '', '', '', '', fmt.cur(sum(rows, p => p.cost)), fmt.cur(sum(rows, p => p.price))] })}</div>`;
+  }
+  $('#page').addEventListener('change', e => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; render(); } });
+  $('#page').addEventListener('click', e => { if (e.target.dataset.t) { f.tab = e.target.dataset.t; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

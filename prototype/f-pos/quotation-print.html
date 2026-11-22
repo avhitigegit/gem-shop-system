@@ -1,0 +1,32 @@
+<!-- Screen: Quotation print preview | BRD: F7, G4 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quotation · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="f-pos/quotation-print.html" data-roles="owner salesperson">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const q = find('quotes', qs('id')) || S.quotes.find(x => x.kind === 'quotation');
+  if (!q) return UI.empty('No price quote yet', 'Give a price quote from the Sell section first.', 'f-pos/reservations.html', 'Go to Reserved & quotes');
+  const c = cust(q.customerId) || {};
+  const total = sum(q.items, i => i.price); const t = Calc.split(total);
+  $('#page').innerHTML = UI.docToolbar('reservations.html?tab=quotation', 'Quotations', '<button class="btn btn-outline" id="sendQ">✉ Send quotation</button>') + `
+    <div class="doc ${q.status !== 'active' ? 'watermark' : ''}" data-wm="${q.status === 'converted' ? 'SOLD' : 'EXPIRED'}">
+      ${UI.docHead(q.kind === 'reservation' ? 'RESERVATION' : 'QUOTATION', `<div style="font-size:12px;margin-top:6px"><b>No:</b> <span class="mono">${q.id}</span><br><b>Date:</b> ${fmt.date(q.created)}<br><b>Valid until:</b> <span style="color:var(--danger);font-weight:700">${fmt.date(q.expires)}</span><br><b>Prepared by:</b> ${esc(user(q.by).name)}</div>`)}
+      <p><b>For:</b> ${esc(c.name)}, ${esc(c.country)} · ${esc(c.email || '')}</p>
+      <table><thead><tr><th>Photo</th><th>Product</th><th>Gem details</th><th style="text-align:right">Quoted price (LKR)</th><th style="text-align:right">USD</th><th style="text-align:right">EUR</th></tr></thead><tbody>
+      ${q.items.map(i => { const p = prod(i.productId); return `<tr><td style="width:70px">${gemPic(p, 56, 60)}</td><td><b>${esc(p.name)}</b><br><span class="mono" style="font-size:11px">${p.id}</span></td><td style="font-size:12px">${esc(p.gem)} · ${fmt.ct(p.carat)} · ${esc(p.colour)} · ${esc(p.shape)}<br>Treatment: ${esc(p.treatment)} · ${p.cert.type === 'lab' ? 'Lab cert. ' + esc(p.cert.lab) : p.cert.type === 'shop' ? 'Shop certificate' : 'No certificate'}</td><td class="right"><b>${fmt.num(i.price)}</b></td><td class="right">${fmt.num(fx.from(i.price, 'USD'))}</td><td class="right">${fmt.num(fx.from(i.price, 'EUR'))}</td></tr>`; }).join('')}
+      </tbody></table>
+      <table class="totals"><tr class="grand"><td>Total</td><td class="right">${fmt.lkr(t.total)}</td></tr><tr><td colspan="2" class="right" style="font-size:11px">≈ USD ${fmt.num(fx.from(t.total, 'USD'))} · EUR ${fmt.num(fx.from(t.total, 'EUR'))} (rates of ${fmt.date(S.rates.updatedAt)})</td></tr><tr><td colspan="2" class="right" style="font-size:11px">Same price for cash or card.</td></tr></table>
+      <div class="foot">This quotation is valid until ${fmt.date(q.expires)}. Prices are in LKR; USD/EUR amounts are for information and follow the rate on the day of payment. ${q.kind === 'reservation' ? 'The product is held for you until the date above.' : 'Products are unique and are not held unless reserved.'}</div>
+    </div>`;
+  $('#sendQ').onclick = () => UI.send('quotation ' + q.id, c);
+})();
+</script>
+</body>
+</html>

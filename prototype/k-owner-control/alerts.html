@@ -1,0 +1,39 @@
+<!-- Screen: Alerts feed | BRD: K2, I4 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alerts · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="k-owner-control/alerts.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const ICON = { sale: '💰', below_min: '💎', return: '↩', cancel_invoice: '🧾', cancel: '🧾', stock_correction: '📦', expense: '💸', closing: '🧮', licence: '📜', month_reopen: '🔓', stock: '📦' };
+  const GROUP = { '': 'All', sale: 'Sales', below_min: 'Below-minimum', return: 'Returns', cancel: 'Cancellations', stock: 'Stock changes', closing: 'Day closing', other: 'Other' };
+  const grp = t => t === 'cancel_invoice' ? 'cancel' : t === 'stock_correction' ? 'stock' : (GROUP[t] ? t : 'other');
+  let f = '', unread = false;
+  function render() {
+    const list = S.alerts.filter(inBranch).filter(a => (!f || grp(a.type) === f) && (!unread || !a.read));
+    $('#page').innerHTML = `<div class="phone-frame" style="max-width:760px">` + UI.pageHead({ crumbs: 'K · Owner control', title: 'Alerts', brd: ['K2'], sub: 'Instant alerts for every sale, below-minimum request, return, cancellation and stock change. Sent as web push to the owner\'s phone.', actions: '<button class="btn btn-outline" id="readAll">Mark all read</button>' }) +
+      `<div class="row mb"><div class="pill-nav">${Object.keys(GROUP).map(k => `<button class="btn btn-sm ${f === k ? 'btn-sapphire' : 'btn-outline'}" data-f="${k}">${GROUP[k]}</button>`).join('')}</div><label class="check" style="margin-left:auto"><input type="checkbox" id="unr" ${unread ? 'checked' : ''}> Unread only</label></div>
+      <div class="card"><ul class="list" style="padding:0 16px">${list.slice(0, 80).map(a => `<li style="align-items:flex-start;${a.read ? '' : 'background:linear-gradient(90deg,var(--sapphire-soft),transparent);margin:0 -16px;padding-left:16px;padding-right:16px'}"><span style="font-size:18px">${ICON[a.type] || '🔔'}</span><div style="flex:1"><div style="font-size:13px">${a.link ? `<a href="../${a.link}" data-read="${a.id}">${esc(a.text)}</a>` : esc(a.text)}</div><small class="muted">${fmt.dt(a.at)} · ${fmt.ago(a.at)} · ${esc(branchName(a.branch))}</small></div>${a.read ? '' : `<button class="btn btn-ghost btn-sm" data-read="${a.id}">Mark read</button>`}</li>`).join('') || '<li class="muted" style="padding:20px">No alerts</li>'}</ul></div>
+      <div class="card mt"><div class="card-header"><h3>Push notification settings (demo)</h3></div><div class="card-content stack" style="gap:10px">
+        ${[['Every sale', true], ['Below-minimum price requests', true], ['Returns & cancellations', true], ['Stock corrections & transfers', true], ['Day-end closing report (I4)', true], ['Large expenses', true]].map(x => `<label class="row between"><span>${x[0]}</span><label class="switch"><input type="checkbox" ${x[1] ? 'checked' : ''} onchange="toast('Saved','Push setting updated','success')"><span></span></label></label>`).join('')}
+        <button class="btn btn-outline" id="testPush">Send a test push to my phone</button>
+      </div></div></div>`;
+  }
+  $('#page').addEventListener('click', e => {
+    if (e.target.dataset.f != null) { f = e.target.dataset.f; render(); return; }
+    if (e.target.id === 'readAll') { S.alerts.forEach(a => a.read = true); Store.save(); render(); toast('All alerts marked as read', '', 'success'); }
+    if (e.target.id === 'testPush') toast('🔔 Test push sent', 'Check your phone (demo).', 'success');
+    const r = e.target.dataset.read; if (r) { const a = find('alerts', r); if (a) { a.read = true; Store.save(); } if (e.target.tagName === 'BUTTON') render(); }
+  });
+  $('#page').addEventListener('change', e => { if (e.target.id === 'unr') { unread = e.target.checked; render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

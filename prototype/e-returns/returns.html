@@ -1,0 +1,33 @@
+<!-- Screen: Returns & exchanges | BRD: E1, E2, D2 | Rules: 3, 7 | Roles: Owner, Salesperson -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Returns &amp; Exchanges · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="e-returns/returns.html" data-roles="owner salesperson">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (qs('new') || qs('inv')) location.replace('new-return.html' + (qs('inv') ? '?inv=' + encodeURIComponent(qs('inv')) : ''));
+else if (PAGE_ALLOWED) (function () {
+  function render() {
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'E · Returns', title: 'Returns & exchanges', brd: ['E1', 'E2'], sub: 'A return or exchange needs a reason and owner approval. The product goes back into stock, a credit note is created and the commissions for that sale are reversed.', actions: '<a class="btn btn-sapphire" href="new-return.html">↩️ Customer brings a gem back</a><a class="btn btn-outline" href="credit-note.html">Credit notes</a>' }) +
+      `<div class="mb">${UI.ruleNote(7, 'Returns need owner approval. Returned items can be sold again (rule 3).')}</div>
+      <div class="card">${UI.table([
+        { h: 'No.', f: r => `<span class="mono">${r.id}</span><br><small class="muted">${fmt.dt(r.at)}</small>` },
+        { h: 'Product', f: r => UI.prodCell(prod(r.productId)) },
+        { h: 'Invoice', f: r => `<a class="mono" href="../g-payments/invoice.html?id=${r.saleId}">${r.saleId}</a><br><small class="muted">${esc((cust(sale(r.saleId).customerId) || {}).name)}</small>` },
+        { h: 'Type', f: r => r.kind === 'exchange' ? '<span class="badge badge-blue">Exchange</span>' : '<span class="badge badge-outline">Refund</span>' },
+        { h: 'Reason', f: r => esc(r.reason) },
+        { h: 'Amount', num: 1, f: r => fmt.cur(r.amount) },
+        { h: 'Status', f: r => `<a href="new-return.html?id=${r.id}">${badge(r.status, r.status === 'pending' ? 'Waiting for owner' : null)}</a>` },
+        { h: 'Credit note', f: r => r.creditNoteId ? `<a class="btn btn-sm btn-outline" href="credit-note.html?id=${r.creditNoteId}">${r.creditNoteId}</a>` : '—' }
+      ], S.returns.filter(r => inBranch(sale(r.saleId))).sort((a, b) => b.at.localeCompare(a.at)), { cls: 'stack-sm', empty: 'No returns yet.' })}</div>`;
+  }
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!-- Screen: Owner mobile dashboard (phone-first) | BRD: K1, K2, K3, D6 | Rule: 9 | Roles: Owner -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#13213f">
+<title>Owner Mobile · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="k-owner-control/owner-mobile.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let br = P.branch === 'b2' ? 'b2' : (P.branch === 'ella' ? 'ella' : 'all');
+  function render() {
+    const today = todayYmd();
+    const ts = Metrics.salesOn(today, br), cash = Metrics.cash(today, br), st = Metrics.stock(br);
+    const pend = S.approvals.filter(a => a.status === 'pending' && (br === 'all' || a.branch === br));
+    const sold = ts.flatMap(s => s.items.map(i => ({ s, i, p: prod(i.productId) })));
+    $('#page').innerHTML = `<div class="phone-frame">
+      <div class="card" style="background:linear-gradient(150deg,var(--navy),var(--sapphire));color:#fff;border:0"><div class="card-content">
+        <div class="row between"><div><small style="color:var(--gold)">${esc(S.shop.name)} · owner view</small><h2 style="color:#fff">${fmt.date(new Date().toISOString())}</h2></div><span class="brd">K1</span></div>
+        <div class="pill-nav mt-s">${[['all', 'All branches'], ['ella', 'Ella'], ['b2', 'Branch 2']].map(x => `<button class="btn btn-sm ${br === x[0] ? 'btn-gold' : 'btn-outline'}" data-br="${x[0]}">${x[1]}</button>`).join('')}</div>
+        <div style="font-size:12px;color:#c9d5ee;margin-top:12px">Today's sales</div>
+        <div style="font-size:30px;font-weight:800">${fmt.cur(sum(ts, s => s.total))}</div>
+        <div style="font-size:12px;color:#c9d5ee">${ts.length} bills · ${sold.length} items · profit ${fmt.cur(sum(ts, s => Calc.saleNetActive(s) - Calc.saleCost(s) - s.guideComm - s.staffComm))}</div>
+      </div></div>
+      ${pend.length ? `<a href="approvals.html" class="alert warning mt" style="text-decoration:none"><b>🔔 ${pend.length} approval${pend.length > 1 ? 's' : ''} waiting</b><span style="margin-left:auto">Open →</span></a>` : ''}
+      <div class="stack mt" style="gap:10px">
+        ${pend.slice(0, 3).map(a => `<div class="card"><div class="card-content" style="padding:12px 14px"><small class="muted">${esc(APPROVAL_TYPES[a.type])} · ${fmt.ago(a.at)}</small><br><b style="font-size:13px">${esc(a.title)}</b>${a.amount ? `<div class="bold mt-s">${fmt.cur(a.amount)}</div>` : ''}</div><div class="card-footer" style="padding:8px 14px"><button class="btn btn-destructive" style="flex:1" data-dec="0" data-id="${a.id}">Reject</button><button class="btn btn-success" style="flex:1" data-dec="1" data-id="${a.id}">Approve</button></div></div>`).join('')}
+      </div>
+      <div class="grid g2 mt" style="grid-template-columns:1fr 1fr;gap:10px">
+        <div class="card kpi"><div class="k-label">Cash LKR</div><div class="k-value" style="font-size:17px">${fmt.num(cash.LKR, 0)}</div></div>
+        <div class="card kpi"><div class="k-label">Cash USD / EUR</div><div class="k-value" style="font-size:17px">${fmt.num(cash.USD, 0)} / ${fmt.num(cash.EUR, 0)}</div></div>
+        <div class="card kpi"><div class="k-label">Card today</div><div class="k-value" style="font-size:17px">${fmt.num(cash.card, 0)}</div></div>
+        <div class="card kpi"><div class="k-label">Stock value</div><div class="k-value" style="font-size:17px">${fmt.num(fx.from(st.sell, P.currency), 0)}</div><div class="k-sub">${P.currency} · ${st.count} items · cost ${fmt.num(fx.from(st.cost, P.currency), 0)}</div></div>
+      </div>
+      <div class="card mt"><div class="card-header"><h3>Sold today</h3><span class="muted">${sold.length}</span></div><div class="card-content"><ul class="list">${sold.map(x => `<li>${gemPic(x.p, 40, 46)}<div style="flex:1;font-size:12px"><b>${esc(x.p.name)}</b><br><span class="muted">${fmt.time(x.s.date)} · ${esc(user(x.s.staffId).name.split(' ')[0])} · ${x.s.guideId ? esc(guide(x.s.guideId).name) : 'Walk-in'}</span></div><div class="right" style="font-size:12px"><b>${fmt.cur(x.i.agreed)}</b>${x.i.agreed < x.i.minPrice ? '<br><span class="badge badge-warning">below min</span>' : ''}</div></li>`).join('') || '<li class="muted">No sales yet today</li>'}</ul></div></div>
+      <div class="card mt"><div class="card-header"><h3>Alerts</h3><a href="alerts.html" class="btn btn-sm btn-ghost">All</a></div><div class="card-content"><ul class="list">${S.alerts.filter(a => br === 'all' || a.branch === br || a.branch === 'all').slice(0, 5).map(a => `<li style="font-size:12px"><div style="flex:1">${esc(a.text)}<br><small class="muted">${fmt.ago(a.at)}</small></div></li>`).join('')}</ul></div></div>
+      <div class="alert info mt" style="font-size:12px">Install this page on the phone's home screen to get instant push alerts for sales and approvals (PWA, iOS 16.4+). Demo: alerts appear in the bell.</div>
+    </div>`;
+  }
+  $('#page').addEventListener('click', e => {
+    if (e.target.dataset.br) { br = e.target.dataset.br; render(); return; }
+    const id = e.target.dataset.id; if (!id) return;
+    Approvals.decide(id, e.target.dataset.dec === '1', '');
+    toast(e.target.dataset.dec === '1' ? 'Approved ✓' : 'Rejected', find('approvals', id).title, e.target.dataset.dec === '1' ? 'success' : 'error');
+    window.renderBell && renderBell(); render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>

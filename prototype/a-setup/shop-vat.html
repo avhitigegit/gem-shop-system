@@ -1,0 +1,48 @@
+<!-- Screen: Shop & NGJA licence details | BRD: A3, §08 Laws (NGJA licence + reminder), M6, NFR-8 | Roles: Owner | v8: no VAT -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop Details · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="a-setup/shop-vat.html" data-roles="owner">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const sh = S.shop;
+  function render() {
+    const days = Math.round((new Date(sh.ngjaExpiry) - new Date(todayYmd())) / 864e5);
+    $('#page').innerHTML = UI.pageHead({ crumbs: 'A · Basic setup', title: 'Shop & licence details', brd: ['A3'], sub: 'Printed on every invoice and certificate. Can be changed without new software (NFR-8).' }) +
+      `${days <= sh.ngjaRemindDays ? `<div class="alert ${days < 0 ? 'danger' : 'warning'} mb"><b>📜 NGJA dealer licence ${days < 0 ? 'EXPIRED ' + (-days) + ' days ago' : 'expires in ' + days + ' days'} (${fmt.date(sh.ngjaExpiry)}).</b>&nbsp;Renew with the National Gem &amp; Jewellery Authority and update the expiry date below.</div>` : ''}
+      <form id="f" novalidate class="grid g2"><div class="card"><div class="card-header"><h3>Shop details</h3></div><div class="card-content stack" style="gap:12px">
+        <div class="field"><label class="req">Shop name</label><input class="input" name="sname" required value="${esc(sh.name)}"></div>
+        <div class="field"><label>Tagline</label><input class="input" name="tagline" value="${esc(sh.tagline)}"></div>
+        <div class="field"><label class="req">Address</label><textarea name="address" required rows="2">${esc(sh.address)}</textarea></div>
+        <div class="form-grid"><div class="field"><label class="req">Phone</label><input class="input" name="phone" required value="${esc(sh.phone)}"></div><div class="field"><label class="req">Email</label><input class="input" type="email" name="email" required value="${esc(sh.email)}"></div></div>
+        <div class="field"><label>Website</label><input class="input" name="website" value="${esc(sh.website)}"></div>
+        <div class="field"><label>Logo</label><div class="upload" id="up"><img src="../assets/img/logo.svg" style="height:46px;margin:0 auto 6px">⇪ Change logo</div></div>
+      </div></div>
+      <div class="stack"><div class="card"><div class="card-header"><h3>NGJA gem dealer licence</h3><span class="brd">§08</span></div><div class="card-content stack" style="gap:12px">
+        <div class="form-grid"><div class="field"><label class="req">Licence number</label><input class="input mono" name="ngjaNo" required value="${esc(sh.ngjaNo)}"></div><div class="field"><label class="req">Expiry date</label><input class="input" type="date" name="ngjaExpiry" required value="${sh.ngjaExpiry}"></div></div>
+        <div class="form-grid"><div class="field"><label>Remind me before expiry (days)</label><input class="input" type="number" min="1" name="ngjaRemindDays" value="${sh.ngjaRemindDays}"></div><label class="check" style="align-self:end"><input type="checkbox" name="printLic" ${sh.printLicenceOnInvoice ? 'checked' : ''}> Print licence on invoices &amp; certificates</label></div>
+      </div></div>
+      <div class="card"><div class="card-header"><h3>Control limits</h3></div><div class="card-content form-grid">
+        <div class="field"><label class="req">Expenses needing owner approval above (LKR)</label><input class="input" type="number" min="0" name="limit" required value="${sh.largeExpenseLimit}"><span class="hint">M6</span></div>
+        <div class="field"><label>Return policy (days)</label><input class="input" type="number" min="0" name="ret" value="${sh.returnPolicyDays}"></div>
+        <div class="field"><label class="req">Card bank fee (%) – paid by the shop</label><input class="input" type="number" min="0" max="10" step="0.1" name="cardFee" required value="${Calc.cardPct()}"><span class="hint">The part of every card payment the bank keeps. The customer pays the normal price; this fee is a shop cost (shown in Profit &amp; Loss).</span></div>
+      </div><div class="card-footer"><a class="btn btn-outline" href="../g-payments/invoice.html">Preview on invoice</a><button class="btn btn-sapphire" type="submit">Save settings</button></div></div></div></form>`;
+    const F = $('#f'); UI.bindUpload($('#up'));
+    F.onsubmit = e => {
+      e.preventDefault(); if (!UI.validate(F)) return;
+      Object.assign(sh, { name: F.sname.value, tagline: F.tagline.value, address: F.address.value, phone: F.phone.value, email: F.email.value, website: F.website.value, ngjaNo: F.ngjaNo.value, ngjaExpiry: F.ngjaExpiry.value, ngjaRemindDays: +F.ngjaRemindDays.value, printLicenceOnInvoice: F.printLic.checked, largeExpenseLimit: +F.limit.value, returnPolicyDays: +F.ret.value, cardFeePct: +F.cardFee.value });
+      Log.add('Shop settings saved', 'details updated', 'all');
+      Store.save(); toast('Settings saved', '', 'success'); render();
+    };
+  }
+  render();
+})();
+</script>
+</body>
+</html>

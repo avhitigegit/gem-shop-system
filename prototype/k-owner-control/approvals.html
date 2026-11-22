@@ -1,0 +1,62 @@
+<!-- Screen: Approvals inbox (one-tap approve / reject, phone-first) | BRD: K3, F3, E1, G6, D7, M6, N6 | Rules: 2, 7, 11 | Roles: Owner (decides); others see the status of their requests -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Approvals Inbox · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="k-owner-control/approvals.html" data-roles="owner salesperson staff accountant">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  const owner = isRole('owner');
+  let tab = 'pending', type = '';
+  const ICON = { below_min: '💎', return: '↩', cancel_invoice: '🧾', stock_correction: '📦', expense: '💸', month_reopen: '🔓' };
+  function card(a) {
+    const req = user(a.requestedBy);
+    const extra = (() => {
+      if (a.type === 'below_min') { const h = find('held', a.payload.heldId); if (!h) return ''; return h.items.map(i => { const p = prod(i.productId); const pct = Math.round((1 - i.agreed / i.listPrice) * 100); return `<div class="row mt-s" style="gap:10px;flex-wrap:nowrap">${gemPic(p, 44, 50)}<div style="font-size:12px;flex:1"><b>${esc(p.name)}</b> <span class="mono muted">${p.id}</span><br>List ${fmt.lkr(i.listPrice)} · Min ${fmt.lkr(i.minPrice)}<br><b class="text-danger">Agreed ${fmt.lkr(i.agreed)}</b> (${pct}% off) · Cost ${fmt.lkr(p.cost)} · Margin ${fmt.lkr(Calc.split(i.agreed).net - p.cost)}</div></div>`; }).join(''); }
+      if (a.type === 'return') { const r = find('returns', a.payload.returnId); if (!r) return ''; const p = prod(r.productId); return `<div class="row mt-s" style="gap:10px;flex-wrap:nowrap">${gemPic(p, 44, 50)}<div style="font-size:12px">${esc(p.name)} · Invoice <a href="../g-payments/invoice.html?id=${r.saleId}">${r.saleId}</a><br>${r.kind === 'exchange' ? 'Exchange' : 'Refund'} · ${fmt.lkr(r.amount)} · commissions will be reversed (E2)</div></div>`; }
+      if (a.type === 'stock_correction') { const c = find('corrections', a.payload.correctionId); if (!c) return ''; const p = prod(c.productId); return `<div class="row mt-s" style="gap:10px;flex-wrap:nowrap">${gemPic(p, 44, 50)}<div style="font-size:12px">${esc(p.name)} · ${esc(c.field)}: <b>${esc(String(c.from))}</b> → <b>${esc(String(c.to))}</b></div></div>`; }
+      if (a.type === 'expense') { const e = find('expenses', a.payload.expenseId); if (!e) return ''; return `<div class="mt-s" style="font-size:12px">${esc(e.category)} · paid to ${esc(e.paidTo)} · ${esc(e.method)} · bill photo ${e.billPhoto ? '✔' : '✖'} · limit ${fmt.lkr(S.shop.largeExpenseLimit)}</div>`; }
+      if (a.type === 'cancel_invoice') return `<div class="mt-s" style="font-size:12px">Invoice <a href="../g-payments/invoice.html?id=${a.payload.saleId}">${a.payload.saleId}</a> stays on record as CANCELLED; items return to stock; commissions reversed.</div>`;
+      return '';
+    })();
+    return `<div class="card" id="${a.id}" style="${location.hash === '#' + a.id ? 'outline:2px solid var(--gold)' : ''}"><div class="card-content">
+      <div class="row between" style="flex-wrap:nowrap;align-items:flex-start"><div class="row" style="gap:10px;flex-wrap:nowrap;align-items:flex-start"><div style="font-size:22px">${ICON[a.type] || '•'}</div><div><span class="badge badge-outline">${esc(APPROVAL_TYPES[a.type] || a.type)}</span> <span class="mono muted" style="font-size:11px">${a.id}</span><br><b style="color:var(--navy)">${esc(a.title)}</b></div></div>${a.amount ? `<div class="right nowrap"><b>${fmt.cur(a.amount)}</b></div>` : ''}</div>
+      <div class="muted mt-s" style="font-size:12px">${esc(a.detail || '')}</div>${extra}
+      <div class="muted mt-s" style="font-size:11px">Requested by ${esc(req.name)} (${ROLES[req.role] || ''}) · ${esc(branchName(a.branch))} · ${fmt.dt(a.at)} (${fmt.ago(a.at)})</div>
+      ${a.status !== 'pending' ? `<div class="mt-s">${badge(a.status)} <small class="muted">by ${esc(user(a.decidedBy).name)} · ${fmt.dt(a.decidedAt)}${a.note ? ' · “' + esc(a.note) + '”' : ''}</small></div>` : ''}
+    </div>${a.status === 'pending' ? (owner ? `<div class="card-footer" style="justify-content:stretch"><input class="input" placeholder="Note (optional)" data-note="${a.id}" style="flex:1;min-width:140px"><button class="btn btn-destructive btn-lg" data-dec="0" data-id="${a.id}">✕ Reject</button><button class="btn btn-success btn-lg" data-dec="1" data-id="${a.id}">✓ Approve</button></div>` : `<div class="card-footer" style="justify-content:flex-start"><span class="badge badge-warning pending-pulse">Waiting for the owner</span></div>`) : ''}</div>`;
+  }
+  function render() {
+    const all = S.approvals.filter(a => owner || isRole('accountant') || a.requestedBy === currentUser().id || inBranch(a));
+    const list = all.filter(a => (tab === 'pending' ? a.status === 'pending' : a.status !== 'pending') && (!type || a.type === type)).sort((a, b) => b.at.localeCompare(a.at));
+    const n = all.filter(a => a.status === 'pending').length;
+    $('#page').innerHTML = `<div class="phone-frame" style="max-width:760px">` + UI.pageHead({ crumbs: 'K · Owner control', title: 'Approvals inbox', brd: ['K3', 'F3', 'E1', 'G6', 'D7', 'M6', 'N6'], sub: owner ? 'Approve or reject with one tap – works on the phone (installed web app / PWA with push alerts).' : 'Requests that need the owner. Only the owner can approve or reject.' }) +
+      `<div class="stack" style="gap:8px;margin-bottom:14px">${UI.ruleNote(2, 'Below-minimum prices need the owner\'s approval.')}${UI.ruleNote(7, 'Returns, cancellations and stock corrections need owner approval.')}</div>
+      <div class="row between mb"><div class="tabs"><button data-tab="pending" class="${tab === 'pending' ? 'active' : ''}">Pending (${n})</button><button data-tab="done" class="${tab === 'done' ? 'active' : ''}">History</button></div>
+      <select id="ftype" style="width:auto">${UI.opts([{ v: '', l: 'All types' }].concat(Object.keys(APPROVAL_TYPES).filter(k => k !== 'transfer').map(k => ({ v: k, l: APPROVAL_TYPES[k] }))), type)}</select></div>
+      <div class="stack">${list.map(card).join('') || `<div class="card"><div class="empty">${tab === 'pending' ? 'Nothing waiting for approval 🎉' : 'No decisions yet.'}</div></div>`}</div></div>`;
+    $('#ftype').onchange = e => { type = e.target.value; render(); };
+  }
+  $('#page').addEventListener('click', e => {
+    const t = e.target.dataset.tab; if (t) { tab = t; render(); return; }
+    const id = e.target.dataset.id; if (!id || e.target.dataset.dec == null) return;
+    const ok = e.target.dataset.dec === '1';
+    const note = ($(`[data-note="${id}"]`) || {}).value || '';
+    Approvals.decide(id, ok, note);
+    toast(ok ? 'Approved ✓' : 'Rejected', find('approvals', id).title, ok ? 'success' : 'error');
+    window.renderBell && renderBell(); render();
+  });
+  render();
+  if (location.hash) setTimeout(() => { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+  const sig = () => S.approvals.map(a => a.id + a.status).join();
+  let last = sig();
+  poll(() => { const s = sig(); if (s !== last) { last = s; render(); } }, 4000);
+})();
+</script>
+</body>
+</html>

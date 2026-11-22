@@ -1,0 +1,65 @@
+<!-- Screen: Product list (photo grid + table) | BRD: C1, C2, C3, C5, C6, D1, D2 | Rules: 1, 3 | Roles: Owner, Salesperson, Shop Staff (cost hidden except Owner) -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products · Gem Shop</title>
+<link rel="icon" href="../assets/img/logo.svg"><link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-root="../" data-page="c-products/products.html" data-roles="owner salesperson staff">
+<div id="page"></div>
+<script src="../assets/js/data.js"></script><script src="../assets/js/app.js"></script><script src="../assets/js/layout.js"></script>
+<script>
+if (PAGE_ALLOWED) (function () {
+  let view; try { view = localStorage.getItem('gemshop.prodview') || 'grid'; } catch (e) { view = 'grid'; }
+  const f = { q: '', gem: '', type: '', status: 'stock', cert: '' };
+  $('#page').innerHTML = UI.pageHead({ crumbs: 'C · Gem products', title: 'Products', brd: ['C1', 'C2', 'C3', 'C5', 'D1', 'D2'], sub: 'Every gem product is unique and has its own code, photos and certificate details.', actions: `<a class="btn btn-sapphire" data-roles="owner" href="product-form.html">+ Add product</a><a class="btn btn-outline" data-roles="owner staff" href="tag-print.html">Print tags</a>` }) +
+    `<div class="card mb"><div class="card-content filters">
+      <div class="field" style="flex:1;min-width:220px"><label>Search or scan</label><input class="input" id="q" placeholder="Code (GEM-00125), name, colour…" autofocus></div>
+      <div class="field"><label>Gem type</label><select id="gem">${UI.opts(S.lists.gemTypes, '', 'All gem types')}</select></div>
+      <div class="field"><label>Product type</label><select id="type">${UI.opts(S.lists.productTypes, '', 'All product types')}</select></div>
+      <div class="field"><label>Status</label><select id="st">${UI.opts([{ v: 'stock', l: 'Available stock' }, { v: '', l: 'All statuses' }, { v: 'in_stock', l: 'In stock' }, { v: 'reserved', l: 'Reserved' }, { v: 'sold', l: 'Sold' }, { v: 'returned', l: 'Returned' }, { v: 'in_transit', l: 'On the way' }, { v: 'on_hold', l: 'On hold' }, { v: 'not_ready', l: 'Not ready to sell' }], 'stock')}</select></div>
+      <div class="field"><label>Certificate</label><select id="cert">${UI.opts([{ v: '', l: 'All' }, { v: 'lab', l: 'Lab certificate' }, { v: 'shop', l: 'Shop certificate' }, { v: 'none', l: 'No certificate' }])}</select></div>
+      <div class="tabs" id="vt"><button data-v="grid">▦ Photos</button><button data-v="table">☰ Table</button></div>
+    </div></div>
+    <div id="out"></div>
+    <div class="mt">${UI.ruleNote(1, 'Only the owner can add products, set or change prices and see cost prices.')}</div>`;
+  function rows() {
+    const q = f.q.toLowerCase();
+    return S.products.filter(inBranch).filter(p =>
+      (!f.gem || p.gem === f.gem) && (!f.type || p.type === f.type) && (!f.cert || p.cert.type === f.cert) &&
+      (f.status === 'stock' ? Metrics.STOCK_STATUSES.includes(p.status) : (!f.status || p.status === f.status)) &&
+      (!q || (p.id + ' ' + p.name + ' ' + p.colour + ' ' + p.gem).toLowerCase().includes(q))
+    ).sort((a, b) => b.id.localeCompare(a.id));
+  }
+  function render() {
+    $$('#vt button').forEach(b => b.classList.toggle('active', b.dataset.v === view));
+    const list = rows();
+    if (view === 'grid') {
+      $('#out').innerHTML = list.length ? `<div class="prod-grid">${list.map(p => `<a class="card prod-card" href="product-detail.html?id=${p.id}" style="color:inherit;text-decoration:none"><div class="pic">${badge(p.status)}${gemSVG(p.gem, p.type, 110)}</div><div class="body"><span class="code">${p.id} · ${esc(p.type)}</span><span class="name">${esc(p.name)}</span><span class="muted" style="font-size:12px">${fmt.ct(p.carat)} · ${esc(p.colour)} · ${esc(p.treatment)}</span><div class="mt-s">${certBadge(p.cert)}</div><span class="price">${fmt.cur(p.price)}</span><span class="muted" style="font-size:11px" data-roles="owner">Cost ${fmt.cur(p.cost)} · Min ${fmt.cur(p.min)}</span></div></a>`).join('')}</div>` : '<div class="card"><div class="empty">No products match.</div></div>';
+    } else {
+      $('#out').innerHTML = `<div class="card">${UI.table([
+        { h: 'Product', f: p => `<a href="product-detail.html?id=${p.id}" style="color:inherit">${UI.prodCell(p)}</a>` },
+        { h: 'Type', f: p => esc(p.type) }, { h: 'Gem', f: p => esc(p.gem) },
+        { h: 'Carat', num: 1, f: p => fmt.ct(p.carat) }, { h: 'Colour / shape', f: p => esc(p.colour) + '<br><small class="muted">' + esc(p.shape) + ' · ' + esc(p.treatment) + '</small>' },
+        { h: 'Certificate', f: p => certBadge(p.cert) },
+        { h: 'Cost', num: 1, roles: 'owner', f: p => fmt.cur(p.cost) },
+        { h: 'Selling', num: 1, f: p => `<b>${fmt.cur(p.price)}</b>` },
+        { h: 'Minimum', num: 1, roles: 'owner', f: p => fmt.cur(p.min) },
+        { h: 'Branch', f: p => esc(branchName(p.branch)) },
+        { h: 'Status', f: p => badge(p.status) }
+      ], list, { cls: 'stack-sm', empty: 'No products match.', foot: [list.length + ' items', '', '', '', '', '', fmt.cur(sum(list, p => p.cost)), fmt.cur(sum(list, p => p.price)), '', '', ''] })}</div>`;
+    }
+  }
+  $('#q').oninput = e => { f.q = e.target.value; render(); };
+  $('#q').onkeydown = e => { if (e.key === 'Enter') { const p = prod(e.target.value.trim().toUpperCase()); if (p) location.href = 'product-detail.html?id=' + p.id; } };
+  $('#gem').onchange = e => { f.gem = e.target.value; render(); };
+  $('#type').onchange = e => { f.type = e.target.value; render(); };
+  $('#st').onchange = e => { f.status = e.target.value; render(); };
+  $('#cert').onchange = e => { f.cert = e.target.value; render(); };
+  $('#vt').onclick = e => { if (e.target.dataset.v) { view = e.target.dataset.v; try { localStorage.setItem('gemshop.prodview', view); } catch (x) { } render(); } };
+  render();
+})();
+</script>
+</body>
+</html>
