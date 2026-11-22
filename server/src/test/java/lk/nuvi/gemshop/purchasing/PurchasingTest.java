@@ -229,6 +229,35 @@ class PurchasingTest {
         mvc.perform(json(post("/api/supplier-returns"), f, OWNER)).andExpect(status().isConflict());
     }
 
+    @Test
+    void aGemAddedByHandCanBeLinkedToASupplier() throws Exception {
+        Map<String, Object> f = line("Old stock Ruby", false);
+        f.put("photos", List.of());
+        f.put("branch", "ella");
+        f.put("supplier", "SUP-03");
+        JsonNode g = JSON.readTree(mvc.perform(json(post("/api/gems"), f, OWNER)).andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString());
+        assertThat(g.path("supplierCode").asString()).isEqualTo("SUP-03");
+        assertThat(g.path("purchaseNo").isNull() || g.path("purchaseNo").isMissingNode()).isTrue();
+        String code = g.path("code").asString();
+
+        f.put("supplier", "");
+        JsonNode e = read(json(put("/api/gems/" + code), f, OWNER), OWNER);
+        assertThat(e.path("supplierCode").isNull() || e.path("supplierCode").isMissingNode()).isTrue();
+        assertThat(e.path("history").findValuesAsString("detail")).anyMatch(d -> d.contains("Supplier SUP-03 → not linked"));
+
+        f.put("supplier", "SUP-99");
+        mvc.perform(json(put("/api/gems/" + code), f, OWNER)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("supplier"));
+
+        // a bought gem keeps its supplier whatever the form says
+        JsonNode p = JSON.readTree(mvc.perform(json(post("/api/purchases"), purchase("SUP-01", upload(), line("Bought", false)),
+                OWNER)).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        String bought = p.path("gems").get(0).path("code").asString();
+        f.put("supplier", "SUP-02");
+        assertThat(read(json(put("/api/gems/" + bought), f, OWNER), OWNER).path("supplierCode").asString()).isEqualTo("SUP-01");
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static Map<String, Object> supplier(String name) {
