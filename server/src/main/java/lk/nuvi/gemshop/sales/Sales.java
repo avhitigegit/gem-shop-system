@@ -59,6 +59,7 @@ import lk.nuvi.gemshop.sales.api.SalesDtos.SaleLine;
 import lk.nuvi.gemshop.sales.api.SalesDtos.SaleRow;
 import lk.nuvi.gemshop.sales.api.SalesDtos.SaleView;
 import lk.nuvi.gemshop.sales.api.SalesDtos.SellSummary;
+import lk.nuvi.gemshop.sales.api.SalesDtos.WaitingReturn;
 import lk.nuvi.gemshop.settings.branch.Branch;
 import lk.nuvi.gemshop.settings.commission.Commission;
 import lk.nuvi.gemshop.settings.rates.Rates;
@@ -88,6 +89,7 @@ public class Sales {
     public static final String HELD_CHANGED = "HELD_CHANGED";
     public static final String NOT_ENOUGH = "NOT_ENOUGH";
     public static final String TOO_MUCH_CARD = "TOO_MUCH_CARD";
+    public static final String CREDIT_NOT_USABLE = "CREDIT_NOTE_NOT_USABLE";
     public static final String INVOICE_LINK = "/sell/invoices/";
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
@@ -96,6 +98,8 @@ public class Sales {
     private final SaleRepository sales;
     private final HeldSaleRepository held;
     private final QuoteRepository quotes;
+    private final SaleReturnRepository returns;
+    private final CreditNoteRepository creditNotes;
     private final Gems gems;
     private final Customers customers;
     private final Guides guides;
@@ -112,13 +116,16 @@ public class Sales {
     private final GemPrints prints;
     private final ZoneId zone;
 
-    public Sales(SaleRepository sales, HeldSaleRepository held, QuoteRepository quotes, Gems gems, Customers customers, Guides guides,
+    public Sales(SaleRepository sales, HeldSaleRepository held, QuoteRepository quotes, SaleReturnRepository returns,
+            CreditNoteRepository creditNotes, Gems gems, Customers customers, Guides guides,
             Commission commission, Rates rates, ShopSettingsRepository shops, Numbers numbers, Approvals approvals,
             ApprovalRepository approvalRepo, ActivityLog log, Alerts alerts, CurrentUser current, EntityManager em,
             AppProperties app, GemPrints prints) {
         this.sales = sales;
         this.held = held;
         this.quotes = quotes;
+        this.returns = returns;
+        this.creditNotes = creditNotes;
         this.gems = gems;
         this.customers = customers;
         this.guides = guides;
@@ -308,7 +315,9 @@ public class Sales {
         Rates.Today today = rates.today();
         BigDecimal cardPct = shops.current().map(ShopSettings::getCardFeePct).orElse(new BigDecimal("3.00"));
         List<Paid> paid = new ArrayList<>();
-        BigDecimal sum = BigDecimal.ZERO;
+        CreditNote cn = blank(f.creditNote()) == null ? null : openCredit(f.creditNote());
+        BigDecimal credit = cn == null ? BigDecimal.ZERO : cn.getAmount().min(total);
+        BigDecimal sum = credit;
         BigDecimal cash = BigDecimal.ZERO;
         BigDecimal fees = BigDecimal.ZERO;
         int n = 0;
@@ -346,6 +355,10 @@ public class Sales {
         for (Line l : lines) {
             s.add(l.gem, l.gem.getPrice(), l.agreed, l.gem.getMinPrice(), h == null ? null : h.getApprovalNo());
         }
+        if (cn != null) {
+            s.payCredit(cn.getNumber(), credit);
+            cn.used(no, credit);
+        }
         paid.forEach(p -> s.pay(p.method, p.currency, p.amount, p.rate, p.lkr, p.feePct, p.fee));
         sales.save(s);
         for (Line l : lines) {
@@ -369,9 +382,29 @@ public class Sales {
             }
         }
         log.add("Sale completed", no + " · " + customer.getName() + " · " + lkr(total), branch.getId());
+        if (cn != null) {
+            log.add("Credit note used", cn.getNumber() + " paid " + lkr(credit) + " of " + no
+                    + (cn.getAmount().compareTo(credit) > 0 ? " · give back " + lkr(cn.getAmount().subtract(credit)) : ""),
+                    branch.getId());
+        }
         alerts.raise(AlertType.SALE, "Sale " + no + " · " + lkr(total) + " · " + customer.getCountry(), INVOICE_LINK + no,
                 branch.getId());
         return view(s);
+    }
+
+    /** An approved exchange credit note not used yet (P3-04). */
+    private CreditNote openCredit(String number) {
+        CreditNote cn = creditNotes.findByNumber(number.trim().toUpperCase(Locale.ROOT))
+                .orElseThrow(() -> ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
+                        "No credit note " + number + ".", "creditNote", "Check the number"));
+        current.checkBranch(cn.getSaleReturn().getBranch().getId());
+        if (cn.getSaleReturn().getKind() != SaleReturn.Kind.EXCHANGE) {
+            throw ApiException.conflict(CREDIT_NOT_USABLE, cn.getNumber() + " is a refund – the money was given back.");
+        }
+        if (cn.isUsed()) {
+            throw ApiException.conflict(CREDIT_NOT_USABLE, cn.getNumber() + " was already used on " + cn.getUsedSaleNo() + ".");
+        }
+        return cn;
     }
 
     @Transactional(readOnly = true)
@@ -391,7 +424,8 @@ public class Sales {
         BigDecimal total = today.stream().map(Sale::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         List<SaleRow> latest = sales.latest(branch, PageRequest.of(0, 6)).stream().map(Sales::row).toList();
         return new SellSummary(today.size(), total, heldList(), latest, quotes.active(Quote.Kind.RESERVATION, branch),
-                quotes.active(Quote.Kind.QUOTATION, branch));
+                quotes.active(Quote.Kind.QUOTATION, branch), returns.waiting(branch).stream()
+                .map(r -> new WaitingReturn(r.getNumber(), r.getGem().getName(), r.getKind())).toList());
     }
 
     // ------------------------------------------------------------------ checks

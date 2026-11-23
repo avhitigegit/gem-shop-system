@@ -18,6 +18,15 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             order by s.soldAt desc, s.id desc""")
     List<Sale> latest(Long branch, Pageable page);
 
+    /** Customer brings a gem back: completed sales by invoice number, customer name or gem code / name ('' = latest). */
+    @Query("""
+            select s from Sale s
+            where s.status = lk.nuvi.gemshop.sales.Sale.Status.COMPLETED and (:branch is null or s.branch.id = :branch)
+              and (:like = '' or lower(s.number) like :like or lower(s.customer.name) like :like
+                   or exists (select 1 from SaleItem i where i.sale = s and (lower(i.gem.code) like :like or lower(i.gem.name) like :like)))
+            order by s.soldAt desc, s.id desc""")
+    List<Sale> forReturn(Long branch, String like, Pageable page);
+
     /** Completed sales of a branch (or all) since a moment. */
     @Query("""
             select s from Sale s
