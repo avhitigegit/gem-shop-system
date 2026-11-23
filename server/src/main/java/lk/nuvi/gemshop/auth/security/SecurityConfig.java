@@ -51,7 +51,8 @@ public class SecurityConfig {
         "/api/auth/demo-users",
         "/api/auth/demo-login",
         "/api/setup/**",
-        "/api/files/*/content" // private links: checked by their signature and expiry (P1-05)
+        "/api/files/*/content", // private links: checked by their signature and expiry (P1-05)
+        "/api/public/**" // unsubscribe link (random token) and the signed WhatsApp webhook (P4-03)
     };
 
     @Bean

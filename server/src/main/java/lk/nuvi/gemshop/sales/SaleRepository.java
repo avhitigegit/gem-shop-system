@@ -46,4 +46,18 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     /** Sales per customer id (for "N previous purchases"). */
     @Query("select s.customer.id, count(s) from Sale s group by s.customer.id")
     List<Object[]> countPerCustomer();
+
+    /** Per customer: live (not cancelled) sales and what they spent, in a branch (or all). Rows: id, count, total. */
+    @Query("""
+            select s.customer.id, count(s), sum(s.total) from Sale s
+            where s.status = lk.nuvi.gemshop.sales.Sale.Status.COMPLETED and (:branch is null or s.branch.id = :branch)
+            group by s.customer.id""")
+    List<Object[]> spentPerCustomer(Long branch);
+
+    /** One customer's invoices in a branch (or all), newest first. */
+    @Query("""
+            select s from Sale s
+            where s.customer.id = :customer and (:branch is null or s.branch.id = :branch)
+            order by s.soldAt desc, s.id desc""")
+    List<Sale> ofCustomer(Long customer, Long branch);
 }

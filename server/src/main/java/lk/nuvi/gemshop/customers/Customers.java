@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Customers for New sale (BRD F5, J2): pick one who came before, or add a new one with name and country. The full
- * customer screens come with P4-03.
+ * Customers for New sale (BRD F5, J2): pick one who came before, or add a new one with name and country. The
+ * customer screens are in {@link CustomerBook}.
  */
 @Service
 public class Customers {

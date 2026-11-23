@@ -33,4 +33,11 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
             where q.kind = :kind and q.status = lk.nuvi.gemshop.sales.Quote.Status.ACTIVE
               and (:branch is null or q.branch.id = :branch)""")
     long active(Quote.Kind kind, Long branch);
+
+    /** One customer's reservations and quotations in a branch (or all), newest first. */
+    @Query("""
+            select q from Quote q
+            where q.customer.id = :customer and (:branch is null or q.branch.id = :branch)
+            order by q.createdOn desc, q.id desc""")
+    List<Quote> ofCustomer(Long customer, Long branch);
 }
