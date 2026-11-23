@@ -91,6 +91,10 @@ public class ExcelExport {
                         continue;
                     }
                     Cell c = xr.createCell(i);
+                    if (v instanceof String text && col.kind() != Kind.TEXT) {
+                        c.setCellValue(text);        // e.g. "Total" in a date column of a totals row
+                        continue;
+                    }
                     switch (col.kind()) {
                         case MONEY -> {
                             c.setCellValue(num(v));

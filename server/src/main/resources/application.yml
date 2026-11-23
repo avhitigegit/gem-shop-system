@@ -17,6 +17,7 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+        default_batch_fetch_size: 100   # reports read many sales with their items / payments – load them in groups
   flyway:
     enabled: true
     locations: classpath:db/migration
