@@ -110,6 +110,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/push/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which pushes are on, and this person's phones */
+        get: operations["getPushSettings"];
+        /** Turn push kinds on or off */
+        put: operations["savePushSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save WhatsApp Business details and verify the connection */
+        put: operations["verifyWhatsapp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/switches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** On / off switches: only the ones sent are changed */
+        put: operations["saveMessageSwitches"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/smtp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The shop's own SMTP (empty password keeps the saved one) */
+        put: operations["saveSmtp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/ses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Amazon SES for offers (empty secret keeps the saved one) */
+        put: operations["saveSes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/birthday": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Birthday wishes: channels, time, subject and message ({name}, {shop}) */
+        put: operations["saveBirthdayWishes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/guides/{code}": {
         parameters: {
             query?: never;
@@ -139,6 +242,76 @@ export interface paths {
         get: operations["view"];
         /** Edit a gem and its prices (owner) */
         put: operations["edit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One expense with its bill photo */
+        get: operations["getExpense"];
+        /** Correct an expense (kept in the activity log) */
+        put: operations["correctExpense"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses/monthly-bills/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a monthly bill, or turn it on / off */
+        put: operations["changeMonthlyBill"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One customer: details, purchases, reservations / quotations, messages */
+        get: operations["getCustomer"];
+        /** Edit a customer (empty passport keeps the saved one) */
+        put: operations["editCustomer"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{code}/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Permission for offers and birthday wishes on / off */
+        put: operations["setCustomerConsent"];
         post?: never;
         delete?: never;
         options?: never;
@@ -565,6 +738,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/push/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test push to my phones */
+        post: operations["sendTestPush"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/push/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** This phone / browser wants push alerts */
+        post: operations["addPushDevice"];
+        /** Stop push alerts to this phone / browser */
+        delete: operations["removePushDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/purchases": {
         parameters: {
             query?: never;
@@ -577,6 +785,144 @@ export interface paths {
         put?: never;
         /** Buy gems from a supplier: saves the cash purchase and adds every gem to stock with its own code */
         post: operations["buy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/whatsapp/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meta webhook check (hub.challenge) */
+        get: operations["whatsappWebhookVerify"];
+        put?: never;
+        /** Messages from WhatsApp (STOP = unsubscribe) */
+        post: operations["whatsappWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Unsubscribe link: who it is for (first name only) */
+        get: operations["unsubscribePage"];
+        put?: never;
+        /** Unsubscribe link: no more offers or birthday wishes */
+        post: operations["unsubscribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test to my email / phone (not counted) */
+        post: operations["sendOfferTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save and send to every customer chosen who gave permission */
+        post: operations["sendOffer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save a draft (new, or the draft with this code) */
+        post: operations["saveOfferDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** How many customers will receive it (permission only) and the cost */
+        post: operations["offerAudience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/smtp/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test email to the signed-in owner */
+        post: operations["sendTestEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/birthdays/send-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send today's wishes now (permission only, once a year) */
+        post: operations["sendBirthdayWishesNow"];
         delete?: never;
         options?: never;
         head?: never;
@@ -699,6 +1045,94 @@ export interface paths {
         put?: never;
         /** Upload a photo or PDF (max 10 MB). Photos are made smaller (about 300 KB) and get a thumbnail */
         post: operations["uploadFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Expenses of the branch at the top (filters: month, type, method, status) */
+        get: operations["listExpenses"];
+        put?: never;
+        /** Add a bank / card expense with its bill photo; above the limit it waits for the owner */
+        post: operations["addExpense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses/{number}/bill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach the bill photo (e.g. to a monthly bill added by itself) */
+        post: operations["attachExpenseBill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses/monthly-bills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Monthly bills (rent, phone, salaries) */
+        get: operations["listMonthlyBills"];
+        put?: never;
+        /** Add a monthly bill */
+        post: operations["addMonthlyBill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses/monthly-bills/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add this month's bills now (those not added yet) */
+        post: operations["runMonthlyBills"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All customers with birthday, purchases in the branch and permission */
+        get: operations["listCustomers"];
+        put?: never;
+        /** Add a customer (name and country required; field errors are customer.*) */
+        post: operations["addCustomer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1351,6 +1785,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/push/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The VAPID public key a phone signs up with */
+        get: operations["getPushKey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/purchases/{number}": {
         parameters: {
             query?: never;
@@ -1385,6 +1836,160 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/offers/{token}/open.gif": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The offer email was opened (1×1 picture) */
+        get: operations["offerOpened"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/offers/{token}/click": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The link in the offer email was clicked: goes on to the shop's website */
+        get: operations["offerClicked"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Offer results: every offer with sent, delivered, opened, clicked, unsubscribed */
+        get: operations["listOffers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One offer (to edit a draft) */
+        get: operations["getOffer"];
+        put?: never;
+        post?: never;
+        /** Delete a draft */
+        delete: operations["deleteOfferDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Countries, gem types, WhatsApp templates and whether email / WhatsApp can send */
+        get: operations["offerOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Email on, WhatsApp ready, invoice sent by itself (for the send buttons) */
+        get: operations["messageStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Email & WhatsApp settings (passwords and tokens are never sent back) */
+        get: operations["messageSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest messages sent (newest first) */
+        get: operations["messageLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/birthdays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Birthdays in the next 30 days, wishes sent this year, preview */
+        get: operations["upcomingBirthdays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/lists": {
         parameters: {
             query?: never;
@@ -1394,6 +1999,40 @@ export interface paths {
         };
         /** Values of every drop-down list, in order (for forms) */
         get: operations["getListValues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Home figures for the signed-in person and the branch at the top */
+        get: operations["getHome"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/phone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Owner phone view: today's sales, cash, stock, approvals, sold gems, alerts */
+        get: operations["getPhoneView"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1548,6 +2187,40 @@ export interface paths {
         };
         /** Open a file with a private link (from url / thumbUrl) */
         get: operations["openFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/expenses/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Approved expenses by month, type, payment method and branch */
+        get: operations["expenseReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The customers list as PDF or Excel (owner) */
+        get: operations["exportCustomers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1754,110 +2427,6 @@ export interface paths {
         get: operations["getBarcode"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/home": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Home figures for the signed-in person and the branch at the top */
-        get: operations["getHome"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/home/phone": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Owner phone view: today's sales, cash, stock, approvals, sold gems, alerts */
-        get: operations["getPhoneView"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/push/key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The VAPID public key a phone signs up with */
-        get: operations["getPushKey"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/push/devices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** This phone / browser wants push alerts */
-        post: operations["addPushDevice"];
-        /** Stop push alerts to this phone / browser */
-        delete: operations["removePushDevice"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/push/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Which pushes are on, and this person's phones */
-        get: operations["getPushSettings"];
-        /** Turn push kinds on or off */
-        put: operations["savePushSettings"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/push/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a test push to my phones */
-        post: operations["sendTestPush"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2102,419 +2671,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/customers/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One customer: details, purchases, reservations / quotations, messages */
-        get: operations["getCustomer"];
-        /** Edit a customer (empty passport keeps the saved one) */
-        put: operations["editCustomer"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/customers/{code}/consent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Permission for offers and birthday wishes on / off */
-        put: operations["setCustomerConsent"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/public/whatsapp/webhook": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Meta webhook check (hub.challenge) */
-        get: operations["whatsappWebhookVerify"];
-        put?: never;
-        /** Messages from WhatsApp (STOP = unsubscribe) */
-        post: operations["whatsappWebhook"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/public/unsubscribe/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Unsubscribe link: who it is for (first name only) */
-        get: operations["unsubscribePage"];
-        put?: never;
-        /** Unsubscribe link: no more offers or birthday wishes */
-        post: operations["unsubscribe"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/customers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** All customers with birthday, purchases in the branch and permission */
-        get: operations["listCustomers"];
-        put?: never;
-        /** Add a customer (name and country required; field errors are customer.*) */
-        post: operations["addCustomer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/customers/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The customers list as PDF or Excel (owner) */
-        get: operations["exportCustomers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/whatsapp": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Save WhatsApp Business details and verify the connection */
-        put: operations["verifyWhatsapp"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/switches": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** On / off switches: only the ones sent are changed */
-        put: operations["saveMessageSwitches"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/smtp": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** The shop's own SMTP (empty password keeps the saved one) */
-        put: operations["saveSmtp"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/ses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Amazon SES for offers (empty secret keeps the saved one) */
-        put: operations["saveSes"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/birthday": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Birthday wishes: channels, time, subject and message ({name}, {shop}) */
-        put: operations["saveBirthdayWishes"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/smtp/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a test email to the signed-in owner */
-        post: operations["sendTestEmail"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/birthdays/send-now": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send today's wishes now (permission only, once a year) */
-        post: operations["sendBirthdayWishesNow"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Email on, WhatsApp ready, invoice sent by itself (for the send buttons) */
-        get: operations["messageStatus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Email & WhatsApp settings (passwords and tokens are never sent back) */
-        get: operations["messageSettings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/log": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The latest messages sent (newest first) */
-        get: operations["messageLog"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/messages/birthdays": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Birthdays in the next 30 days, wishes sent this year, preview */
-        get: operations["upcomingBirthdays"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send a test to my email / phone (not counted) */
-        post: operations["sendOfferTest"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers/send": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Save and send to every customer chosen who gave permission */
-        post: operations["sendOffer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Save a draft (new, or the draft with this code) */
-        post: operations["saveOfferDraft"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers/audience": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** How many customers will receive it (permission only) and the cost */
-        post: operations["offerAudience"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Offer results: every offer with sent, delivered, opened, clicked, unsubscribed */
-        get: operations["listOffers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One offer (to edit a draft) */
-        get: operations["getOffer"];
-        put?: never;
-        post?: never;
-        /** Delete a draft */
-        delete: operations["deleteOfferDraft"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/offers/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Countries, gem types, WhatsApp templates and whether email / WhatsApp can send */
-        get: operations["offerOptions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2703,6 +2859,144 @@ export interface components {
             openedOn?: string;
             staff: components["schemas"]["BranchStaff"][];
         };
+        PushSettingsForm: {
+            kinds: {
+                [key: string]: boolean;
+            };
+        };
+        PushDeviceView: {
+            /** Format: int64 */
+            id: number;
+            device?: string;
+            /** Format: date-time */
+            addedAt: string;
+            /** Format: date-time */
+            lastSentAt?: string;
+        };
+        PushKindSetting: {
+            /** @enum {string} */
+            kind: "SALE" | "APPROVAL" | "CASH_DIFFERENCE" | "DAY_CLOSED";
+            label: string;
+            on: boolean;
+        };
+        PushSettings: {
+            kinds: components["schemas"]["PushKindSetting"][];
+            /** @description This person's phones / browsers */
+            devices: components["schemas"]["PushDeviceView"][];
+        };
+        WhatsappForm: {
+            /** @example +94 77 123 4567 */
+            phone: string;
+            /** @example 102938475610293 */
+            accountId: string;
+            /** @description Empty = keep the saved one */
+            token?: string;
+        };
+        AutoView: {
+            invoiceEmail: boolean;
+            invoiceWhatsapp: boolean;
+            thankYou: boolean;
+            ownerClosing: boolean;
+        };
+        BirthdayView: {
+            on: boolean;
+            email: boolean;
+            whatsapp: boolean;
+            /** @example 09:00 */
+            time: string;
+            subject: string;
+            text: string;
+        };
+        MessageSettingsView: {
+            emailOn: boolean;
+            /** @description Emails go to the test mail server (MailHog) until real email is connected */
+            emailTestMode: boolean;
+            /** @description WhatsApp messages are only written to the server log until P6-03 */
+            whatsappTestMode: boolean;
+            smtp: components["schemas"]["SmtpView"];
+            ses: components["schemas"]["SesView"];
+            whatsapp: components["schemas"]["WhatsappView"];
+            auto: components["schemas"]["AutoView"];
+            birthday: components["schemas"]["BirthdayView"];
+        };
+        SesView: {
+            enabled: boolean;
+            domain?: string;
+            region?: string;
+            from?: string;
+            accessKey?: string;
+            hasSecret: boolean;
+            spf: boolean;
+            dkim: boolean;
+        };
+        SmtpView: {
+            host?: string;
+            /** Format: int32 */
+            port?: number;
+            /** @example STARTTLS */
+            security: string;
+            user?: string;
+            /** @description A password is saved (never sent back) */
+            hasPassword: boolean;
+            from?: string;
+        };
+        VerifyResult: {
+            verified: boolean;
+            message: string;
+            settings: components["schemas"]["MessageSettingsView"];
+        };
+        WhatsappView: {
+            enabled: boolean;
+            phone?: string;
+            accountId?: string;
+            /** @description A token is saved (never sent back) */
+            hasToken: boolean;
+            verified: boolean;
+            /** Format: date-time */
+            verifiedAt?: string;
+        };
+        SwitchForm: {
+            emailOn?: boolean;
+            whatsappOn?: boolean;
+            invoiceEmail?: boolean;
+            invoiceWhatsapp?: boolean;
+            thankYou?: boolean;
+            ownerClosing?: boolean;
+            birthdays?: boolean;
+        };
+        SmtpForm: {
+            /** @example smtp.gmail.com */
+            host: string;
+            /**
+             * Format: int32
+             * @example 587
+             */
+            port: number;
+            /** @example STARTTLS */
+            security: string;
+            user: string;
+            /** @description Empty = keep the saved one */
+            password?: string;
+            /** @example Ceylon Gem House <sales@ceylongemhouse.lk> */
+            from: string;
+        };
+        SesForm: {
+            enabled: boolean;
+            domain?: string;
+            region?: string;
+            from?: string;
+            accessKey?: string;
+            /** @description Empty = keep the saved one */
+            secret?: string;
+        };
+        BirthdayForm: {
+            email: boolean;
+            whatsapp: boolean;
+            /** @example 09:00 */
+            time: string;
+            subject: string;
+            text: string;
+        };
         GuideForm: {
             name: string;
             phone: string;
@@ -2820,6 +3114,152 @@ export interface components {
             user: string;
             action: string;
             detail: string;
+        };
+        ExpenseForm: {
+            /**
+             * Format: date
+             * @description The day on the bill (not in the future)
+             */
+            spentOn: string;
+            /** @example ella */
+            branch: string;
+            /** @example Electricity */
+            expenseType: string;
+            /** @description LKR, the total on the bill */
+            amount: number;
+            /** @example Ceylon Electricity Board */
+            paidTo: string;
+            /**
+             * @description BANK, CARD or OWNER_CASH (cash from the drawer: Pay out cash)
+             * @example BANK
+             */
+            method: string;
+            /**
+             * Format: uuid
+             * @description Uploaded bill photo (rule 11); a correction may keep the saved one
+             */
+            bill?: string;
+            note?: string;
+        };
+        ExpenseDetail: {
+            expense: components["schemas"]["ExpenseRow"];
+            bill?: components["schemas"]["FileView"];
+            /** @description Sample data: the prototype's bill name (no real photo) */
+            sampleBill?: string;
+            canCorrect: boolean;
+            /** @description Why it cannot be corrected */
+            locked?: string;
+        };
+        ExpenseRow: {
+            /** @example EXP-0030 */
+            number: string;
+            /** Format: date-time */
+            spentAt: string;
+            /** @example ella */
+            branch: string;
+            expenseType: string;
+            paidTo: string;
+            /** @example BANK */
+            method: string;
+            amount: number;
+            /** @example APPROVED */
+            status: string;
+            approvalNo?: string;
+            note?: string;
+            /**
+             * @description Added by this monthly bill
+             * @example RC-01
+             */
+            monthlyBill?: string;
+            /** @description A bill photo or sample bill is there */
+            hasBill: boolean;
+            by?: string;
+        };
+        MonthlyBillForm: {
+            /** @example ella */
+            branch: string;
+            /** @example Rent */
+            expenseType: string;
+            amount: number;
+            paidTo: string;
+            /** @example BANK */
+            method: string;
+            /**
+             * Format: int32
+             * @description Day of the month, 1–28
+             */
+            day: number;
+            /** @description On / off; empty = keep */
+            active?: boolean;
+        };
+        MonthlyBillRow: {
+            /** @example RC-01 */
+            code: string;
+            branch: string;
+            expenseType: string;
+            amount: number;
+            paidTo: string;
+            method: string;
+            /** Format: int32 */
+            day: number;
+            active: boolean;
+            /** Format: date */
+            lastAdded?: string;
+            /**
+             * Format: date
+             * @description The next day it is added (empty when off)
+             */
+            next?: string;
+            /** @description Already added this month */
+            addedThisMonth: boolean;
+        };
+        CustomerDetailsForm: {
+            /** @example Anna Müller */
+            name: string;
+            /** @example Germany */
+            country: string;
+            email?: string;
+            whatsapp?: string;
+            /**
+             * @description MM-DD, day and month only (or empty)
+             * @example 04-17
+             */
+            birthday?: string;
+            /** @description Stored encrypted */
+            passport?: string;
+            /** @description Agrees to receive offers and birthday wishes (add only) */
+            consent?: boolean;
+        };
+        CustomerRow: {
+            /** @example C-001 */
+            code: string;
+            name: string;
+            country: string;
+            email?: string;
+            whatsapp?: string;
+            /** @description MM-DD */
+            birthday?: string;
+            /**
+             * Format: int32
+             * @description Days until the next birthday (0 = today), shop time
+             */
+            birthdayIn?: number;
+            /** Format: int64 */
+            purchases: number;
+            spent: number;
+            consent: boolean;
+            /** Format: date-time */
+            consentAt?: string;
+            unsubscribed: boolean;
+            /** Format: date-time */
+            unsubscribedAt?: string;
+            /** @description May get offers and birthday wishes (consent and not unsubscribed) */
+            canMessage: boolean;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        ConsentForm: {
+            consent: boolean;
         };
         TransferForm: {
             from: string;
@@ -3313,6 +3753,20 @@ export interface components {
              */
             expires: string;
         };
+        PushTestResult: {
+            /**
+             * Format: int32
+             * @description Phones / browsers it was sent to
+             */
+            sent: number;
+        };
+        DeviceForm: {
+            endpoint: string;
+            p256dh: string;
+            auth: string;
+            /** @description e.g. "iPhone · Safari" */
+            device?: string;
+        };
         PurchaseForm: {
             /** Format: date */
             date: string;
@@ -3371,6 +3825,117 @@ export interface components {
             recordedBy: string;
             gems: components["schemas"]["PurchaseGem"][];
         };
+        UnsubscribeView: {
+            firstName: string;
+            shop: string;
+            unsubscribed: boolean;
+        };
+        OfferForm: {
+            /** @description A draft being edited; empty = new */
+            code?: string;
+            /** @example EMAIL */
+            channel: string;
+            /** @example New Padparadscha arrivals */
+            name: string;
+            /** @description Email only */
+            subject?: string;
+            /** @description WhatsApp only: new_arrivals, festive_offer, thank_you */
+            template?: string;
+            /** @description Email text, or WhatsApp "your text"; {name} = first name */
+            body: string;
+            /** @description Gem picture chosen (e.g. Padparadscha), "upload", or empty = no picture */
+            picture?: string;
+            /** @description The picture as a data URL (PNG / JPEG, up to 2 MB); empty = keep the saved one */
+            photo?: string;
+            countries?: string[];
+            gems?: string[];
+        };
+        OfferTestResult: {
+            to: string;
+            testMode: boolean;
+        };
+        OfferRow: {
+            /** @example OF-0001 */
+            code: string;
+            /** @example EMAIL */
+            channel: string;
+            name: string;
+            subject?: string;
+            /** @example Germany, Netherlands · Moonstone */
+            audience: string;
+            /** Format: date-time */
+            sentAt?: string;
+            sentBy?: string;
+            /** @example SENT */
+            status: string;
+            /** Format: int32 */
+            sent: number;
+            /** Format: int32 */
+            delivered: number;
+            /** Format: int32 */
+            opened: number;
+            /** Format: int32 */
+            clicked: number;
+            /** Format: int32 */
+            unsubscribed: number;
+        };
+        OfferDetail: {
+            code: string;
+            channel: string;
+            name: string;
+            subject?: string;
+            template?: string;
+            body: string;
+            picture?: string;
+            /** @description data URL */
+            photo?: string;
+            countries: string[];
+            gems: string[];
+            status: string;
+        };
+        OfferAudienceForm: {
+            /** @example EMAIL */
+            channel: string;
+            /** @description Countries; empty = all */
+            countries?: string[];
+            /** @description Gem types bought before; empty = any */
+            gems?: string[];
+            /** @description WhatsApp template (for the cost) */
+            template?: string;
+        };
+        OfferAudience: {
+            /**
+             * Format: int32
+             * @description Customers who match the countries and gems
+             */
+            matching: number;
+            /**
+             * Format: int32
+             * @description Who will receive it: permission, not unsubscribed, email / number
+             */
+            recipients: number;
+            /**
+             * Format: int32
+             * @description No permission, unsubscribed or no email / number
+             */
+            excluded: number;
+            /**
+             * @description First name of the first recipient, for the preview
+             * @example Anna
+             */
+            firstName: string;
+            /** @description Estimated cost in US$ (Amazon SES or Meta) */
+            costUsd: number;
+        };
+        TestEmailResult: {
+            to: string;
+            via: string;
+            testMode: boolean;
+        };
+        SendNowResult: {
+            /** Format: int32 */
+            sent: number;
+        };
         HoldForm: {
             branch?: string;
             items: components["schemas"]["LineForm"][];
@@ -3402,6 +3967,14 @@ export interface components {
             /** @enum {string} */
             size: "L60X30" | "L50X25" | "A4_SHEET";
             showPrice: boolean;
+        };
+        ExpenseBillForm: {
+            /** Format: uuid */
+            bill: string;
+        };
+        MonthlyRunResult: {
+            /** Format: int32 */
+            added: number;
         };
         PayForm: {
             lines: number[];
@@ -3863,6 +4436,10 @@ export interface components {
             /** Format: int64 */
             quotations: number;
         };
+        PushKey: {
+            /** @description VAPID public key (base64url) */
+            publicKey: string;
+        };
         PurchaseList: {
             items: components["schemas"]["PurchaseRow"][];
             /** Format: int64 */
@@ -3875,10 +4452,198 @@ export interface components {
             /** Format: int64 */
             purchasesThisMonth: number;
         };
+        OfferList: {
+            offers: components["schemas"]["OfferRow"][];
+            totals: components["schemas"]["OfferTotals"];
+        };
+        OfferTotals: {
+            /**
+             * Format: int32
+             * @description Offers sent
+             */
+            offers: number;
+            /** Format: int32 */
+            sent: number;
+            /** Format: int32 */
+            delivered: number;
+            /** Format: int32 */
+            opened: number;
+            /** Format: int32 */
+            clicked: number;
+            /** Format: int32 */
+            unsubscribed: number;
+        };
+        OfferOptions: {
+            countries: string[];
+            gemTypes: string[];
+            templates: components["schemas"]["OfferTemplate"][];
+            /** @description Email on and Amazon SES on */
+            emailReady: boolean;
+            emailOn: boolean;
+            /** @description WhatsApp on and verified */
+            whatsappReady: boolean;
+            emailTestMode: boolean;
+            whatsappTestMode: boolean;
+            shopName: string;
+            shopAddress?: string;
+            website?: string;
+            /** @description Where "Send test to me" goes */
+            myEmail: string;
+            myPhone?: string;
+        };
+        OfferTemplate: {
+            /** @example new_arrivals */
+            key: string;
+            /** @example new_arrivals (Marketing) */
+            label: string;
+            /** @description With {name}, {shop} and {text} */
+            text: string;
+            marketing: boolean;
+        };
+        MessageStatus: {
+            emailOn: boolean;
+            whatsappReady: boolean;
+            whatsappTestMode: boolean;
+            /** @description The invoice is emailed by itself after a sale */
+            autoInvoiceEmail: boolean;
+            /** @description The invoice goes on WhatsApp by itself after a sale */
+            autoInvoiceWhatsapp: boolean;
+        };
+        MessageLogList: {
+            rows: components["schemas"]["MessageLogRow"][];
+        };
+        MessageLogRow: {
+            /** Format: date-time */
+            at: string;
+            /** @example THANK_YOU */
+            kind: string;
+            /** @example EMAIL */
+            channel: string;
+            recipient: string;
+            customer?: string;
+            ref?: string;
+            subject?: string;
+            /** @example SENT */
+            status: string;
+            automatic: boolean;
+        };
+        BirthdayList: {
+            /** @description Birthdays in the next 30 days */
+            next30: components["schemas"]["BirthdayRow"][];
+            /** Format: int32 */
+            sentThisYear: number;
+            /** @example Happy birthday from Ceylon Gem House! */
+            previewSubject: string;
+            /** @description The message for a customer called Anna */
+            previewText: string;
+        };
+        BirthdayRow: {
+            code: string;
+            name: string;
+            country: string;
+            /** @description MM-DD */
+            birthday: string;
+            /**
+             * Format: int32
+             * @description Days until the birthday, 0 = today
+             */
+            birthdayIn: number;
+            /** @description SENT, NO_PERMISSION, OFF or WILL_SEND */
+            status: string;
+            /**
+             * Format: date-time
+             * @description When this year's wish went out
+             */
+            sentAt?: string;
+        };
         ListValues: {
             /** @enum {string} */
             name: "GEM_TYPE" | "PRODUCT_TYPE" | "COLOUR" | "SHAPE" | "LAB" | "TREATMENT" | "EXPENSE_TYPE";
             values: string[];
+        };
+        DrawerNow: {
+            lkr: number;
+            usd: number;
+            eur: number;
+            card: number;
+        };
+        HomeFigures: {
+            /** Format: date */
+            day: string;
+            /** @description Today's sales total (owner, salesperson) */
+            salesTotal?: number;
+            /** Format: int32 */
+            bills: number;
+            /** @description Cash in the drawer and card today (owner, salesperson) */
+            cash?: components["schemas"]["DrawerNow"];
+            /**
+             * Format: int64
+             * @description Approvals waiting (owner: for them; others: their own requests)
+             */
+            approvalsWaiting: number;
+            /** Format: int64 */
+            gemsInStock: number;
+            /**
+             * Format: int64
+             * @description Transfers on the way to this branch
+             */
+            onTheWay: number;
+            /** Format: int64 */
+            customers: number;
+            /** @description Opening cash entered today (owner, salesperson; null on All branches) */
+            dayStarted?: boolean;
+            /** @description Day closed today (owner, salesperson; null on All branches) */
+            dayClosed?: boolean;
+            /**
+             * Format: int32
+             * @description Owner: days until the gem dealer licence expires, when inside the reminder time
+             */
+            licenceDays?: number;
+            /** Format: date */
+            licenceExpiry?: string;
+            /** @description Gems sold today (owner, salesperson) */
+            soldToday: components["schemas"]["SoldGem"][];
+        };
+        SoldGem: {
+            invoice: string;
+            /** Format: date-time */
+            soldAt: string;
+            gem: string;
+            name: string;
+            gemType: string;
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
+            agreed: number;
+            belowMin: boolean;
+            country?: string;
+            staff: string;
+            /** @description Guide / driver, or null = walk-in */
+            guide?: string;
+        };
+        PhoneView: {
+            /** @description Branch code or "all" */
+            branch: string;
+            /** Format: date */
+            day: string;
+            salesTotal: number;
+            /** Format: int32 */
+            bills: number;
+            /** Format: int32 */
+            items: number;
+            /** @description Sales − gem cost − commissions */
+            profit: number;
+            cash: components["schemas"]["DrawerNow"];
+            /** Format: int64 */
+            stockCount: number;
+            stockValue: number;
+            stockCost: number;
+            /** Format: int64 */
+            approvalsWaiting: number;
+            /** @description The 3 newest approvals waiting */
+            approvals: components["schemas"]["ApprovalView"][];
+            soldToday: components["schemas"]["SoldGem"][];
+            /** @description The 5 newest alerts */
+            alerts: components["schemas"]["AlertView"][];
         };
         HealthResponse: {
             /** @enum {string} */
@@ -4009,6 +4774,114 @@ export interface components {
         NextCode: {
             code: string;
         };
+        ExpenseList: {
+            expenses: components["schemas"]["ExpenseRow"][];
+            /** @description Approved and waiting (not rejected) */
+            total: number;
+            /** @description Months that have expenses, newest first */
+            months: components["schemas"]["ExpenseMonth"][];
+            expenseTypes: string[];
+            largeExpenseLimit: number;
+        };
+        ExpenseMonth: {
+            /** @example 2026-11 */
+            month: string;
+            /** Format: int32 */
+            count: number;
+        };
+        ExpenseReport: {
+            /** @description Oldest first */
+            months: components["schemas"]["ReportMonth"][];
+            types: components["schemas"]["ReportTypeRow"][];
+            methods: components["schemas"]["ReportMethodRow"][];
+            branches: components["schemas"]["ReportBranchRow"][];
+            /** @description Approved expenses only */
+            total: number;
+        };
+        ReportBranchRow: {
+            branch: string;
+            total: number;
+        };
+        ReportMethodRow: {
+            method: string;
+            /** Format: int32 */
+            count: number;
+            total: number;
+        };
+        ReportMonth: {
+            /** @example 2026-11 */
+            month: string;
+            total: number;
+        };
+        ReportTypeRow: {
+            expenseType: string;
+            /** @description One amount per month, in the order of months */
+            amounts: number[];
+            total: number;
+        };
+        MonthlyBillList: {
+            bills: components["schemas"]["MonthlyBillRow"][];
+            expenseTypes: string[];
+            /** @description Every month, total of the active bills */
+            monthlyTotal: number;
+        };
+        CustomerList: {
+            customers: components["schemas"]["CustomerRow"][];
+        };
+        CustomerGem: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+        };
+        CustomerMessage: {
+            /** Format: date-time */
+            at: string;
+            /**
+             * @description INVOICE, RESERVATION, QUOTATION, THANK_YOU, BIRTHDAY, OFFER
+             * @example INVOICE
+             */
+            kind: string;
+            /** @example Invoice INV-000140 */
+            text: string;
+            email: boolean;
+            whatsapp: boolean;
+        };
+        CustomerProfile: {
+            customer: components["schemas"]["CustomerRow"];
+            /** @description Owner only: "•••• 000" (stored encrypted) */
+            passport?: string;
+            /** @description A passport is saved (shown to the owner only) */
+            hasPassport: boolean;
+            /** @description LINK or WHATSAPP */
+            unsubVia?: string;
+            notes?: string;
+            purchases: components["schemas"]["CustomerPurchase"][];
+            quotes: components["schemas"]["CustomerQuote"][];
+            messages: components["schemas"]["CustomerMessage"][];
+        };
+        CustomerPurchase: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            branch: string;
+            gems: components["schemas"]["CustomerGem"][];
+            total: number;
+            /** @example COMPLETED */
+            status: string;
+        };
+        CustomerQuote: {
+            number: string;
+            /** @example RESERVATION */
+            kind: string;
+            /** Format: date-time */
+            createdOn: string;
+            gems: string[];
+            /** Format: date */
+            expires: string;
+            /** @example ACTIVE */
+            status: string;
+        };
         CreditNoteView: {
             number: string;
             /** Format: date-time */
@@ -4135,116 +5008,6 @@ export interface components {
             upTo?: number;
             amount: number;
         };
-        SoldGem: {
-            invoice: string;
-            /** Format: date-time */
-            soldAt: string;
-            gem: string;
-            name: string;
-            gemType: string;
-            /** @description First photo (small), or null = draw the gem */
-            photo?: string;
-            agreed: number;
-            belowMin: boolean;
-            country?: string;
-            staff: string;
-            /** @description Guide / driver, or null = walk-in */
-            guide?: string;
-        };
-        DrawerNow: {
-            lkr: number;
-            usd: number;
-            eur: number;
-            card: number;
-        };
-        HomeFigures: {
-            /** Format: date */
-            day: string;
-            /** @description Today's sales total (owner, salesperson) */
-            salesTotal?: number;
-            /** Format: int32 */
-            bills: number;
-            cash?: components["schemas"]["DrawerNow"];
-            /** Format: int64 */
-            approvalsWaiting: number;
-            /** Format: int64 */
-            gemsInStock: number;
-            /** Format: int64 */
-            onTheWay: number;
-            /** Format: int64 */
-            customers: number;
-            dayStarted?: boolean;
-            dayClosed?: boolean;
-            /** Format: int32 */
-            licenceDays?: number;
-            /** Format: date */
-            licenceExpiry?: string;
-            soldToday: components["schemas"]["SoldGem"][];
-        };
-        PhoneView: {
-            branch: string;
-            /** Format: date */
-            day: string;
-            salesTotal: number;
-            /** Format: int32 */
-            bills: number;
-            /** Format: int32 */
-            items: number;
-            profit: number;
-            cash: components["schemas"]["DrawerNow"];
-            /** Format: int64 */
-            stockCount: number;
-            stockValue: number;
-            stockCost: number;
-            /** Format: int64 */
-            approvalsWaiting: number;
-            approvals: components["schemas"]["ApprovalView"][];
-            soldToday: components["schemas"]["SoldGem"][];
-            alerts: components["schemas"]["AlertView"][];
-        };
-        PushKey: {
-            /** @description VAPID public key (base64url) */
-            publicKey: string;
-        };
-        DeviceForm: {
-            endpoint: string;
-            p256dh: string;
-            auth: string;
-            /** @description e.g. "iPhone · Safari" */
-            device?: string;
-        };
-        PushDeviceView: {
-            /** Format: int64 */
-            id: number;
-            device?: string;
-            /** Format: date-time */
-            addedAt: string;
-            /** Format: date-time */
-            lastSentAt?: string;
-        };
-        PushKindSetting: {
-            /** @enum {string} */
-            kind: "SALE" | "APPROVAL" | "CASH_DIFFERENCE" | "DAY_CLOSED";
-            label: string;
-            on: boolean;
-        };
-        PushSettings: {
-            kinds: components["schemas"]["PushKindSetting"][];
-            /** @description This person's phones / browsers */
-            devices: components["schemas"]["PushDeviceView"][];
-        };
-        PushSettingsForm: {
-            kinds: {
-                [key: string]: boolean;
-            };
-        };
-        PushTestResult: {
-            /**
-             * Format: int32
-             * @description Phones / browsers it was sent to
-             */
-            sent: number;
-        };
         CashSummary: {
             /** @description The branch the drawer screens work on (empty = choose a branch) */
             branch?: string;
@@ -4336,436 +5099,6 @@ export interface components {
         ApiFieldError: {
             field: string;
             message: string;
-        };
-        CustomerDetailsForm: {
-            /** @example Anna Müller */
-            name: string;
-            /** @example Germany */
-            country: string;
-            email?: string;
-            whatsapp?: string;
-            /**
-             * @description MM-DD, day and month only (or empty)
-             * @example 04-17
-             */
-            birthday?: string;
-            /** @description Stored encrypted */
-            passport?: string;
-            /** @description Agrees to receive offers and birthday wishes (add only) */
-            consent?: boolean;
-        };
-        ConsentForm: {
-            consent: boolean;
-        };
-        CustomerRow: {
-            /** @example C-001 */
-            code: string;
-            name: string;
-            country: string;
-            email?: string;
-            whatsapp?: string;
-            /** @description MM-DD */
-            birthday?: string;
-            /**
-             * Format: int32
-             * @description Days until the next birthday (0 = today), shop time
-             */
-            birthdayIn?: number;
-            /** Format: int64 */
-            purchases: number;
-            spent: number;
-            consent: boolean;
-            /** Format: date-time */
-            consentAt?: string;
-            unsubscribed: boolean;
-            /** Format: date-time */
-            unsubscribedAt?: string;
-            /** @description May get offers and birthday wishes (consent and not unsubscribed) */
-            canMessage: boolean;
-            /** Format: date-time */
-            joinedAt: string;
-        };
-        CustomerList: {
-            customers: components["schemas"]["CustomerRow"][];
-        };
-        CustomerGem: {
-            code: string;
-            name: string;
-            gemType: string;
-            productType: string;
-        };
-        CustomerPurchase: {
-            number: string;
-            /** Format: date-time */
-            soldAt: string;
-            branch: string;
-            gems: components["schemas"]["CustomerGem"][];
-            total: number;
-            /** @example COMPLETED */
-            status: string;
-        };
-        CustomerQuote: {
-            number: string;
-            /** @example RESERVATION */
-            kind: string;
-            /** Format: date-time */
-            createdOn: string;
-            gems: string[];
-            /** Format: date */
-            expires: string;
-            /** @example ACTIVE */
-            status: string;
-        };
-        CustomerMessage: {
-            /** Format: date-time */
-            at: string;
-            /** @example INVOICE */
-            kind: string;
-            /** @example Invoice INV-000140 */
-            text: string;
-            email: boolean;
-            whatsapp: boolean;
-        };
-        CustomerProfile: {
-            customer: components["schemas"]["CustomerRow"];
-            /** @description Owner only: "•••• 000" (stored encrypted) */
-            passport?: string;
-            /** @description A passport is saved (shown to the owner only) */
-            hasPassport: boolean;
-            /** @description LINK or WHATSAPP */
-            unsubVia?: string;
-            notes?: string;
-            purchases: components["schemas"]["CustomerPurchase"][];
-            quotes: components["schemas"]["CustomerQuote"][];
-            messages: components["schemas"]["CustomerMessage"][];
-        };
-        UnsubscribeView: {
-            firstName: string;
-            shop: string;
-            unsubscribed: boolean;
-        };
-        WhatsappForm: {
-            /** @example +94 77 123 4567 */
-            phone: string;
-            /** @example 102938475610293 */
-            accountId: string;
-            /** @description Empty = keep the saved one */
-            token?: string;
-        };
-        AutoView: {
-            invoiceEmail: boolean;
-            invoiceWhatsapp: boolean;
-            thankYou: boolean;
-            ownerClosing: boolean;
-        };
-        BirthdayView: {
-            on: boolean;
-            email: boolean;
-            whatsapp: boolean;
-            /** @example 09:00 */
-            time: string;
-            subject: string;
-            text: string;
-        };
-        MessageSettingsView: {
-            emailOn: boolean;
-            /** @description Emails go to the test mail server (MailHog) until real email is connected */
-            emailTestMode: boolean;
-            /** @description WhatsApp messages are only written to the server log until P6-03 */
-            whatsappTestMode: boolean;
-            smtp: components["schemas"]["SmtpView"];
-            ses: components["schemas"]["SesView"];
-            whatsapp: components["schemas"]["WhatsappView"];
-            auto: components["schemas"]["AutoView"];
-            birthday: components["schemas"]["BirthdayView"];
-        };
-        SesView: {
-            enabled: boolean;
-            domain?: string;
-            region?: string;
-            from?: string;
-            accessKey?: string;
-            hasSecret: boolean;
-            spf: boolean;
-            dkim: boolean;
-        };
-        SmtpView: {
-            host?: string;
-            /** Format: int32 */
-            port?: number;
-            /** @example STARTTLS */
-            security: string;
-            user?: string;
-            /** @description A password is saved (never sent back) */
-            hasPassword: boolean;
-            from?: string;
-        };
-        VerifyResult: {
-            verified: boolean;
-            message: string;
-            settings: components["schemas"]["MessageSettingsView"];
-        };
-        WhatsappView: {
-            enabled: boolean;
-            phone?: string;
-            accountId?: string;
-            /** @description A token is saved (never sent back) */
-            hasToken: boolean;
-            verified: boolean;
-            /** Format: date-time */
-            verifiedAt?: string;
-        };
-        SwitchForm: {
-            emailOn?: boolean;
-            whatsappOn?: boolean;
-            invoiceEmail?: boolean;
-            invoiceWhatsapp?: boolean;
-            thankYou?: boolean;
-            ownerClosing?: boolean;
-            birthdays?: boolean;
-        };
-        SmtpForm: {
-            /** @example smtp.gmail.com */
-            host: string;
-            /**
-             * Format: int32
-             * @example 587
-             */
-            port: number;
-            /** @example STARTTLS */
-            security: string;
-            user: string;
-            /** @description Empty = keep the saved one */
-            password?: string;
-            /** @example Ceylon Gem House <sales@ceylongemhouse.lk> */
-            from: string;
-        };
-        SesForm: {
-            enabled: boolean;
-            domain?: string;
-            region?: string;
-            from?: string;
-            accessKey?: string;
-            /** @description Empty = keep the saved one */
-            secret?: string;
-        };
-        BirthdayForm: {
-            email: boolean;
-            whatsapp: boolean;
-            /** @example 09:00 */
-            time: string;
-            subject: string;
-            text: string;
-        };
-        TestEmailResult: {
-            to: string;
-            via: string;
-            testMode: boolean;
-        };
-        SendNowResult: {
-            /** Format: int32 */
-            sent: number;
-        };
-        MessageStatus: {
-            emailOn: boolean;
-            whatsappReady: boolean;
-            whatsappTestMode: boolean;
-            /** @description The invoice is emailed by itself after a sale */
-            autoInvoiceEmail: boolean;
-            /** @description The invoice goes on WhatsApp by itself after a sale */
-            autoInvoiceWhatsapp: boolean;
-        };
-        MessageLogList: {
-            rows: components["schemas"]["MessageLogRow"][];
-        };
-        MessageLogRow: {
-            /** Format: date-time */
-            at: string;
-            /** @example THANK_YOU */
-            kind: string;
-            /** @example EMAIL */
-            channel: string;
-            recipient: string;
-            customer?: string;
-            ref?: string;
-            subject?: string;
-            /** @example SENT */
-            status: string;
-            automatic: boolean;
-        };
-        BirthdayList: {
-            /** @description Birthdays in the next 30 days */
-            next30: components["schemas"]["BirthdayRow"][];
-            /** Format: int32 */
-            sentThisYear: number;
-            /** @example Happy birthday from Ceylon Gem House! */
-            previewSubject: string;
-            /** @description The message for a customer called Anna */
-            previewText: string;
-        };
-        BirthdayRow: {
-            code: string;
-            name: string;
-            country: string;
-            /** @description MM-DD */
-            birthday: string;
-            /**
-             * Format: int32
-             * @description Days until the birthday, 0 = today
-             */
-            birthdayIn: number;
-            /** @description SENT, NO_PERMISSION, OFF or WILL_SEND */
-            status: string;
-            /**
-             * Format: date-time
-             * @description When this year's wish went out
-             */
-            sentAt?: string;
-        };
-        OfferForm: {
-            /** @description A draft being edited; empty = new */
-            code?: string;
-            /** @example EMAIL */
-            channel: string;
-            /** @example New Padparadscha arrivals */
-            name: string;
-            /** @description Email only */
-            subject?: string;
-            /** @description WhatsApp only: new_arrivals, festive_offer, thank_you */
-            template?: string;
-            /** @description Email text, or WhatsApp "your text"; {name} = first name */
-            body: string;
-            /** @description Gem picture chosen (e.g. Padparadscha), "upload", or empty = no picture */
-            picture?: string;
-            /** @description The picture as a data URL (PNG / JPEG, up to 2 MB); empty = keep the saved one */
-            photo?: string;
-            countries?: string[];
-            gems?: string[];
-        };
-        OfferTestResult: {
-            to: string;
-            testMode: boolean;
-        };
-        OfferRow: {
-            /** @example OF-0001 */
-            code: string;
-            /** @example EMAIL */
-            channel: string;
-            name: string;
-            subject?: string;
-            /** @example Germany, Netherlands · Moonstone */
-            audience: string;
-            /** Format: date-time */
-            sentAt?: string;
-            sentBy?: string;
-            /** @example SENT */
-            status: string;
-            /** Format: int32 */
-            sent: number;
-            /** Format: int32 */
-            delivered: number;
-            /** Format: int32 */
-            opened: number;
-            /** Format: int32 */
-            clicked: number;
-            /** Format: int32 */
-            unsubscribed: number;
-        };
-        OfferDetail: {
-            code: string;
-            channel: string;
-            name: string;
-            subject?: string;
-            template?: string;
-            body: string;
-            picture?: string;
-            /** @description data URL */
-            photo?: string;
-            countries: string[];
-            gems: string[];
-            status: string;
-        };
-        OfferAudienceForm: {
-            /** @example EMAIL */
-            channel: string;
-            /** @description Countries; empty = all */
-            countries?: string[];
-            /** @description Gem types bought before; empty = any */
-            gems?: string[];
-            /** @description WhatsApp template (for the cost) */
-            template?: string;
-        };
-        OfferAudience: {
-            /**
-             * Format: int32
-             * @description Customers who match the countries and gems
-             */
-            matching: number;
-            /**
-             * Format: int32
-             * @description Who will receive it: permission, not unsubscribed, email / number
-             */
-            recipients: number;
-            /**
-             * Format: int32
-             * @description No permission, unsubscribed or no email / number
-             */
-            excluded: number;
-            /**
-             * @description First name of the first recipient, for the preview
-             * @example Anna
-             */
-            firstName: string;
-            /** @description Estimated cost in US$ (Amazon SES or Meta) */
-            costUsd: number;
-        };
-        OfferList: {
-            offers: components["schemas"]["OfferRow"][];
-            totals: components["schemas"]["OfferTotals"];
-        };
-        OfferTotals: {
-            /**
-             * Format: int32
-             * @description Offers sent
-             */
-            offers: number;
-            /** Format: int32 */
-            sent: number;
-            /** Format: int32 */
-            delivered: number;
-            /** Format: int32 */
-            opened: number;
-            /** Format: int32 */
-            clicked: number;
-            /** Format: int32 */
-            unsubscribed: number;
-        };
-        OfferOptions: {
-            countries: string[];
-            gemTypes: string[];
-            templates: components["schemas"]["OfferTemplate"][];
-            /** @description Email on and Amazon SES on */
-            emailReady: boolean;
-            emailOn: boolean;
-            /** @description WhatsApp on and verified */
-            whatsappReady: boolean;
-            emailTestMode: boolean;
-            whatsappTestMode: boolean;
-            shopName: string;
-            shopAddress?: string;
-            website?: string;
-            /** @description Where "Send test to me" goes */
-            myEmail: string;
-            myPhone?: string;
-        };
-        OfferTemplate: {
-            /** @example new_arrivals */
-            key: string;
-            /** @example new_arrivals (Marketing) */
-            label: string;
-            /** @description With {name}, {shop} and {text} */
-            text: string;
-            marketing: boolean;
         };
     };
     responses: never;
@@ -5102,6 +5435,233 @@ export interface operations {
             };
         };
     };
+    getPushSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushSettings"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    savePushSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSettingsForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushSettings"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    verifyWhatsapp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WhatsappForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VerifyResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveMessageSwitches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveSmtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmtpForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveSes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SesForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveBirthdayWishes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BirthdayForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getGuide: {
         parameters: {
             query?: {
@@ -5224,6 +5784,208 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["GemView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    correctExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    changeMonthlyBill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonthlyBillForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthlyBillRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerProfile"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    editCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDetailsForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setCustomerConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerRow"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -6364,6 +7126,97 @@ export interface operations {
             };
         };
     };
+    sendTestPush: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushTestResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addPushDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushDeviceView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    removePushDevice: {
+        parameters: {
+            query: {
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     purchases: {
         parameters: {
             query?: {
@@ -6417,6 +7270,324 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PurchaseView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    whatsappWebhookVerify: {
+        parameters: {
+            query?: {
+                "hub.mode"?: string;
+                "hub.verify_token"?: string;
+                "hub.challenge"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    whatsappWebhook: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Hub-Signature-256"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": string;
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unsubscribePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendOfferTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferTestResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveOfferDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    offerAudience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferAudienceForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferAudience"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendTestEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestEmailResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendBirthdayWishesNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SendNowResult"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -6744,6 +7915,261 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FileView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listExpenses: {
+        parameters: {
+            query?: {
+                month?: string;
+                type?: string;
+                method?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    attachExpenseBill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseBillForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listMonthlyBills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthlyBillList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addMonthlyBill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MonthlyBillForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthlyBillRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    runMonthlyBills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthlyRunResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listCustomers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDetailsForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerRow"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -7954,6 +9380,35 @@ export interface operations {
             };
         };
     };
+    getPushKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PushKey"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     purchase: {
         parameters: {
             query?: never;
@@ -8014,6 +9469,302 @@ export interface operations {
             };
         };
     };
+    offerOpened: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    offerClicked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listOffers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteOfferDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    offerOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferOptions"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    messageStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageStatus"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    messageSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    messageLog: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageLogList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    upcomingBirthdays: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BirthdayList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getListValues: {
         parameters: {
             query?: never;
@@ -8030,6 +9781,67 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ListValues"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getHome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HomeFigures"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getPhoneView: {
+        parameters: {
+            query?: {
+                /** @description Branch code, or "all" */
+                branch?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhoneView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -8330,6 +10142,67 @@ export interface operations {
             path: {
                 id: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    expenseReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExpenseReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportCustomers: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+            };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -8724,249 +10597,6 @@ export interface operations {
                 };
                 content: {
                     "image/png": string;
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    getHome: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["HomeFigures"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    getPhoneView: {
-        parameters: {
-            query?: {
-                /** @description Branch code, or "all" */
-                branch?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PhoneView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    getPushKey: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PushKey"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    addPushDevice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeviceForm"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PushDeviceView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    removePushDevice: {
-        parameters: {
-            query: {
-                endpoint: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    getPushSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PushSettings"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    savePushSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PushSettingsForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PushSettings"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    sendTestPush: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PushTestResult"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -9411,919 +11041,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    getCustomer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CustomerProfile"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    editCustomer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerDetailsForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CustomerRow"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    setCustomerConsent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConsentForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CustomerRow"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    whatsappWebhookVerify: {
-        parameters: {
-            query: {
-                "hub.mode"?: string;
-                "hub.verify_token"?: string;
-                "hub.challenge"?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": string;
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    whatsappWebhook: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": string;
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    unsubscribePage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UnsubscribeView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    unsubscribe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UnsubscribeView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    listCustomers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CustomerList"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    addCustomer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerDetailsForm"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CustomerRow"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    exportCustomers: {
-        parameters: {
-            query: {
-                /** @description pdf or xlsx */
-                format: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    verifyWhatsapp: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WhatsappForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["VerifyResult"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    saveMessageSwitches: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SwitchForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageSettingsView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    saveSmtp: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SmtpForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageSettingsView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    saveSes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SesForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageSettingsView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    saveBirthdayWishes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BirthdayForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageSettingsView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    sendTestEmail: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["TestEmailResult"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    sendBirthdayWishesNow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SendNowResult"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    messageStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageStatus"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    messageSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageSettingsView"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    messageLog: {
-        parameters: {
-            query?: {
-                /** Format: int32 */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MessageLogList"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    upcomingBirthdays: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BirthdayList"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    sendOfferTest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OfferForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferTestResult"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    sendOffer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OfferForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferRow"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    saveOfferDraft: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OfferForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferDetail"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    offerAudience: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OfferAudienceForm"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferAudience"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    listOffers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferList"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    getOffer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferDetail"];
-                };
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    deleteOfferDraft: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Error (ApiError format) */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    offerOptions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["OfferOptions"];
                 };
             };
             /** @description Error (ApiError format) */
