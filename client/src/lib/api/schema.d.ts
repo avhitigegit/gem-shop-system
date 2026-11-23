@@ -110,6 +110,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/guides/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One guide / driver with commission in a period (default last 30 days) */
+        get: operations["getGuide"];
+        /** Edit a guide / driver (a new % applies to new sales) */
+        put: operations["editGuide"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/gems/{code}": {
         parameters: {
             query?: never;
@@ -600,6 +618,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/guides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Guides & drivers with sales brought (amounts for owner / accountant) */
+        get: operations["listGuides"];
+        put?: never;
+        /** Add a guide / driver (empty % = the default %) */
+        post: operations["addGuide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/gems": {
         parameters: {
             query?: never;
@@ -680,6 +716,23 @@ export interface paths {
         put?: never;
         /** Send the credit note by email and / or WhatsApp */
         post: operations["sendCreditNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commissions/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a commission payment for the chosen lines (CP-…) */
+        post: operations["payCommissions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1503,6 +1556,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/commissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Commission owed by person, and the lines (show: OWED, PAID, REVERSED, ALL) */
+        get: operations["commissionsPayable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commissions/slips/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A payment slip (CP-…) or a guide's statement of the last 30 days (G-…) */
+        get: operations["commissionSlip"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commissions/slips/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The commission slip as a PDF */
+        get: operations["commissionSlipPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commissions/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales with their commission (filters: from, to, guide code or "walkin", staff id) */
+        get: operations["commissionSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commissions/sales/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How the commission of one sale was worked out */
+        get: operations["saleCommission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/commissions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The commission lines shown as PDF or Excel */
+        get: operations["exportCommissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/codes/qr": {
         parameters: {
             query?: never;
@@ -1842,6 +1997,12 @@ export interface components {
         CommissionForm: {
             defaultGuidePct: number;
             levels: components["schemas"]["LevelDto"][];
+            /** @description Each guide's own % (only the ones sent are changed) */
+            guides?: components["schemas"]["GuidePctForm"][];
+        };
+        GuidePctForm: {
+            code: string;
+            pct: number;
         };
         LevelDto: {
             /** @description Sale total up to (LKR); empty on the last level = "above …" */
@@ -1853,6 +2014,14 @@ export interface components {
             levels: components["schemas"]["LevelDto"][];
             /** @description The BRD example levels (button "Use BRD example levels") */
             exampleLevels: components["schemas"]["LevelDto"][];
+            /** @description Each guide / driver with their own % */
+            guides: components["schemas"]["GuidePct"][];
+        };
+        GuidePct: {
+            code: string;
+            name: string;
+            vehicle?: string;
+            pct: number;
         };
         BranchForm: {
             name: string;
@@ -1880,6 +2049,32 @@ export interface components {
             /** Format: date */
             openedOn?: string;
             staff: components["schemas"]["BranchStaff"][];
+        };
+        GuideForm: {
+            name: string;
+            phone: string;
+            /** @description Tuk-tuk, Van, Taxi, Car or Other */
+            vehicle: string;
+            vehicleNo: string;
+            /** @description Empty = the default % for new guides */
+            pct?: number;
+        };
+        GuideCard: {
+            code: string;
+            name: string;
+            vehicle?: string;
+            vehicleNo?: string;
+            phone: string;
+            pct: number;
+            /** Format: date */
+            since?: string;
+            /** Format: int32 */
+            sales: number;
+            salesValue: number;
+            /** @description Commission earned (owner / accountant) */
+            earned?: number;
+            /** @description Not yet paid (owner / accountant) */
+            unpaid?: number;
         };
         GemForm: {
             name: string;
@@ -2555,6 +2750,20 @@ export interface components {
             size: "L60X30" | "L50X25" | "A4_SHEET";
             showPrice: boolean;
         };
+        PayForm: {
+            lines: number[];
+            /** Format: date */
+            paidOn: string;
+            /** @enum {string} */
+            method: "DRAWER" | "OWNER_CASH" | "BANK" | "SALARY";
+        };
+        PaidView: {
+            number: string;
+            amount: number;
+            payee: string;
+            /** Format: int32 */
+            lines: number;
+        };
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
@@ -2883,6 +3092,53 @@ export interface components {
             /** Format: date-time */
             time: string;
         };
+        GuideList: {
+            guides: components["schemas"]["GuideCard"][];
+            /** @description The % a new guide starts with */
+            defaultPct: number;
+        };
+        CommissionRow: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            earnedAt: string;
+            branch: string;
+            sale: string;
+            customer: string;
+            saleTotal: number;
+            /** @enum {string} */
+            payee: "GUIDE" | "STAFF";
+            /** @description "G:G-01" (guide) or "S:12" (staff) */
+            person: string;
+            name: string;
+            pct?: number;
+            /** @description Empty for the salesperson */
+            amount?: number;
+            /** @enum {string} */
+            status: "UNPAID" | "PAID" | "REVERSED";
+            /** @description Not paid yet (a negative line is taken off the next payment) */
+            owed: boolean;
+            note?: string;
+            /** Format: date-time */
+            paidAt?: string;
+            method?: string;
+            payment?: string;
+        };
+        GuideProfile: {
+            guide: components["schemas"]["GuideCard"];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** Format: int32 */
+            sales: number;
+            salesValue: number;
+            earned?: number;
+            unpaid?: number;
+            /** Format: int32 */
+            unpaidLines: number;
+            lines: components["schemas"]["CommissionRow"][];
+        };
         GemPage: {
             items: components["schemas"]["GemCard"][];
             /** Format: int64 */
@@ -2982,6 +3238,103 @@ export interface components {
             sentEmail: boolean;
             sentWhatsapp: boolean;
             shop: components["schemas"]["DocShop"];
+        };
+        OwedPerson: {
+            person: string;
+            name: string;
+            /** @enum {string} */
+            payee: "GUIDE" | "STAFF";
+            /** Format: int32 */
+            lines: number;
+            amount: number;
+        };
+        Payable: {
+            owed: number;
+            /** Format: int32 */
+            owedLines: number;
+            guidesOwed: number;
+            /** Format: int32 */
+            guidesPeople: number;
+            staffOwed: number;
+            byPerson: components["schemas"]["OwedPerson"][];
+            lines: components["schemas"]["CommissionRow"][];
+            people: components["schemas"]["PayeeOption"][];
+        };
+        PayeeOption: {
+            key: string;
+            name: string;
+            /** @enum {string} */
+            payee: "GUIDE" | "STAFF";
+        };
+        CommissionSlip: {
+            /** @description CP-… – empty for a statement (last 30 days of one guide) */
+            number?: string;
+            /** Format: date-time */
+            date: string;
+            /** @description How it was paid */
+            method?: string;
+            payee: string;
+            guideVehicle?: string;
+            guideVehicleNo?: string;
+            guidePhone?: string;
+            guidePct?: number;
+            paidBy: string;
+            lines: components["schemas"]["CommissionSlipLine"][];
+            total: number;
+            shop: components["schemas"]["DocShop"];
+        };
+        CommissionSlipLine: {
+            /** Format: date-time */
+            date: string;
+            sale: string;
+            saleAmount: number;
+            amount: number;
+            /** @enum {string} */
+            status: "UNPAID" | "PAID" | "REVERSED";
+            note?: string;
+        };
+        CommissionSaleList: {
+            sales: components["schemas"]["CommissionSaleRow"][];
+            /** @description Guide filter */
+            guides: components["schemas"]["PayeeOption"][];
+            /** @description Salesperson filter */
+            staff: components["schemas"]["PayeeOption"][];
+        };
+        CommissionSaleRow: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            customer: string;
+            guide?: string;
+            staff: string;
+            total: number;
+            commission: number;
+        };
+        SaleCommission: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            branch: string;
+            customer: string;
+            staff: string;
+            total: number;
+            guide?: string;
+            guideVehicle?: string;
+            guidePct: number;
+            guideComm: number;
+            staffComm: number;
+            /**
+             * Format: int32
+             * @description 0-based staff level of the sale total
+             */
+            level: number;
+            levels: components["schemas"]["StaffLevel"][];
+            lines: components["schemas"]["CommissionRow"][];
+        };
+        StaffLevel: {
+            /** @description Empty = the last level ("above …") */
+            upTo?: number;
+            amount: number;
         };
         DemoUser: {
             name: string;
@@ -3384,6 +3737,75 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BranchView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getGuide: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuideProfile"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    editGuide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuideForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuideCard"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -4749,6 +5171,68 @@ export interface operations {
             };
         };
     };
+    listGuides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuideList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addGuide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuideForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GuideCard"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query?: {
@@ -4943,6 +5427,39 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SendResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    payCommissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaidView"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -6452,6 +6969,200 @@ export interface operations {
         parameters: {
             query?: {
                 format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    commissionsPayable: {
+        parameters: {
+            query?: {
+                show?: "OWED" | "PAID" | "REVERSED" | "ALL";
+                person?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Payable"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    commissionSlip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommissionSlip"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    commissionSlipPdf: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    commissionSales: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                guide?: string;
+                staff?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommissionSaleList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saleCommission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleCommission"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportCommissions: {
+        parameters: {
+            query?: {
+                format?: string;
+                show?: "OWED" | "PAID" | "REVERSED" | "ALL";
+                person?: string;
             };
             header?: never;
             path?: never;
