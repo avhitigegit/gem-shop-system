@@ -28,6 +28,7 @@ export function DataTable<T>({
   stackOnPhone,
   id,
   onRowClick,
+  marked,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -38,6 +39,8 @@ export function DataTable<T>({
   stackOnPhone?: boolean;
   id?: string;
   onRowClick?: (row: T) => void;
+  /** Marks a row, e.g. the one just saved (gold background). */
+  marked?: (row: T) => boolean;
 }) {
   if (!rows.length) return <div className="empty">{empty}</div>;
   return (
@@ -57,7 +60,10 @@ export function DataTable<T>({
             <tr
               key={rowKey(r, i)}
               onClick={onRowClick ? () => onRowClick(r) : undefined}
-              style={onRowClick ? { cursor: "pointer" } : undefined}
+              style={{
+                cursor: onRowClick ? "pointer" : undefined,
+                background: marked?.(r) ? "var(--gold-soft)" : undefined,
+              }}
             >
               {columns.map((c) => (
                 <td

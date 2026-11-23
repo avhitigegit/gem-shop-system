@@ -230,9 +230,10 @@ public class Offers {
             // test mode / email accepted = delivered; real WhatsApp waits for Meta's "delivered" status
             boolean del = ok && (email || "TEST_MODE".equals(status));
             jdbc.update("""
-                    insert into offer_recipient (offer_id, customer_id, recipient, token, status, sent_at, delivered_at)
-                    values (?, ?, ?, ?, ?, ?, ?)""", o.id(), c.getId(), email ? c.getEmail() : c.getWhatsapp(), token, status,
-                    Timestamp.from(now), del ? Timestamp.from(now) : null);
+                    insert into offer_recipient (offer_id, customer_id, recipient, token, status, sent_at, delivered_at, created_by,
+                                                 updated_by)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)""", o.id(), c.getId(), email ? c.getEmail() : c.getWhatsapp(), token, status,
+                    Timestamp.from(now), del ? Timestamp.from(now) : null, by(), by());
             sent += ok ? 1 : 0;
             delivered += del ? 1 : 0;
         }
@@ -243,8 +244,8 @@ public class Offers {
         return list().offers().stream().filter(r -> r.code().equals(code)).findFirst().orElseThrow();
     }
 
-    /** "Send test to me": to the signed-in owner's email or phone. Not counted, not saved. */
-    @Transactional(readOnly = true)
+    /** "Send test to me": to the signed-in owner's email or phone. Not counted; written to the message log. */
+    @Transactional
     public OfferTestResult test(OfferForm f) {
         boolean email = "EMAIL".equals(f.channel());
         ready(email, false);
@@ -311,7 +312,8 @@ public class Offers {
                 where customer_id = ? and sent_at between ? and ? and unsubscribed_at is null
                 order by sent_at desc limit 1""", rs -> {
             long id = rs.getLong(1);
-            jdbc.update("update offer_recipient set unsubscribed_at = ? where id = ?", Timestamp.from(at), id);
+            jdbc.update("update offer_recipient set unsubscribed_at = ?, updated_at = now(), updated_by = 'system', version = version + 1"
+                    + " where id = ?", Timestamp.from(at), id);
             jdbc.update("update offer set unsubscribed = unsubscribed + 1 where id = ?", rs.getLong(2));
         }, e.customerId(), Timestamp.from(at.minus(Duration.ofDays(30))), Timestamp.from(at));
     }
@@ -521,7 +523,8 @@ public class Offers {
 
     /** Sets delivered / opened / clicked once and counts it on the offer. */
     private void mark(Recipient r, String what) {
-        int n = jdbc.update("update offer_recipient set " + what + "_at = now() where id = ? and " + what + "_at is null", r.id());
+        int n = jdbc.update("update offer_recipient set " + what + "_at = now(), updated_at = now(), updated_by = 'system', version = version + 1"
+                + " where id = ? and " + what + "_at is null", r.id());
         if (n > 0) {
             jdbc.update("update offer set " + what + " = " + what + " + 1 where id = ?", r.offerId());
         }

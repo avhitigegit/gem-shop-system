@@ -45,6 +45,11 @@ create table offer_recipient (
     opened_at       timestamptz,
     clicked_at      timestamptz,
     unsubscribed_at timestamptz,
+    created_at      timestamptz  not null default now(),
+    created_by      varchar(64)  not null,
+    updated_at      timestamptz  not null default now(),
+    updated_by      varchar(64)  not null,
+    version         bigint       not null default 0,
     unique (offer_id, customer_id)
 );
 create index ix_offer_recipient_customer on offer_recipient (customer_id, sent_at desc);
