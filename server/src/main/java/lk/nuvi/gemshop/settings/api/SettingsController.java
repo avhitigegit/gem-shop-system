@@ -27,6 +27,7 @@ import lk.nuvi.gemshop.settings.api.SettingsDtos.ValueForm;
 import lk.nuvi.gemshop.settings.branch.BranchRepository;
 import lk.nuvi.gemshop.settings.branch.BranchStatus;
 import lk.nuvi.gemshop.settings.branch.Branches;
+import lk.nuvi.gemshop.commissions.Guides;
 import lk.nuvi.gemshop.settings.commission.Commission;
 import lk.nuvi.gemshop.settings.lists.ListName;
 import lk.nuvi.gemshop.settings.lists.Lists;
@@ -60,9 +61,10 @@ public class SettingsController {
     private final Rates rates;
     private final Lists lists;
     private final Commission commission;
+    private final Guides guides;
 
     public SettingsController(ShopService shop, ShopSettingsRepository shops, Staff staff, UserAccountRepository users,
-            Branches branches, BranchRepository branchRepo, Rates rates, Lists lists, Commission commission) {
+            Branches branches, BranchRepository branchRepo, Rates rates, Lists lists, Commission commission, Guides guides) {
         this.shop = shop;
         this.shops = shops;
         this.staff = staff;
@@ -72,6 +74,7 @@ public class SettingsController {
         this.rates = rates;
         this.lists = lists;
         this.commission = commission;
+        this.guides = guides;
     }
 
     // ------------------------------------------------------------------ Settings home
@@ -175,12 +178,14 @@ public class SettingsController {
     @PutMapping("/api/settings/commission")
     @Operation(operationId = "saveCommissionRules", summary = "Save commission rules (applies to new sales)")
     public CommissionView saveCommission(@Valid @RequestBody CommissionForm form) {
-        return view(commission.save(form.defaultGuidePct(),
-                form.levels().stream().map(l -> new Commission.Level(l.upTo(), l.amount())).toList()));
+        Commission.Rules saved = commission.save(form.defaultGuidePct(),
+                form.levels().stream().map(l -> new Commission.Level(l.upTo(), l.amount())).toList());
+        guides.savePcts(form.guides());
+        return view(saved);
     }
 
-    private static CommissionView view(Commission.Rules r) {
-        return new CommissionView(r.defaultGuidePct(), levels(r.levels()), levels(Commission.BRD_EXAMPLE));
+    private CommissionView view(Commission.Rules r) {
+        return new CommissionView(r.defaultGuidePct(), levels(r.levels()), levels(Commission.BRD_EXAMPLE), guides.pcts());
     }
 
     private static List<LevelDto> levels(List<Commission.Level> l) {
