@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lk.nuvi.gemshop.accountant.MonthLock;
 import lk.nuvi.gemshop.audit.log.ActivityLog;
 import lk.nuvi.gemshop.auth.security.CurrentUser;
 import lk.nuvi.gemshop.auth.security.CurrentUser.Who;
@@ -84,10 +85,11 @@ public class Commissions {
     private final ActivityLog log;
     private final CurrentUser current;
     private final ZoneId zone;
+    private final MonthLock monthLock;
 
     public Commissions(CommissionLineRepository lines, CommissionPaymentRepository payments, SaleRepository sales, GuideRepository guideRepo,
             Guides guides, UserAccountRepository users, Commission commission, Sales sell, Numbers numbers, PdfDocuments pdfs,
-            DayLock lock, ActivityLog log, CurrentUser current, AppProperties app) {
+            DayLock lock, ActivityLog log, CurrentUser current, MonthLock monthLock, AppProperties app) {
         this.lines = lines;
         this.payments = payments;
         this.sales = sales;
@@ -102,6 +104,7 @@ public class Commissions {
         this.log = log;
         this.current = current;
         this.zone = ZoneId.of(app.timezone());
+        this.monthLock = monthLock;
     }
 
     // ------------------------------------------------------------------ commission per sale
@@ -175,6 +178,7 @@ public class Commissions {
             throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "The payment date cannot be in the future.",
                     "paidOn", "Today or earlier.");
         }
+        monthLock.checkOpen(f.paidOn());
         List<CommissionLine> chosen = new ArrayList<>(lines.findAllById(new LinkedHashSet<>(f.lines())));
         if (chosen.size() != new LinkedHashSet<>(f.lines()).size()) {
             throw ApiException.notFound("Some commission lines were not found – reload the page.");

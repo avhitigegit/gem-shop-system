@@ -77,7 +77,8 @@ public final class PurchasingDtos {
             @Schema(requiredMode = REQUIRED) String branch,
             @Schema(requiredMode = REQUIRED) List<PurchaseGem> gems,
             @Schema(requiredMode = REQUIRED) boolean hasBill,
-            @Schema(requiredMode = REQUIRED) BigDecimal total) {}
+            @Schema(requiredMode = REQUIRED) BigDecimal total,
+            @Schema(requiredMode = REQUIRED, description = "Dated in a closed month (locked, rule 11)") boolean monthClosed) {}
 
     public record PurchaseList(
             @Schema(requiredMode = REQUIRED) List<PurchaseRow> items,

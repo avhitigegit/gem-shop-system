@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable, ExportButtons, Filters, type Column } from "@/components/ui/data-table";
@@ -69,9 +70,19 @@ export function PurchasesScreen() {
     },
     { key: "bill", header: "Bill", cell: (p) => (p.hasBill ? "📎" : <span className="muted">—</span>) },
     { key: "total", header: "Total (cash)", num: true, cell: (p) => <b>{money(p.total)}</b> },
+    {
+      key: "month",
+      header: "Month",
+      cell: (p) =>
+        p.monthClosed ? (
+          <span title="Month closed – nothing dated in it can change">
+            <Badge tone="navy">🔒 closed</Badge>
+          </span>
+        ) : null,
+    },
   ];
   const rows = data?.items ?? [];
-  const footer = [`${rows.length} purchases`, "", "", "", `${data?.gems ?? 0} gems`, "", money(data?.total ?? 0)];
+  const footer = [`${rows.length} purchases`, "", "", "", `${data?.gems ?? 0} gems`, "", money(data?.total ?? 0), ""];
 
   return (
     <>

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import lk.nuvi.gemshop.accountant.MonthLock;
 import lk.nuvi.gemshop.audit.approval.Approval;
 import lk.nuvi.gemshop.audit.approval.ApprovalType;
 import lk.nuvi.gemshop.audit.approval.Approvals;
@@ -83,13 +84,14 @@ public class Expenses {
     private final Approvals approvals;
     private final ShopSettingsRepository shops;
     private final DayLock lock;
+    private final MonthLock monthLock;
     private final ActivityLog log;
     private final CurrentUser current;
     private final ZoneId zone;
 
     public Expenses(ExpenseRepository expenses, MonthlyBillRepository bills, BranchRepository branches, UserAccountRepository users,
             Lists lists, Numbers numbers, FileService files, Approvals approvals, ShopSettingsRepository shops, DayLock lock,
-            ActivityLog log, CurrentUser current, AppProperties app) {
+            MonthLock monthLock, ActivityLog log, CurrentUser current, AppProperties app) {
         this.expenses = expenses;
         this.bills = bills;
         this.branches = branches;
@@ -100,6 +102,7 @@ public class Expenses {
         this.approvals = approvals;
         this.shops = shops;
         this.lock = lock;
+        this.monthLock = monthLock;
         this.log = log;
         this.current = current;
         this.zone = ZoneId.of(app.timezone());
@@ -153,6 +156,7 @@ public class Expenses {
             throw ApiException.field(HttpStatus.BAD_REQUEST, "BILL_REQUIRED", "Every expense needs a bill photo (rule 11).", "bill",
                     "Every expense needs a bill photo (rule 11).");
         }
+        monthLock.checkOpen(f.spentOn());
         Branch b = branch(f.branch());
         String type = lists.check(ListName.EXPENSE_TYPE, f.expenseType(), "expenseType");
         BigDecimal amount = f.amount().setScale(2, RoundingMode.HALF_UP);
@@ -178,6 +182,7 @@ public class Expenses {
         if (locked != null) {
             throw ApiException.conflict(EXPENSE_LOCKED, locked);
         }
+        monthLock.checkOpen(f.spentOn());
         Expense.Method method = Expense.Method.valueOf(f.method());
         if ((method == Expense.Method.DRAWER) != (e.getMethod() == Expense.Method.DRAWER)) {
             throw ApiException.badRequest(USE_PAY_OUT, "Cash from the drawer cannot be changed to another payment method or back.");
@@ -214,10 +219,16 @@ public class Expenses {
         return detail(number);
     }
 
-    /** Attach the bill photo later (e.g. a monthly bill that was added by itself). */
+    /**
+     * Attach the bill photo later (e.g. a monthly bill that was added by itself). In a closed month only a missing bill
+     * photo may still be added – an existing one is not replaced.
+     */
     @Transactional
     public ExpenseDetail attachBill(String number, java.util.UUID bill) {
         Expense e = require(number);
+        if (monthLock.isClosed(day(e.getSpentAt())) && (!files.ofOwner(Expense.OWNER_TYPE, number).isEmpty() || e.getSampleBill() != null)) {
+            throw ApiException.conflict(EXPENSE_LOCKED, monthLock.closedWhy(day(e.getSpentAt())));
+        }
         files.ofOwner(Expense.OWNER_TYPE, number).forEach(files::remove);
         files.attach(List.of(bill), FileKind.BILL_PHOTO, Expense.OWNER_TYPE, number);
         e.sampleBill(null);
@@ -349,10 +360,14 @@ public class Expenses {
         return e;
     }
 
-    /** Why the expense cannot be corrected, or null. (Closed months come with P5-03.) */
+    /** Why the expense cannot be corrected, or null. */
     private String lockedWhy(Expense e) {
         if (e.getStatus() == Expense.Status.REJECTED) {
             return "The owner rejected this expense.";
+        }
+        String month = monthLock.closedWhy(day(e.getSpentAt()));
+        if (month != null) {
+            return month;
         }
         if (e.getMethod() == Expense.Method.DRAWER && lock.isClosed(e.getBranch().getId(), day(e.getSpentAt()))) {
             return "Paid from the drawer on a day that is already closed.";

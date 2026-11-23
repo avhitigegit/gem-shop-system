@@ -13,6 +13,9 @@ public interface ApprovalRepository extends JpaRepository<Approval, Long> {
 
     Optional<Approval> findByNumber(String number);
 
+    /** E.g. the cancellations or month re-opens still waiting for the owner. */
+    List<Approval> findByTypeAndStatus(ApprovalType type, ApprovalStatus status);
+
     List<Approval> findByNumberIn(java.util.Collection<String> numbers);
 
     /**
