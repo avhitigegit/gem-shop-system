@@ -443,7 +443,8 @@ public class Gems {
 
     // ------------------------------------------------------------------ views
 
-    private Map<String, String> firstPhotos(List<String> codes) {
+    /** First photo (small link) of each gem code that has one. */
+    public Map<String, String> firstPhotos(List<String> codes) {
         Map<String, String> m = new HashMap<>();
         for (StoredFile f : files.ofOwners(OWNER_TYPE, codes)) {
             if (f.getKind() == FileKind.PRODUCT_PHOTO) {
