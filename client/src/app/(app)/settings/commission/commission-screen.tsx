@@ -2,11 +2,11 @@
 
 /* Commission rules – prototype a-setup/commission-rules.html (Guide 8). Guides / drivers get a % of the sale; staff
    get a fixed amount by price level. Changes apply to new sales (each sale keeps what was worked out then).
-   Each guide's own % is set on the guide's page (Guides & drivers, P3-05); new guides start with the default %. */
+   Each guide has their own % (listed here and on the guide's page); new guides start with the default %. */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Alert, Field, Input, InputGroup } from "@/components/ui/form";
+import { Alert, Field, Input, InputGroup, Options, Select } from "@/components/ui/form";
 import { PageHead } from "@/components/ui/steps";
 import { useToast } from "@/components/ui/toast";
 import { api, errorMessage } from "@/lib/api/client";
@@ -49,7 +49,11 @@ function Rules({ rules, onSaved }: { rules: CommissionView; onSaved: (r: Commiss
   const [pct, setPct] = useState(String(Number(rules.defaultGuidePct)));
   const [levels, setLevels] = useState<Level[]>(() => toLevels(rules.levels));
   const [amount, setAmount] = useState("300000");
-  const [guidePct, setGuidePct] = useState(String(Number(rules.defaultGuidePct)));
+  const [guidePcts, setGuidePcts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(rules.guides.map((g) => [g.code, String(Number(g.pct))])),
+  );
+  const [calcGuide, setCalcGuide] = useState(rules.guides[0]?.code ?? "");
+  const [guidePct, setGuidePct] = useState(() => String(Number(rules.guides[0]?.pct ?? rules.defaultGuidePct)));
   const [bad, setBad] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -73,6 +77,11 @@ function Rules({ rules, onSaved }: { rules: CommissionView; onSaved: (r: Commiss
         return toast("Levels must go up", "Each “up to” amount must be higher than the one before.", "error");
       }
     }
+    const badGuide = rules.guides.find((g) => {
+      const v = Number(guidePcts[g.code]);
+      return guidePcts[g.code] === "" || !(v >= 0 && v <= 50);
+    });
+    if (badGuide) return toast("Check the guide %", `${badGuide.name}: 0 to 50.`, "error");
     setBusy(true);
     const { data, error } = await api.PUT("/api/settings/commission", {
       body: {
@@ -81,6 +90,7 @@ function Rules({ rules, onSaved }: { rules: CommissionView; onSaved: (r: Commiss
           upTo: i === levels.length - 1 ? undefined : Number(l.upTo),
           amount: Number(l.amount || 0),
         })),
+        guides: rules.guides.map((g) => ({ code: g.code, pct: Number(guidePcts[g.code]) })),
       },
     });
     setBusy(false);
@@ -105,12 +115,7 @@ function Rules({ rules, onSaved }: { rules: CommissionView; onSaved: (r: Commiss
             </div>
           </CardHeader>
           <CardContent>
-            <Field
-              label="Default % for new guides"
-              htmlFor="defPct"
-              required
-              hint="Each guide's own % is set on the guide's page (Guides & drivers)."
-            >
+            <Field label="Default % for new guides" htmlFor="defPct" required hint="New guides start with this %.">
               <InputGroup addon="%">
                 <Input
                   id="defPct"
@@ -123,6 +128,28 @@ function Rules({ rules, onSaved }: { rules: CommissionView; onSaved: (r: Commiss
                 />
               </InputGroup>
             </Field>
+            <ul className="list mt" id="guidePcts">
+              {rules.guides.map((g) => (
+                <li key={g.code}>
+                  <div style={{ flex: 1 }}>
+                    {g.name} <small className="muted">{g.vehicle}</small>
+                  </div>
+                  <Input
+                    className="right"
+                    type="number"
+                    style={{ width: 80 }}
+                    min={0}
+                    max={50}
+                    step={0.5}
+                    data-g={g.code}
+                    aria-label={`${g.name} %`}
+                    value={guidePcts[g.code] ?? ""}
+                    onChange={(e) => setGuidePcts((x) => ({ ...x, [g.code]: e.target.value }))}
+                  />
+                  <span>%</span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
         <Card>
@@ -224,6 +251,23 @@ function Rules({ rules, onSaved }: { rules: CommissionView; onSaved: (r: Commiss
         <CardContent className="stack" style={{ gap: 12 }}>
           <Field label="Sale amount (LKR)" htmlFor="cAmt">
             <Input id="cAmt" size="lg" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </Field>
+          <Field label="Guide" htmlFor="cG">
+            <Select
+              id="cG"
+              value={calcGuide}
+              onChange={(e) => {
+                setCalcGuide(e.target.value);
+                setGuidePct(e.target.value ? (guidePcts[e.target.value] ?? "0") : "0");
+              }}
+            >
+              <Options
+                items={[
+                  { value: "", label: "Walk-in (no guide)" },
+                  ...rules.guides.map((g) => ({ value: g.code, label: `${g.name} · ${guidePcts[g.code] ?? ""}%` })),
+                ]}
+              />
+            </Select>
           </Field>
           <Field label="Guide %" htmlFor="cPct" hint="0 = walk-in (no guide)">
             <InputGroup addon="%">
