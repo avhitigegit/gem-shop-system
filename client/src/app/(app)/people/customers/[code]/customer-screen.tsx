@@ -208,7 +208,7 @@ export function CustomerScreen({ code }: { code: string }) {
               {data.messages.length ? (
                 <ul className="list">
                   {data.messages.map((m) => (
-                    <li key={`${m.kind}-${m.text}`}>
+                    <li key={`${m.kind}-${m.text}-${m.at}`}>
                       {ICON[m.kind] ?? "✉"} {m.text} · {date(m.at)}{" "}
                       {m.email ? <Badge tone="success">✉ email</Badge> : null}{" "}
                       {m.whatsapp ? <Badge tone="success">💬 WhatsApp</Badge> : null}
