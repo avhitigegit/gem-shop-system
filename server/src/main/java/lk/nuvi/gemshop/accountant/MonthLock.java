@@ -31,6 +31,14 @@ public class MonthLock {
         return day != null && months.existsByMonthAndStatus(YearMonth.from(day).toString(), MonthClosing.Status.CLOSED);
     }
 
+    /** The closed months, for marking rows of a list (one query). */
+    @Transactional(readOnly = true)
+    public java.util.Set<YearMonth> closedMonths() {
+        java.util.Set<YearMonth> out = new java.util.HashSet<>();
+        months.findAll().stream().filter(MonthClosing::isClosed).forEach(c -> out.add(c.getMonth()));
+        return out;
+    }
+
     /** "September 2026 is closed …" when the day's month is closed, otherwise null. */
     @Transactional(readOnly = true)
     public String closedWhy(LocalDate day) {

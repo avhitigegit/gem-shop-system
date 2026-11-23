@@ -132,6 +132,12 @@ class MonthEndTest {
         assertThat(row(months, now.minusMonths(2)).path("closed").asBoolean()).isTrue();
         assertThat(row(months, last).path("closed").asBoolean()).isFalse();
         assertThat(row(months, now).path("ended").asBoolean()).isFalse();
+        // purchases dated in a closed month are marked
+        for (JsonNode p : read(get("/api/purchases").param("from", now.minusMonths(6).atDay(1).toString()), OWNER).path("items")) {
+            YearMonth pm = YearMonth.parse(p.path("date").asString().substring(0, 7));
+            boolean closedMonth = pm.equals(now.minusMonths(2)) || pm.equals(now.minusMonths(3));
+            assertThat(p.path("monthClosed").asBoolean()).as(p.path("number").asString()).isEqualTo(closedMonth);
+        }
 
         mvc.perform(post("/api/months/" + now + "/close").with(who.get(ACCOUNTANT).bearer())).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("MONTH_NOT_ENDED"));

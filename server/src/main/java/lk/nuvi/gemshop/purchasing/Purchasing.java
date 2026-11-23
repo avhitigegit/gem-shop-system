@@ -140,7 +140,7 @@ public class Purchasing {
         BigDecimal paid = list.stream().map(Purchase::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new SupplierView(row(s, new Object[] {s.getId(), (long) list.size(), paid}), bought, sold, rets.size(),
                 rets.stream().map(SupplierReturn::getRefund).reduce(BigDecimal.ZERO, BigDecimal::add),
-                list.stream().map(this::row).toList(), rets.stream().map(Purchasing::row).toList());
+                rows(list), rets.stream().map(Purchasing::row).toList());
     }
 
     private static Supplier.Details details(SupplierForm f) {
@@ -161,7 +161,7 @@ public class Purchasing {
         LocalDate t = to == null ? today : to;
         LocalDate f = from == null ? t.minusDays(180) : from;
         Long sup = supplierCode == null || supplierCode.isBlank() ? null : supplier(supplierCode).getId();
-        List<PurchaseRow> rows = purchases.search(sup, current.scope().branchId(), f, t).stream().map(this::row).toList();
+        List<PurchaseRow> rows = rows(purchases.search(sup, current.scope().branchId(), f, t));
         return new PurchaseList(rows, rows.stream().mapToLong(r -> r.gems().size()).sum(),
                 rows.stream().map(PurchaseRow::total).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
@@ -280,9 +280,11 @@ public class Purchasing {
                 totals == null || totals[2] == null ? BigDecimal.ZERO : (BigDecimal) totals[2]);
     }
 
-    private PurchaseRow row(Purchase p) {
-        return new PurchaseRow(p.getNumber(), p.getDate(), p.getSupplier().getCode(), p.getSupplier().getName(),
-                p.getBranch().getCode(), p.getLines().stream().map(Purchasing::gem).toList(), p.getBillPhoto() != null, p.getTotal());
+    private List<PurchaseRow> rows(List<Purchase> list) {
+        var closed = monthLock.closedMonths();
+        return list.stream().map(p -> new PurchaseRow(p.getNumber(), p.getDate(), p.getSupplier().getCode(), p.getSupplier().getName(),
+                p.getBranch().getCode(), p.getLines().stream().map(Purchasing::gem).toList(), p.getBillPhoto() != null, p.getTotal(),
+                closed.contains(java.time.YearMonth.from(p.getDate())))).toList();
     }
 
     private PurchaseView view(Purchase p) {

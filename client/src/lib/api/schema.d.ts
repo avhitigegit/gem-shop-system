@@ -4646,6 +4646,8 @@ export interface components {
             gems: components["schemas"]["PurchaseGem"][];
             hasBill: boolean;
             total: number;
+            /** @description Dated in a closed month (locked, rule 11) */
+            monthClosed: boolean;
         };
         SupplierView: {
             supplier: components["schemas"]["SupplierRow"];
