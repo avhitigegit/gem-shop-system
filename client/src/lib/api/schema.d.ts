@@ -460,6 +460,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns and exchanges, newest first */
+        get: operations["listReturns"];
+        put?: never;
+        /** Send a return / exchange to the owner for approval */
+        post: operations["createReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/quotes": {
         parameters: {
             query?: never;
@@ -645,6 +663,23 @@ export interface paths {
         put?: never;
         /** Upload a photo or PDF (max 10 MB). Photos are made smaller (about 300 KB) and get a thumbnail */
         post: operations["uploadFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/credit-notes/{number}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the credit note by email and / or WhatsApp */
+        post: operations["sendCreditNote"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1110,6 +1145,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/returns/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One return and the owner's answer */
+        get: operations["getReturn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/returns/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find the sale: invoice number, customer name or gem (8 latest) */
+        get: operations["findReturnSales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/returns/sales/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A completed sale and which of its gems may come back */
+        get: operations["getReturnSale"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/quotes/{number}": {
         parameters: {
             query?: never;
@@ -1341,6 +1427,74 @@ export interface paths {
         };
         /** Open a file with a private link (from url / thumbUrl) */
         get: operations["openFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/credit-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Credit notes, newest first */
+        get: operations["listCreditNotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/credit-notes/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One credit note */
+        get: operations["getCreditNote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/credit-notes/{number}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The credit note as a PDF */
+        get: operations["creditNotePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/credit-notes/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The credit notes list as PDF or Excel */
+        get: operations["exportCreditNotes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2045,7 +2199,7 @@ export interface components {
         };
         PaymentForm: {
             /** @enum {string} */
-            method: "CASH" | "CARD";
+            method: "CASH" | "CARD" | "CREDIT";
             /** @enum {string} */
             currency: "LKR" | "USD" | "EUR";
             amount: number;
@@ -2059,8 +2213,11 @@ export interface components {
             held?: string;
             /** @description RS-0001 / QT-0001 when selling a reservation or quotation */
             quote?: string;
+            /** @description May be empty when an exchange credit note pays it all */
             payments: components["schemas"]["PaymentForm"][];
             notes?: string;
+            /** @description CN-0002: an exchange credit note paying for this sale (P3-04) */
+            creditNote?: string;
         };
         CancelRequest: {
             number: string;
@@ -2108,7 +2265,7 @@ export interface components {
         };
         PaymentLine: {
             /** @enum {string} */
-            method: "CASH" | "CARD";
+            method: "CASH" | "CARD" | "CREDIT";
             /** @enum {string} */
             currency: "LKR" | "USD" | "EUR";
             amount: number;
@@ -2217,6 +2374,43 @@ export interface components {
              * @description Staff commission price level, 1 = lowest
              */
             level: number;
+        };
+        CustomerReturnForm: {
+            /** @example INV-000134 */
+            sale: string;
+            /** @example GEM-00086 */
+            gem: string;
+            /** @enum {string} */
+            kind: "REFUND" | "EXCHANGE";
+            reason: string;
+        };
+        ReturnView: {
+            number: string;
+            /** Format: date-time */
+            requestedAt: string;
+            branch: string;
+            sale: string;
+            /** Format: date-time */
+            soldAt: string;
+            customer: components["schemas"]["CustomerPick"];
+            gem: components["schemas"]["SaleLine"];
+            /** @enum {string} */
+            kind: "REFUND" | "EXCHANGE";
+            reason: string;
+            amount: number;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            staff: string;
+            approvalNo?: string;
+            /** @description The owner's note with the answer */
+            ownerNote?: string;
+            decidedBy?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            /** @description CN-… once approved */
+            creditNote?: string;
+            /** @description Exchange: the new sale the credit note paid for */
+            usedSaleNo?: string;
         };
         QuoteForm: {
             /** @enum {string} */
@@ -2594,6 +2788,14 @@ export interface components {
             reservations: number;
             /** Format: int64 */
             quotations: number;
+            /** @description Returns waiting for the owner */
+            returnsWaiting: components["schemas"]["WaitingReturn"][];
+        };
+        WaitingReturn: {
+            number: string;
+            gem: string;
+            /** @enum {string} */
+            kind: "REFUND" | "EXCHANGE";
         };
         GemCard: {
             code: string;
@@ -2623,6 +2825,28 @@ export interface components {
             sellable: boolean;
             /** @description Why it cannot be sold, e.g. already sold on 24/10/2026 (INV-000101) */
             note?: string;
+        };
+        ReturnGem: {
+            gem: components["schemas"]["SaleLine"];
+            /** @description Already returned (approved) */
+            returned: boolean;
+            /** @description RT-… waiting for the owner */
+            waiting?: string;
+        };
+        ReturnSale: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            /** Format: int64 */
+            daysAgo: number;
+            /** @description After the shop's return time – the owner still decides */
+            late: boolean;
+            /** Format: int32 */
+            returnDays: number;
+            branch: string;
+            customer: components["schemas"]["CustomerPick"];
+            total: number;
+            items: components["schemas"]["ReturnGem"][];
         };
         QuoteList: {
             items: components["schemas"]["QuoteView"][];
@@ -2729,6 +2953,35 @@ export interface components {
         };
         NextCode: {
             code: string;
+        };
+        CreditNoteView: {
+            number: string;
+            /** Format: date-time */
+            issuedAt: string;
+            branch: string;
+            returnNo: string;
+            /** @enum {string} */
+            kind: "REFUND" | "EXCHANGE";
+            reason: string;
+            sale: string;
+            /** Format: date-time */
+            soldAt: string;
+            customer: components["schemas"]["CustomerPick"];
+            gem: components["schemas"]["SaleLine"];
+            amount: number;
+            /** @description Guide commission taken back */
+            guideComm: number;
+            /** @description Staff commission taken back */
+            staffComm: number;
+            guide?: string;
+            staff?: string;
+            approvedBy: string;
+            /** @description Exchange: the new sale it paid for */
+            usedSaleNo?: string;
+            usedAmount?: number;
+            sentEmail: boolean;
+            sentWhatsapp: boolean;
+            shop: components["schemas"]["DocShop"];
         };
         DemoUser: {
             name: string;
@@ -4110,6 +4363,68 @@ export interface operations {
             };
         };
     };
+    listReturns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerReturnForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     listQuotes: {
         parameters: {
             query?: {
@@ -4593,6 +4908,41 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FileView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendCreditNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SendResult"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -5448,6 +5798,99 @@ export interface operations {
             };
         };
     };
+    getReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    findReturnSales: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnSale"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getReturnSale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReturnSale"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     getQuote: {
         parameters: {
             query?: never;
@@ -5888,6 +6331,130 @@ export interface operations {
             path: {
                 id: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listCreditNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CreditNoteView"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getCreditNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CreditNoteView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    creditNotePdf: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportCreditNotes: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;

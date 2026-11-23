@@ -16,13 +16,17 @@ export type InvoicePage = components["schemas"]["InvoicePage"];
 export type SendResult = components["schemas"]["SendResult"];
 export type QuoteView = components["schemas"]["QuoteView"];
 export type QuoteKind = QuoteView["kind"];
+export type ReturnSale = components["schemas"]["ReturnSale"];
+export type ReturnView = components["schemas"]["ReturnView"];
+export type CreditNoteView = components["schemas"]["CreditNoteView"];
+export const kindLabel = (k: ReturnView["kind"]) => (k === "EXCHANGE" ? "Exchange" : "Refund");
 
 /** "2026-11-26" in the shop, n days from today. */
 export const inDays = (n: number) => todayInShop(new Date(Date.now() + n * 86_400_000));
 
 /** "Card" · "Cash USD" for one payment line. */
 export const payLabel = (p: { method: string; currency: string }) =>
-  p.method === "CARD" ? "Card" : `Cash ${p.currency}`;
+  p.method === "CARD" ? "Card" : p.method === "CREDIT" ? "Credit note" : `Cash ${p.currency}`;
 
 export type NewCustomer = {
   name: string;
@@ -44,6 +48,8 @@ export type Draft = {
   held: string | null;
   /** RS-… / QT-… when selling a reservation or quotation. */
   quote: string | null;
+  /** CN-… exchange credit note paying for this bill (P3-04). */
+  credit: string | null;
 };
 
 const KEY = "gemshop.pos.draft";
@@ -56,6 +62,7 @@ export const blankDraft = (): Draft => ({
   guide: "",
   held: null,
   quote: null,
+  credit: null,
 });
 
 export function loadDraft(): Draft {
