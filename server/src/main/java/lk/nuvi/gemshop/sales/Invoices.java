@@ -22,7 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Pattern;
 import lk.nuvi.gemshop.audit.approval.Approval;
 import lk.nuvi.gemshop.audit.approval.ApprovalRepository;
 import lk.nuvi.gemshop.audit.approval.ApprovalType;
@@ -32,13 +31,11 @@ import lk.nuvi.gemshop.auth.security.CurrentUser;
 import lk.nuvi.gemshop.common.config.AppProperties;
 import lk.nuvi.gemshop.common.error.ApiException;
 import lk.nuvi.gemshop.common.error.ErrorCode;
-import lk.nuvi.gemshop.common.mail.MailService;
 import lk.nuvi.gemshop.files.pdf.PdfBody;
 import lk.nuvi.gemshop.files.pdf.PdfDocuments;
 import lk.nuvi.gemshop.gems.CertType;
 import lk.nuvi.gemshop.gems.Gem;
 import lk.nuvi.gemshop.gems.GemPrints;
-import lk.nuvi.gemshop.messaging.WhatsApp;
 import lk.nuvi.gemshop.sales.api.SalesDtos.CancelForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.InvoiceItem;
 import lk.nuvi.gemshop.sales.api.SalesDtos.InvoicePage;
@@ -62,12 +59,10 @@ public class Invoices {
 
     public static final String CANCELLED = "INVOICE_CANCELLED";
     public static final String CANCEL_WAITING = "CANCEL_WAITING";
-    public static final String NOT_SENT = "NOT_SENT";
+    public static final String NOT_SENT = Delivery.NOT_SENT;
     public static final int MAX_PAGE = 100;
     public static final int EXPORT_MAX = 5_000;
 
-    private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
-    private static final Pattern PHONE = Pattern.compile("^\\+?[0-9 ()-]{7,20}$");
     private static final DateTimeFormatter DMY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DMY_HM = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -77,15 +72,14 @@ public class Invoices {
     private final ApprovalRepository approvalRepo;
     private final PdfDocuments pdfs;
     private final GemPrints prints;
-    private final MailService mail;
-    private final WhatsApp whatsapp;
+    private final Delivery delivery;
     private final ShopSettingsRepository shops;
     private final ActivityLog log;
     private final CurrentUser current;
     private final ZoneId zone;
 
     public Invoices(SaleRepository sales, Sales sell, Approvals approvals, ApprovalRepository approvalRepo, PdfDocuments pdfs,
-            GemPrints prints, MailService mail, WhatsApp whatsapp, ShopSettingsRepository shops, ActivityLog log,
+            GemPrints prints, Delivery delivery, ShopSettingsRepository shops, ActivityLog log,
             CurrentUser current, AppProperties app) {
         this.sales = sales;
         this.sell = sell;
@@ -93,8 +87,7 @@ public class Invoices {
         this.approvalRepo = approvalRepo;
         this.pdfs = pdfs;
         this.prints = prints;
-        this.mail = mail;
-        this.whatsapp = whatsapp;
+        this.delivery = delivery;
         this.shops = shops;
         this.log = log;
         this.current = current;
@@ -352,46 +345,11 @@ public class Invoices {
         if (s.getStatus() == Sale.Status.CANCELLED) {
             throw ApiException.conflict(CANCELLED, s.getNumber() + " is cancelled – it cannot be sent.");
         }
-        if (!f.email() && !f.whatsapp()) {
-            throw ApiException.badRequest("NOTHING_CHOSEN", "Choose email or WhatsApp.");
-        }
-        String email = f.email() ? trim(f.emailTo(), s.getCustomer().getEmail()) : null;
-        String phone = f.whatsapp() ? trim(f.whatsappTo(), s.getCustomer().getWhatsapp()) : null;
-        if (f.email() && (email == null || !EMAIL.matcher(email).matches())) {
-            throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Enter a valid email address.", "emailTo",
-                    "e.g. anna@example.com");
-        }
-        if (f.whatsapp() && (phone == null || !PHONE.matcher(phone).matches())) {
-            throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED, "Enter the WhatsApp number with the country code.",
-                    "whatsappTo", "e.g. +49 151 2345 6789");
-        }
-        byte[] pdf = pdf(number);
-        String file = "Invoice " + s.getNumber() + ".pdf";
-        ShopSettings shop = shops.current().orElse(null);
-        String shopName = shop == null ? "our shop" : shop.getName();
-        String first = s.getCustomer().getName().trim().split("\\s+")[0];
-        String text = "Dear " + first + ",\n\nThank you for shopping at " + shopName + ", " + s.getBranch().getDisplayName()
-                + ". Please find your invoice " + s.getNumber() + " attached as a PDF.\n\nSafe travels!\n" + shopName;
-        boolean mailed = false;
-        if (f.email()) {
-            mailed = mail.send(email, "Your invoice " + s.getNumber() + " – " + shopName, text, file, pdf, "application/pdf");
-            if (!mailed) {
-                throw ApiException.conflict(NOT_SENT, "The email could not be sent. Check the email settings, or try again.");
-            }
-        }
-        boolean wa = f.whatsapp() && whatsapp.send(phone, text, file, pdf);
-        s.sent(mailed, wa);
-        List<String> by = new ArrayList<>();
-        if (mailed) {
-            by.add("email (" + email + ")");
-        }
-        if (wa) {
-            by.add("WhatsApp (" + phone + ")" + (whatsapp.testMode() ? " – test mode" : ""));
-        }
-        String message = "Sent by " + String.join(" and ", by) + ".";
-        log.add("Invoice sent", s.getNumber() + " to " + s.getCustomer().getName() + " by " + String.join(" and ", by),
-                s.getBranch().getId());
-        return new SendResult(mailed, wa, wa && whatsapp.testMode(), message);
+        Delivery.Sent sent = delivery.send(f, s.getCustomer(), s.getBranch().getDisplayName(), "invoice " + s.getNumber(),
+                "Invoice " + s.getNumber() + ".pdf", pdf(number));
+        s.sent(sent.email(), sent.whatsapp());
+        log.add("Invoice sent", s.getNumber() + " to " + s.getCustomer().getName() + " by " + sent.by(), s.getBranch().getId());
+        return sent.result();
     }
 
     // ------------------------------------------------------------------ helpers
@@ -472,8 +430,4 @@ public class Invoices {
         return c;
     }
 
-    private static String trim(String given, String fallback) {
-        String v = given == null || given.isBlank() ? fallback : given;
-        return v == null || v.isBlank() ? null : v.trim();
-    }
 }

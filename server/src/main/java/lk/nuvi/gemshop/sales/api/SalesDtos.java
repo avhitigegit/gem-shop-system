@@ -18,6 +18,7 @@ import lk.nuvi.gemshop.common.money.Currency;
 import lk.nuvi.gemshop.gems.CertType;
 import lk.nuvi.gemshop.gems.api.GemDtos.GemCard;
 import lk.nuvi.gemshop.sales.HeldSale;
+import lk.nuvi.gemshop.sales.Quote;
 import lk.nuvi.gemshop.sales.Sale;
 import lk.nuvi.gemshop.sales.SalePayment;
 
@@ -47,7 +48,9 @@ public final class SalesDtos {
     public record BillForm(
             @Schema(description = "Branch code; empty = the salesperson's branch / the first gem's branch") String branch,
             @Schema(requiredMode = REQUIRED) @NotNull @Size(max = 50) List<@Valid @NotNull LineForm> items,
-            @Schema(description = "Guide code; empty = walk-in") String guide) {}
+            @Schema(description = "Guide code; empty = walk-in") String guide,
+            @Schema(description = "The held sale being finished (its gems are on hold)") String held,
+            @Schema(description = "The reservation / quotation being sold (its gems are reserved)") String quote) {}
 
     /** Send the bill to the owner because a price is below the minimum. */
     public record HoldForm(
@@ -68,6 +71,7 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) @NotNull @Valid CustomerForm customer,
             String guide,
             @Schema(description = "HS-0001 when finishing an approved held sale") String held,
+            @Schema(description = "RS-0001 / QT-0001 when selling a reservation or quotation") String quote,
             @Schema(requiredMode = REQUIRED) @NotEmpty @Size(max = 10) List<@Valid @NotNull PaymentForm> payments,
             @Size(max = 500) String notes) {}
 
@@ -185,6 +189,47 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) Instant requestedAt,
             String note) {}
 
+    // ------------------------------------------------------------------ keep a gem / give a quote (P3-03)
+
+    /** Keep the gems on the bill for the customer (reservation) or give them a price quote (quotation). */
+    public record QuoteForm(
+            @Schema(requiredMode = REQUIRED) @NotNull Quote.Kind kind,
+            String branch,
+            @Schema(requiredMode = REQUIRED) @NotEmpty @Size(max = 50) List<@Valid @NotNull LineForm> items,
+            @Schema(requiredMode = REQUIRED) @NotNull @Valid CustomerForm customer,
+            @Schema(requiredMode = REQUIRED, example = "2026-11-26") @NotNull java.time.LocalDate expires,
+            @Schema(description = "Deposit taken for a reservation (LKR)") @DecimalMin("0") @DecimalMax("999999999") BigDecimal deposit,
+            @Size(max = 500) String notes) {}
+
+    public record ExtendForm(@Schema(requiredMode = REQUIRED, example = "2026-11-30") @NotNull java.time.LocalDate expires) {}
+
+    public record QuoteView(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) Quote.Kind kind,
+            @Schema(requiredMode = REQUIRED) Quote.Status status,
+            @Schema(requiredMode = REQUIRED) Instant createdOn,
+            @Schema(requiredMode = REQUIRED) String branch,
+            @Schema(requiredMode = REQUIRED) String staff,
+            @Schema(requiredMode = REQUIRED) CustomerPick customer,
+            @Schema(requiredMode = REQUIRED) java.time.LocalDate expires,
+            @Schema(requiredMode = REQUIRED, description = "Days until the expiry date (0 = today)") long daysLeft,
+            @Schema(requiredMode = REQUIRED) BigDecimal deposit,
+            String notes,
+            @Schema(requiredMode = REQUIRED) List<SaleLine> items,
+            @Schema(requiredMode = REQUIRED) BigDecimal total,
+            @Schema(description = "Invoice when sold") String saleNo,
+            @Schema(requiredMode = REQUIRED) boolean sentEmail,
+            @Schema(requiredMode = REQUIRED) boolean sentWhatsapp,
+            @Schema(description = "Today's rates for the USD / EUR columns") BigDecimal rateUsd,
+            BigDecimal rateEur,
+            @Schema(requiredMode = REQUIRED) DocShop shop) {}
+
+    /** Reserved & quotes list: one kind, plus how many of each are active (for the two tabs). */
+    public record QuoteList(
+            @Schema(requiredMode = REQUIRED) List<QuoteView> items,
+            @Schema(requiredMode = REQUIRED) long reservations,
+            @Schema(requiredMode = REQUIRED) long quotations) {}
+
     // ------------------------------------------------------------------ invoices (P3-02)
 
     public record InvoiceItem(
@@ -267,5 +312,7 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) long salesToday,
             @Schema(requiredMode = REQUIRED) BigDecimal totalToday,
             @Schema(requiredMode = REQUIRED) List<HeldView> held,
-            @Schema(requiredMode = REQUIRED) List<SaleRow> latest) {}
+            @Schema(requiredMode = REQUIRED) List<SaleRow> latest,
+            @Schema(requiredMode = REQUIRED) long reservations,
+            @Schema(requiredMode = REQUIRED) long quotations) {}
 }
