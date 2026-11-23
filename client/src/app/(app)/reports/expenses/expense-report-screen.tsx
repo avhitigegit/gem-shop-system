@@ -1,13 +1,15 @@
 "use client";
 
 /* Expense report – prototype m-expenses/expense-report.html (Guide 67; BRD M7, L6). Approved expenses by month, expense
-   type, payment method and branch. The branch at the top filters (All branches = the whole shop). */
+   type, payment method and branch. The branch at the top filters (All branches = the whole shop). PDF / Excel come
+   from the backend (P5-02). */
 import { Card, CardHeader, Kpi } from "@/components/ui/card";
 import { DataTable, ExportButtons } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/steps";
 import { api } from "@/lib/api/client";
 import { type ExpenseReport, methodLabel } from "@/lib/expenses";
 import { lkr, month, pct } from "@/lib/format";
+import { useReportDownload } from "@/lib/reports";
 import { ALL_BRANCHES, useSession } from "@/lib/session";
 import { useLoad } from "@/lib/use-load";
 
@@ -16,6 +18,7 @@ type TypeRow = ExpenseReport["types"][number];
 export function ExpenseReportScreen() {
   const { branch, branchName } = useSession();
   const { data: r } = useLoad(() => api.GET("/api/expenses/report"), [branch]);
+  const download = useReportDownload("expenses", "Expense report", {});
   const title = `Expense report – ${branch === ALL_BRANCHES ? "all branches" : branchName(branch)}`;
   if (!r)
     return (
@@ -32,7 +35,13 @@ export function ExpenseReportScreen() {
       <PageHead
         title={title}
         sub="By month, branch and expense type (approved expenses)."
-        actions={<ExportButtons tableId="erT" name="Expense report" />}
+        actions={
+          <ExportButtons
+            name="Expense report"
+            onPdf={() => void download("pdf")}
+            onExcel={() => void download("xlsx")}
+          />
+        }
       />
       <div className="g3 mb grid">
         {r.months.map((m, i) => (
