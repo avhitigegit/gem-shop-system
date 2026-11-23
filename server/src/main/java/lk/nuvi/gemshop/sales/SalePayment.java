@@ -20,7 +20,8 @@ import lk.nuvi.gemshop.common.persistence.BaseEntity;
 @Table(name = "sale_payment")
 public class SalePayment extends BaseEntity {
 
-    public enum Method { CASH, CARD }
+    /** CREDIT = an exchange credit note (CN-…) paying for the new gem. */
+    public enum Method { CASH, CARD, CREDIT }
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sale_id")
@@ -30,7 +31,7 @@ public class SalePayment extends BaseEntity {
     private int lineNo;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 4)
+    @Column(nullable = false, length = 6)
     private Method method;
 
     @Enumerated(EnumType.STRING)
@@ -52,6 +53,9 @@ public class SalePayment extends BaseEntity {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal fee;
 
+    @Column(length = 20)
+    private String creditNoteNo;
+
     protected SalePayment() {}
 
     SalePayment(Sale sale, int lineNo, Method method, Currency currency, BigDecimal amount, BigDecimal rate, BigDecimal lkr,
@@ -67,6 +71,11 @@ public class SalePayment extends BaseEntity {
         this.fee = fee;
     }
 
+    void creditNote(String no) {
+        this.creditNoteNo = no;
+    }
+
+    public String getCreditNoteNo() { return creditNoteNo; }
     public Sale getSale() { return sale; }
     public int getLineNo() { return lineNo; }
     public Method getMethod() { return method; }

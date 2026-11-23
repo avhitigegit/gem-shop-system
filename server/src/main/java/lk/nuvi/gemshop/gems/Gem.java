@@ -167,6 +167,13 @@ public class Gem extends BaseEntity {
         this.status = GemStatus.IN_STOCK;
     }
 
+    /** The owner approved a customer return (P3-04): back on the shelf as "Returned" and may be sold again. */
+    public void returnedByCustomer() {
+        this.saleNo = null;
+        this.soldAt = null;
+        this.status = GemStatus.RETURNED;
+    }
+
     public void setStatus(GemStatus status) {
         this.status = status;
     }

@@ -152,6 +152,14 @@ public class Sale extends BaseEntity {
         payments.add(new SalePayment(this, payments.size() + 1, method, currency, amount, rate, lkr, feePct, fee));
     }
 
+    /** An exchange (P3-04): the credit note pays {@code lkr} of this sale. */
+    public void payCredit(String creditNoteNo, BigDecimal lkr) {
+        SalePayment p = new SalePayment(this, payments.size() + 1, SalePayment.Method.CREDIT, Currency.LKR, lkr, BigDecimal.ONE,
+                lkr, BigDecimal.ZERO, BigDecimal.ZERO);
+        p.creditNote(creditNoteNo);
+        payments.add(p);
+    }
+
     /** Sold from a reservation or quotation (P3-03). */
     public void fromQuote(String quoteNo) {
         this.quoteNo = quoteNo;

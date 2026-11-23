@@ -21,6 +21,7 @@ import lk.nuvi.gemshop.sales.HeldSale;
 import lk.nuvi.gemshop.sales.Quote;
 import lk.nuvi.gemshop.sales.Sale;
 import lk.nuvi.gemshop.sales.SalePayment;
+import lk.nuvi.gemshop.sales.SaleReturn;
 
 /** New sale (P3-01). Prices are LKR; USD / EUR are shown at today's rate. */
 public final class SalesDtos {
@@ -72,8 +73,10 @@ public final class SalesDtos {
             String guide,
             @Schema(description = "HS-0001 when finishing an approved held sale") String held,
             @Schema(description = "RS-0001 / QT-0001 when selling a reservation or quotation") String quote,
-            @Schema(requiredMode = REQUIRED) @NotEmpty @Size(max = 10) List<@Valid @NotNull PaymentForm> payments,
-            @Size(max = 500) String notes) {}
+            @Schema(requiredMode = REQUIRED, description = "May be empty when an exchange credit note pays it all")
+            @NotNull @Size(max = 10) List<@Valid @NotNull PaymentForm> payments,
+            @Size(max = 500) String notes,
+            @Schema(description = "CN-0002: an exchange credit note paying for this sale (P3-04)") String creditNote) {}
 
     // ------------------------------------------------------------------ views
 
@@ -314,5 +317,82 @@ public final class SalesDtos {
             @Schema(requiredMode = REQUIRED) List<HeldView> held,
             @Schema(requiredMode = REQUIRED) List<SaleRow> latest,
             @Schema(requiredMode = REQUIRED) long reservations,
-            @Schema(requiredMode = REQUIRED) long quotations) {}
+            @Schema(requiredMode = REQUIRED) long quotations,
+            @Schema(requiredMode = REQUIRED, description = "Returns waiting for the owner") List<WaitingReturn> returnsWaiting) {}
+
+    /** A return waiting for the owner, for the Sell home. */
+    public record WaitingReturn(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) String gem,
+            @Schema(requiredMode = REQUIRED) SaleReturn.Kind kind) {}
+
+    // ------------------------------------------------------------------ returns and credit notes (P3-04)
+
+    /** Customer brings a gem back: which sale, which gem, refund or exchange, and why. */
+    public record CustomerReturnForm(
+            @Schema(requiredMode = REQUIRED, example = "INV-000134") @NotBlank String sale,
+            @Schema(requiredMode = REQUIRED, example = "GEM-00086") @NotBlank String gem,
+            @Schema(requiredMode = REQUIRED) @NotNull SaleReturn.Kind kind,
+            @Schema(requiredMode = REQUIRED) @NotBlank @Size(min = 4, max = 500) String reason) {}
+
+    /** A gem on a sale that may come back. */
+    public record ReturnGem(
+            @Schema(requiredMode = REQUIRED) SaleLine gem,
+            @Schema(requiredMode = REQUIRED, description = "Already returned (approved)") boolean returned,
+            @Schema(description = "RT-… waiting for the owner") String waiting) {}
+
+    /** Step 1 / 2: a completed sale and its gems. */
+    public record ReturnSale(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) Instant soldAt,
+            @Schema(requiredMode = REQUIRED) long daysAgo,
+            @Schema(requiredMode = REQUIRED, description = "After the shop's return time – the owner still decides") boolean late,
+            @Schema(requiredMode = REQUIRED) int returnDays,
+            @Schema(requiredMode = REQUIRED) String branch,
+            @Schema(requiredMode = REQUIRED) CustomerPick customer,
+            @Schema(requiredMode = REQUIRED) BigDecimal total,
+            @Schema(requiredMode = REQUIRED) List<ReturnGem> items) {}
+
+    public record ReturnView(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) Instant requestedAt,
+            @Schema(requiredMode = REQUIRED) String branch,
+            @Schema(requiredMode = REQUIRED) String sale,
+            @Schema(requiredMode = REQUIRED) Instant soldAt,
+            @Schema(requiredMode = REQUIRED) CustomerPick customer,
+            @Schema(requiredMode = REQUIRED) SaleLine gem,
+            @Schema(requiredMode = REQUIRED) SaleReturn.Kind kind,
+            @Schema(requiredMode = REQUIRED) String reason,
+            @Schema(requiredMode = REQUIRED) BigDecimal amount,
+            @Schema(requiredMode = REQUIRED) SaleReturn.Status status,
+            @Schema(requiredMode = REQUIRED) String staff,
+            String approvalNo,
+            @Schema(description = "The owner's note with the answer") String ownerNote,
+            String decidedBy,
+            Instant decidedAt,
+            @Schema(description = "CN-… once approved") String creditNote,
+            @Schema(description = "Exchange: the new sale the credit note paid for") String usedSaleNo) {}
+
+    public record CreditNoteView(
+            @Schema(requiredMode = REQUIRED) String number,
+            @Schema(requiredMode = REQUIRED) Instant issuedAt,
+            @Schema(requiredMode = REQUIRED) String branch,
+            @Schema(requiredMode = REQUIRED) String returnNo,
+            @Schema(requiredMode = REQUIRED) SaleReturn.Kind kind,
+            @Schema(requiredMode = REQUIRED) String reason,
+            @Schema(requiredMode = REQUIRED) String sale,
+            @Schema(requiredMode = REQUIRED) Instant soldAt,
+            @Schema(requiredMode = REQUIRED) CustomerPick customer,
+            @Schema(requiredMode = REQUIRED) SaleLine gem,
+            @Schema(requiredMode = REQUIRED) BigDecimal amount,
+            @Schema(requiredMode = REQUIRED, description = "Guide commission taken back") BigDecimal guideComm,
+            @Schema(requiredMode = REQUIRED, description = "Staff commission taken back") BigDecimal staffComm,
+            String guide,
+            String staff,
+            @Schema(requiredMode = REQUIRED) String approvedBy,
+            @Schema(description = "Exchange: the new sale it paid for") String usedSaleNo,
+            BigDecimal usedAmount,
+            @Schema(requiredMode = REQUIRED) boolean sentEmail,
+            @Schema(requiredMode = REQUIRED) boolean sentWhatsapp,
+            @Schema(requiredMode = REQUIRED) DocShop shop) {}
 }

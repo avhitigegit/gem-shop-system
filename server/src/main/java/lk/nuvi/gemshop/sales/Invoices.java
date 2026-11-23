@@ -152,9 +152,18 @@ public class Invoices {
     static String payment(Sale s) {
         Set<String> parts = new LinkedHashSet<>();
         for (SalePayment p : s.getPayments()) {
-            parts.add(p.getMethod() == SalePayment.Method.CARD ? "Card" : "Cash " + p.getCurrency());
+            parts.add(method(p));
         }
         return parts.isEmpty() ? "–" : String.join(" + ", parts);
+    }
+
+    /** "Card", "Cash USD" or "Credit note". */
+    static String method(SalePayment p) {
+        return switch (p.getMethod()) {
+            case CARD -> "Card";
+            case CREDIT -> "Credit note";
+            case CASH -> "Cash " + p.getCurrency();
+        };
     }
 
     static String payType(Sale s) {
@@ -315,7 +324,7 @@ public class Invoices {
             paid.add(new Chunk("Payment received", bold));
             for (SalePayment p : s.getPayments()) {
                 paid.add(Chunk.NEWLINE);
-                String what = p.getMethod() == SalePayment.Method.CARD ? "Card" : "Cash " + p.getCurrency();
+                String what = p.getMethod() == SalePayment.Method.CREDIT ? "Credit note " + p.getCreditNoteNo() : method(p);
                 String amount = p.getCurrency() == lk.nuvi.gemshop.common.money.Currency.LKR ? Sales.lkr(p.getLkr())
                         : p.getCurrency() + " " + num(p.getAmount()) + " @ " + num(p.getRate()) + " = " + Sales.lkr(p.getLkr());
                 paid.add(new Chunk(PdfBody.clean(what + ": " + amount), normal));
