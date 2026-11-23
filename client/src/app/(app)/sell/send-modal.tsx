@@ -11,6 +11,7 @@ import { Check, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { api, errorMessage, fieldErrors } from "@/lib/api/client";
 import { useSession } from "@/lib/session";
+import { useLoad } from "@/lib/use-load";
 
 type Doc = {
   /** "invoice" for /api/sales/…/send, "quotation" / "reservation" for /api/quotes/…/send */
@@ -23,8 +24,14 @@ type Doc = {
 export function SendModal({ doc, onClose, onSent }: { doc: Doc; onClose: () => void; onSent: () => void }) {
   const toast = useToast();
   const { shop, branchName } = useSession();
-  const [email, setEmail] = useState(true);
-  const [whatsapp, setWhatsapp] = useState(!!doc.customer.whatsapp);
+  // Email / WhatsApp switched on by the owner (Email & WhatsApp settings)
+  const { data: status } = useLoad(() => api.GET("/api/messages/status"), []);
+  const emailOn = status?.emailOn ?? true;
+  const waReady = status?.whatsappReady ?? false;
+  const [emailPick, setEmail] = useState(true);
+  const [waPick, setWhatsapp] = useState(!!doc.customer.whatsapp);
+  const email = emailPick && emailOn;
+  const whatsapp = waPick && waReady;
   const [emailTo, setEmailTo] = useState(doc.customer.email ?? "");
   const [waTo, setWaTo] = useState(doc.customer.whatsapp ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -79,8 +86,8 @@ export function SendModal({ doc, onClose, onSent }: { doc: Doc; onClose: () => v
       }
     >
       <div className="stack" style={{ gap: 12 }}>
-        <Check checked={email} onChange={setEmail}>
-          <b>Email</b> (PDF attached, from the shop email)
+        <Check checked={email} onChange={setEmail} disabled={!emailOn}>
+          <b>Email</b> (PDF attached, from the shop email) {!emailOn && <Badge tone="outline">Switched off</Badge>}
         </Check>
         <Field label="Email address" htmlFor="sdEmail" error={errors.emailTo}>
           <Input
@@ -92,14 +99,23 @@ export function SendModal({ doc, onClose, onSent }: { doc: Doc; onClose: () => v
             onChange={(e) => setEmailTo(e.target.value)}
           />
         </Field>
-        <Check checked={whatsapp} onChange={setWhatsapp}>
-          <b>WhatsApp</b> (PDF) <Badge tone="warning">Test mode</Badge>
+        <Check checked={whatsapp} onChange={setWhatsapp} disabled={!waReady}>
+          <b>WhatsApp</b> (PDF){" "}
+          {!waReady ? (
+            <Badge tone="outline">Off</Badge>
+          ) : status?.whatsappTestMode ? (
+            <Badge tone="warning">Test mode</Badge>
+          ) : null}
         </Check>
         <Field
           label="WhatsApp number"
           htmlFor="sdWa"
           error={errors.whatsappTo}
-          hint="WhatsApp Business is connected near the end of the project. Until then the message is only recorded."
+          hint={
+            waReady
+              ? "Until WhatsApp Business is fully connected the message is only recorded."
+              : "WhatsApp is off or not verified. The owner can turn it on in Email & WhatsApp settings."
+          }
         >
           <Input
             id="sdWa"

@@ -2208,6 +2208,193 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/messages/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save WhatsApp Business details and verify the connection */
+        put: operations["verifyWhatsapp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/switches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** On / off switches: only the ones sent are changed */
+        put: operations["saveMessageSwitches"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/smtp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The shop's own SMTP (empty password keeps the saved one) */
+        put: operations["saveSmtp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/ses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Amazon SES for offers (empty secret keeps the saved one) */
+        put: operations["saveSes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/birthday": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Birthday wishes: channels, time, subject and message ({name}, {shop}) */
+        put: operations["saveBirthdayWishes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/smtp/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test email to the signed-in owner */
+        post: operations["sendTestEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/birthdays/send-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send today's wishes now (permission only, once a year) */
+        post: operations["sendBirthdayWishesNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Email on, WhatsApp ready, invoice sent by itself (for the send buttons) */
+        get: operations["messageStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Email & WhatsApp settings (passwords and tokens are never sent back) */
+        get: operations["messageSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest messages sent (newest first) */
+        get: operations["messageLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/messages/birthdays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Birthdays in the next 30 days, wishes sent this year, preview */
+        get: operations["upcomingBirthdays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4136,6 +4323,184 @@ export interface components {
             firstName: string;
             shop: string;
             unsubscribed: boolean;
+        };
+        WhatsappForm: {
+            /** @example +94 77 123 4567 */
+            phone: string;
+            /** @example 102938475610293 */
+            accountId: string;
+            /** @description Empty = keep the saved one */
+            token?: string;
+        };
+        AutoView: {
+            invoiceEmail: boolean;
+            invoiceWhatsapp: boolean;
+            thankYou: boolean;
+            ownerClosing: boolean;
+        };
+        BirthdayView: {
+            on: boolean;
+            email: boolean;
+            whatsapp: boolean;
+            /** @example 09:00 */
+            time: string;
+            subject: string;
+            text: string;
+        };
+        MessageSettingsView: {
+            emailOn: boolean;
+            /** @description Emails go to the test mail server (MailHog) until real email is connected */
+            emailTestMode: boolean;
+            /** @description WhatsApp messages are only written to the server log until P6-03 */
+            whatsappTestMode: boolean;
+            smtp: components["schemas"]["SmtpView"];
+            ses: components["schemas"]["SesView"];
+            whatsapp: components["schemas"]["WhatsappView"];
+            auto: components["schemas"]["AutoView"];
+            birthday: components["schemas"]["BirthdayView"];
+        };
+        SesView: {
+            enabled: boolean;
+            domain?: string;
+            region?: string;
+            from?: string;
+            accessKey?: string;
+            hasSecret: boolean;
+            spf: boolean;
+            dkim: boolean;
+        };
+        SmtpView: {
+            host?: string;
+            /** Format: int32 */
+            port?: number;
+            /** @example STARTTLS */
+            security: string;
+            user?: string;
+            /** @description A password is saved (never sent back) */
+            hasPassword: boolean;
+            from?: string;
+        };
+        VerifyResult: {
+            verified: boolean;
+            message: string;
+            settings: components["schemas"]["MessageSettingsView"];
+        };
+        WhatsappView: {
+            enabled: boolean;
+            phone?: string;
+            accountId?: string;
+            /** @description A token is saved (never sent back) */
+            hasToken: boolean;
+            verified: boolean;
+            /** Format: date-time */
+            verifiedAt?: string;
+        };
+        SwitchForm: {
+            emailOn?: boolean;
+            whatsappOn?: boolean;
+            invoiceEmail?: boolean;
+            invoiceWhatsapp?: boolean;
+            thankYou?: boolean;
+            ownerClosing?: boolean;
+            birthdays?: boolean;
+        };
+        SmtpForm: {
+            /** @example smtp.gmail.com */
+            host: string;
+            /**
+             * Format: int32
+             * @example 587
+             */
+            port: number;
+            /** @example STARTTLS */
+            security: string;
+            user: string;
+            /** @description Empty = keep the saved one */
+            password?: string;
+            /** @example Ceylon Gem House <sales@ceylongemhouse.lk> */
+            from: string;
+        };
+        SesForm: {
+            enabled: boolean;
+            domain?: string;
+            region?: string;
+            from?: string;
+            accessKey?: string;
+            /** @description Empty = keep the saved one */
+            secret?: string;
+        };
+        BirthdayForm: {
+            email: boolean;
+            whatsapp: boolean;
+            /** @example 09:00 */
+            time: string;
+            subject: string;
+            text: string;
+        };
+        TestEmailResult: {
+            to: string;
+            via: string;
+            testMode: boolean;
+        };
+        SendNowResult: {
+            /** Format: int32 */
+            sent: number;
+        };
+        MessageStatus: {
+            emailOn: boolean;
+            whatsappReady: boolean;
+            whatsappTestMode: boolean;
+            /** @description The invoice is emailed by itself after a sale */
+            autoInvoiceEmail: boolean;
+            /** @description The invoice goes on WhatsApp by itself after a sale */
+            autoInvoiceWhatsapp: boolean;
+        };
+        MessageLogList: {
+            rows: components["schemas"]["MessageLogRow"][];
+        };
+        MessageLogRow: {
+            /** Format: date-time */
+            at: string;
+            /** @example THANK_YOU */
+            kind: string;
+            /** @example EMAIL */
+            channel: string;
+            recipient: string;
+            customer?: string;
+            ref?: string;
+            subject?: string;
+            /** @example SENT */
+            status: string;
+            automatic: boolean;
+        };
+        BirthdayList: {
+            /** @description Birthdays in the next 30 days */
+            next30: components["schemas"]["BirthdayRow"][];
+            /** Format: int32 */
+            sentThisYear: number;
+            /** @example Happy birthday from Ceylon Gem House! */
+            previewSubject: string;
+            /** @description The message for a customer called Anna */
+            previewText: string;
+        };
+        BirthdayRow: {
+            code: string;
+            name: string;
+            country: string;
+            /** @description MM-DD */
+            birthday: string;
+            /**
+             * Format: int32
+             * @description Days until the birthday, 0 = today
+             */
+            birthdayIn: number;
+            /** @description SENT, NO_PERMISSION, OFF or WILL_SEND */
+            status: string;
+            /**
+             * Format: date-time
+             * @description When this year's wish went out
+             */
+            sentAt?: string;
         };
     };
     responses: never;
@@ -9102,6 +9467,348 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    verifyWhatsapp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WhatsappForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VerifyResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveMessageSwitches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveSmtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmtpForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveSes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SesForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveBirthdayWishes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BirthdayForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendTestEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TestEmailResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendBirthdayWishesNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SendNowResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    messageStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageStatus"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    messageSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageSettingsView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    messageLog: {
+        parameters: {
+            query?: {
+                /** Format: int32 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MessageLogList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    upcomingBirthdays: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BirthdayList"];
                 };
             };
             /** @description Error (ApiError format) */
