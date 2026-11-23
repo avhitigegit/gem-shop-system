@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import tools.jackson.databind.json.JsonMapper;
 class CommissionsTest {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
+    private static final ZoneId SHOP = ZoneId.of("Asia/Colombo");
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
@@ -94,7 +96,7 @@ class CommissionsTest {
         assertThat(one.path("lines").size()).isGreaterThanOrEqualTo(2);
 
         // profile, statement slip and PDF
-        JsonNode g1 = read(get("/api/guides/G-01").param("from", LocalDate.now().minusDays(60).toString()), ACCOUNTANT);
+        JsonNode g1 = read(get("/api/guides/G-01").param("from", LocalDate.now(SHOP).minusDays(60).toString()), ACCOUNTANT);
         assertThat(g1.path("guide").path("name").asString()).isEqualTo("Sunil Kumara");
         assertThat(g1.path("lines").size()).isPositive();
         JsonNode slip = read(get("/api/commissions/slips/G-01"), ACCOUNTANT);
@@ -121,7 +123,7 @@ class CommissionsTest {
         assertThat(code).matches("G-\\d{2}");
         assertThat(g.path("pct").decimalValue()).isEqualByComparingTo("10");          // the default %
         assertThat(g.path("vehicleNo").asString()).isEqualTo("SP PQ-1234");
-        assertThat(g.path("since").asString()).isEqualTo(LocalDate.now().toString());
+        assertThat(g.path("since").asString()).isEqualTo(LocalDate.now(SHOP).toString());
         // same phone twice → refused; a bad vehicle → refused
         mvc.perform(json(post("/api/guides"), form, OWNER)).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DUPLICATE_GUIDE"));
@@ -158,9 +160,9 @@ class CommissionsTest {
         Sold b = sell(3, "G-03");
         List<Long> ids = owedFor("G:G-03", a.invoice, b.invoice);
         assertThat(ids).hasSize(2);
-        Map<String, Object> pay = Map.of("lines", ids, "paidOn", LocalDate.now().toString(), "method", "DRAWER");
+        Map<String, Object> pay = Map.of("lines", ids, "paidOn", LocalDate.now(SHOP).toString(), "method", "DRAWER");
         mvc.perform(json(post("/api/commissions/pay"), pay, SALES)).andExpect(status().isForbidden());
-        mvc.perform(json(post("/api/commissions/pay"), Map.of("lines", ids, "paidOn", LocalDate.now().plusDays(1).toString(),
+        mvc.perform(json(post("/api/commissions/pay"), Map.of("lines", ids, "paidOn", LocalDate.now(SHOP).plusDays(1).toString(),
                 "method", "BANK"), OWNER)).andExpect(status().isBadRequest());
         JsonNode p = read(json(post("/api/commissions/pay"), pay, ACCOUNTANT));
         String cp = p.path("number").asString();
@@ -188,7 +190,7 @@ class CommissionsTest {
     void returnAndCancelTakeCommissionBack() throws Exception {
         // paid first, then the gem comes back: the guide's 10 % is taken off the next payment
         Sold s = sell(4, "G-04");
-        read(json(post("/api/commissions/pay"), Map.of("lines", owedFor("G:G-04", s.invoice), "paidOn", LocalDate.now().toString(),
+        read(json(post("/api/commissions/pay"), Map.of("lines", owedFor("G:G-04", s.invoice), "paidOn", LocalDate.now(SHOP).toString(),
                 "method", "OWNER_CASH"), OWNER));
         JsonNode r = created(json(post("/api/returns"), Map.of("sale", s.invoice, "gem", s.gem, "kind", "REFUND",
                 "reason", "Changed mind"), SALES));
@@ -203,7 +205,7 @@ class CommissionsTest {
         assertThat(gBack.path("owed").asBoolean()).isTrue();
         // paying only the taken-back line → nothing to pay
         mvc.perform(json(post("/api/commissions/pay"), Map.of("lines", List.of(gBack.path("id").asLong()), "paidOn",
-                LocalDate.now().toString(), "method", "OWNER_CASH"), OWNER))
+                LocalDate.now(SHOP).toString(), "method", "OWNER_CASH"), OWNER))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("NOTHING_TO_PAY"));
 
         // a cancelled invoice: everything on it is taken back (net 0 per person)
