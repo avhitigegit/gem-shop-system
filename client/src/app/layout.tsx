@@ -11,7 +11,9 @@ export const metadata: Metadata = {
     template: "%s · Gem Shop System",
   },
   description: "Sales, stock and money system for the gem shop.",
-  icons: { icon: "/logo.svg" },
+  icons: { icon: "/logo.svg", apple: "/icons/apple-touch-icon.png" },
+  // Added to the phone's home screen it opens full screen, like an app (P4-02).
+  appleWebApp: { capable: true, title: "Gem Shop", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

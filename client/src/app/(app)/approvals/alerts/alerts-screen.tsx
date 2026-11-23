@@ -2,7 +2,7 @@
 
 /* Alerts – prototype k-owner-control/alerts.html (Guide 55; BRD K2). Every sale, below-minimum request, return,
    cancellation, stock change and day closing, newest first. Filter by kind (drop-down) and unread only; mark one or all
-   as read. Push to the phone and its on / off settings come with P4-02. */
+   as read. Below: push alerts to the owner's phone and which kinds come (P4-02). */
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import type { components } from "@/lib/api/schema";
 import { ago, dateTime } from "@/lib/format";
 import { useSession } from "@/lib/session";
 import { useLoad } from "@/lib/use-load";
+import { PushPanel } from "./push-panel";
 import { ALERT_ICON } from "@/lib/alerts";
 
 type AlertView = components["schemas"]["AlertView"];
@@ -129,9 +130,7 @@ export function AlertsScreen() {
           )}
         </ul>
       </Card>
-      <p className="muted mt" style={{ fontSize: 12 }}>
-        Push alerts to the owner&apos;s phone (and turning each kind on or off) come with the phone app.
-      </p>
+      <PushPanel />
     </div>
   );
 }
