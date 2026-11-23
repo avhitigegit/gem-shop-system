@@ -89,6 +89,6 @@ class CryptoTest {
     private static AppProperties props(String key, String env) {
         return new AppProperties("Gem Shop System", env, "Asia/Colombo", new AppProperties.Cors(List.of()),
                 new AppProperties.SampleData(false, null), new AppProperties.Crypto(key),
-                new AppProperties.Files("target/test-files", 60, 24));
+                new AppProperties.Files("target/test-files", 60, 24), new AppProperties.Push(null, List.of(), false));
     }
 }

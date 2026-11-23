@@ -11,6 +11,7 @@ import lk.nuvi.gemshop.common.branch.BranchScope;
 import lk.nuvi.gemshop.common.error.ApiException;
 import lk.nuvi.gemshop.common.paging.PageResult;
 import lk.nuvi.gemshop.settings.branch.Branch;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +26,24 @@ public class Alerts {
     private final AlertRepository alerts;
     private final CurrentUser currentUser;
     private final EntityManager em;
+    private final ApplicationEventPublisher events;
 
-    public Alerts(AlertRepository alerts, CurrentUser currentUser, EntityManager em) {
+    /** Published for every live alert (not sample data); the phone push (P4-02) listens after the save is committed. */
+    public record Raised(long id, AlertType type, String text, String link, Long branchId) {}
+
+    public Alerts(AlertRepository alerts, CurrentUser currentUser, EntityManager em, ApplicationEventPublisher events) {
         this.alerts = alerts;
         this.currentUser = currentUser;
         this.em = em;
+        this.events = events;
     }
 
     /** {@code branchId} null = whole shop. {@code link} = app page to open, or null. */
     @Transactional
     public Alert raise(AlertType type, String text, String link, Long branchId) {
-        return raiseAt(Instant.now(), type, text, link, branchId == null ? null : em.getReference(Branch.class, branchId));
+        Alert a = raiseAt(Instant.now(), type, text, link, branchId == null ? null : em.getReference(Branch.class, branchId));
+        events.publishEvent(new Raised(a.getId(), type, text, link, branchId));
+        return a;
     }
 
     /** Sample data only: an alert with its own time. */
