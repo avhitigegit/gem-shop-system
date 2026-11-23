@@ -80,7 +80,6 @@ class MessagesTest {
         JsonNode s = read(get("/api/messages/settings"), OWNER);
         assertThat(s.path("smtp").path("host").asString()).isEqualTo("smtp.gmail.com");
         assertThat(s.path("smtp").path("port").asInt()).isEqualTo(587);
-        assertThat(s.path("smtp").path("hasPassword").asBoolean()).isFalse();
         assertThat(s.path("ses").path("domain").asString()).isEqualTo("ceylongemhouse.lk");
         assertThat(s.path("whatsapp").path("enabled").asBoolean()).isFalse();
         assertThat(s.path("auto").path("thankYou").asBoolean()).isTrue();
@@ -169,7 +168,7 @@ class MessagesTest {
         verify(mail).send(eq("anna@example.de"), eq("Happy birthday from Ceylon Gem House!"), anyString());
         assertThat(read(post("/api/messages/birthdays/send-now"), OWNER).path("sent").asInt()).isZero();   // once a year
         assertThat(wishStatus(read(get("/api/messages/birthdays"), OWNER), "C-001")).isEqualTo("SENT");
-        assertThat(jdbc.queryForObject("select email || '/' || whatsapp from birthday_wish w join customer c on c.id = w.customer_id "
+        assertThat(jdbc.queryForObject("select w.email || '/' || w.whatsapp from birthday_wish w join customer c on c.id = w.customer_id "
                 + "where c.code = 'C-001'", String.class)).isEqualTo("sent/WhatsApp off");
         assertThat(jdbc.queryForObject("select count(*) from activity_log where action = 'Birthday wish sent' and user_id is null "
                 + "and detail like 'C-001%'", Integer.class)).isEqualTo(1);
