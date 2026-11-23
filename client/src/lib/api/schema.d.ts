@@ -895,6 +895,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/months/{month}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Owner: re-open a closed month. Accountant: ask the owner to re-open it */
+        post: operations["reopenMonth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/months/{month}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close an ended month – nothing dated in it can change afterwards */
+        post: operations["closeMonth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/messages/smtp/test": {
         parameters: {
             query?: never;
@@ -1445,6 +1479,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tax-pack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The tax pack as one ZIP: the reports (Excel / PDF) and the bill photos */
+        get: operations["downloadTaxPack"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tax-pack/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the tax pack for these months holds */
+        get: operations["taxPackPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/supplier-returns/gems": {
         parameters: {
             query?: never;
@@ -1904,6 +1972,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/profit-loss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Profit & Loss of a month (empty = last month), every month, per branch */
+        get: operations["profitLoss"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/profit-loss/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The month's Profit & Loss as PDF or Excel */
+        get: operations["exportProfitLoss"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/expenses/export": {
         parameters: {
             query?: never;
@@ -2152,6 +2254,23 @@ export interface paths {
         };
         /** Countries, gem types, WhatsApp templates and whether email / WhatsApp can send */
         get: operations["offerOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/months": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every month with its figures, checks and closed / open status */
+        get: operations["listMonths"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2901,6 +3020,23 @@ export interface paths {
         };
         /** The activity log as PDF or Excel (same filters as the list) */
         get: operations["exportActivityLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/accountant/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accountant home: this month, months and their status, things to do */
+        get: operations["accountantHome"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4165,6 +4301,42 @@ export interface components {
             /** @description Estimated cost in US$ (Amazon SES or Meta) */
             costUsd: number;
         };
+        ReopenForm: {
+            /** @description Why the month must change (kept in the activity log) */
+            reason: string;
+        };
+        MonthRow: {
+            /** @example 2026-10 */
+            month: string;
+            /** Format: int32 */
+            invoices: number;
+            netSales: number;
+            netProfit: number;
+            closed: boolean;
+            /** Format: date-time */
+            closedAt?: string;
+            closedBy?: string;
+            /** Format: date-time */
+            reopenedAt?: string;
+            reopenedBy?: string;
+            reopenReason?: string;
+            /** @description A re-open request waiting for the owner (AP-…) */
+            reopenWaiting?: string;
+            /** @description The month is over (only ended months can be closed) */
+            ended: boolean;
+            /**
+             * Format: int32
+             * @description Expenses without a bill photo
+             */
+            billsMissing: number;
+            /** Format: int32 */
+            expensesWaiting: number;
+            /**
+             * Format: int32
+             * @description Invoice cancellations waiting for the owner
+             */
+            cancellationsWaiting: number;
+        };
         TestEmailResult: {
             to: string;
             via: string;
@@ -4446,6 +4618,23 @@ export interface components {
         ReadAll: {
             /** Format: int32 */
             marked: number;
+        };
+        TaxPackPreview: {
+            /** @example 2026-08 */
+            from: string;
+            /** @example 2026-10 */
+            to: string;
+            /** Format: int32 */
+            invoices: number;
+            netSales: number;
+            netProfit: number;
+            /**
+             * Format: int32
+             * @description Expense and purchase bill photos in the period
+             */
+            billPhotos: number;
+            /** @description Months to choose from, newest first */
+            months: string[];
         };
         PurchaseRow: {
             number: string;
@@ -4817,6 +5006,54 @@ export interface components {
             /** @description Sold below the minimum price (owner approved) */
             belowMin: boolean;
         };
+        PlBranch: {
+            code: string;
+            name: string;
+            netSales: number;
+            netProfit: number;
+        };
+        PlExpenseType: {
+            expenseType: string;
+            total: number;
+        };
+        PlMonth: {
+            /** @example 2026-10 */
+            month: string;
+            /**
+             * Format: int32
+             * @description Invoices not cancelled
+             */
+            invoices: number;
+            /** @description Invoice value of the month's sales */
+            sales: number;
+            /** @description Credit notes given in the month (returns) */
+            returns: number;
+            /** @description Sales − returns */
+            netSales: number;
+            /** @description Cost of gems sold, less the cost of gems returned */
+            cost: number;
+            grossProfit: number;
+            /** @description Guide + staff commission, after take-backs */
+            commissions: number;
+            /** @description Bank fee on card payments – paid by the shop */
+            cardFees: number;
+            /** @description Approved shop expenses */
+            expenses: number;
+            netProfit: number;
+            closed: boolean;
+        };
+        ProfitLoss: {
+            figures: components["schemas"]["PlMonth"];
+            /** @description The month's expenses by type, biggest first */
+            expenseTypes: components["schemas"]["PlExpenseType"][];
+            /** @description Every month, newest first */
+            months: components["schemas"]["PlMonth"][];
+            /** @description The month per branch (whole shop) */
+            branches: components["schemas"]["PlBranch"][];
+            cardFeePct: number;
+            /** @description The chosen month is the current month (month to date) */
+            monthToDate: boolean;
+        };
         CashCount: {
             lkr: number;
             usd: number;
@@ -4957,6 +5194,10 @@ export interface components {
             /** @description With {name}, {shop} and {text} */
             text: string;
             marketing: boolean;
+        };
+        MonthList: {
+            /** @description Newest first */
+            months: components["schemas"]["MonthRow"][];
         };
         MessageStatus: {
             emailOn: boolean;
@@ -5542,6 +5783,20 @@ export interface components {
             page: number;
             /** Format: int32 */
             size: number;
+        };
+        AccountantHome: {
+            /** @description This month so far */
+            thisMonth: components["schemas"]["PlMonth"];
+            /** @description Last month */
+            lastMonth?: components["schemas"]["PlMonth"];
+            /** @description Newest first, at most 6 */
+            months: components["schemas"]["MonthRow"][];
+            /** Format: int32 */
+            billsMissing: number;
+            /** Format: int32 */
+            expensesWaiting: number;
+            /** @description Last month – the one to close next */
+            toClose: components["schemas"]["MonthRow"];
         };
         ApiError: {
             /** Format: date-time */
@@ -8001,6 +8256,72 @@ export interface operations {
             };
         };
     };
+    reopenMonth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    closeMonth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     sendTestEmail: {
         parameters: {
             query?: never;
@@ -9223,6 +9544,77 @@ export interface operations {
             };
         };
     };
+    downloadTaxPack: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                /** @description SALES, PURCHASES, EXPENSES, PROFIT_LOSS, COMMISSIONS, CLOSINGS, CREDIT_NOTES (empty = all) */
+                parts?: string[];
+                format?: "BOTH" | "XLSX" | "PDF";
+                /** @description Include the bill photos */
+                photos?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    taxPackPreview: {
+        parameters: {
+            query?: {
+                /** @description e.g. 2026-08 */
+                from?: string;
+                /** @description e.g. 2026-10 */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TaxPackPreview"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     returnable: {
         parameters: {
             query?: {
@@ -10085,6 +10477,71 @@ export interface operations {
             };
         };
     };
+    profitLoss: {
+        parameters: {
+            query?: {
+                /** @description e.g. 2026-10 */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfitLoss"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportProfitLoss: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     exportExpenseReport: {
         parameters: {
             query: {
@@ -10573,6 +11030,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OfferOptions"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listMonths: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MonthList"];
                 };
             };
             /** @description Error (ApiError format) */
@@ -11980,6 +12466,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    accountantHome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AccountantHome"];
                 };
             };
             /** @description Error (ApiError format) */

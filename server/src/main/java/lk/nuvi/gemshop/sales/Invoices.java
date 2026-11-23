@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import lk.nuvi.gemshop.accountant.MonthLock;
 import lk.nuvi.gemshop.audit.approval.Approval;
 import lk.nuvi.gemshop.audit.approval.ApprovalRepository;
 import lk.nuvi.gemshop.audit.approval.ApprovalType;
@@ -77,11 +78,13 @@ public class Invoices {
     private final ActivityLog log;
     private final CurrentUser current;
     private final ZoneId zone;
+    private final MonthLock monthLock;
 
     public Invoices(SaleRepository sales, Sales sell, Approvals approvals, ApprovalRepository approvalRepo, PdfDocuments pdfs,
             GemPrints prints, Delivery delivery, ShopSettingsRepository shops, ActivityLog log,
-            CurrentUser current, AppProperties app) {
+            CurrentUser current, MonthLock monthLock, AppProperties app) {
         this.sales = sales;
+        this.monthLock = monthLock;
         this.sell = sell;
         this.approvals = approvals;
         this.approvalRepo = approvalRepo;
@@ -190,6 +193,7 @@ public class Invoices {
         if (s.getStatus() == Sale.Status.CANCELLED) {
             throw ApiException.conflict(CANCELLED, s.getNumber() + " is already cancelled.");
         }
+        monthLock.checkOpen(s.getSoldAt().atZone(zone).toLocalDate());
         String waiting = pending(s);
         if (waiting != null) {
             throw ApiException.conflict(CANCEL_WAITING, "Cancellation of " + s.getNumber() + " is already waiting for the owner ("

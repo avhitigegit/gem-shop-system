@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lk.nuvi.gemshop.accountant.MonthLock;
 import lk.nuvi.gemshop.audit.log.ActivityLog;
 import lk.nuvi.gemshop.auth.security.CurrentUser;
 import lk.nuvi.gemshop.auth.user.UserAccount;
@@ -78,11 +79,12 @@ public class Purchasing {
     private final CurrentUser current;
     private final ActivityLog log;
     private final EntityManager em;
+    private final MonthLock monthLock;
     private final ZoneId zone;
 
     public Purchasing(SupplierRepository suppliers, PurchaseRepository purchases,
             SupplierReturnRepository returns, GemRepository gemRepo, Gems gems, BranchRepository branches, Numbers numbers,
-            FileService files, CurrentUser current, ActivityLog log, EntityManager em, AppProperties app) {
+            FileService files, CurrentUser current, ActivityLog log, EntityManager em, MonthLock monthLock, AppProperties app) {
         this.suppliers = suppliers;
         this.purchases = purchases;
         this.returns = returns;
@@ -94,6 +96,7 @@ public class Purchasing {
         this.current = current;
         this.log = log;
         this.em = em;
+        this.monthLock = monthLock;
         this.zone = ZoneId.of(app.timezone());
     }
 
@@ -188,6 +191,7 @@ public class Purchasing {
             throw ApiException.field(HttpStatus.BAD_REQUEST, FUTURE_DATE, "The purchase date cannot be in the future.", "date",
                     "Not after today.");
         }
+        monthLock.checkOpen(f.date());
         Supplier s = supplier(f.supplier());
         Branch branch = branches.findByCode(f.branch().trim()).orElseThrow(() -> ApiException.field(HttpStatus.BAD_REQUEST,
                 ErrorCode.VALIDATION_FAILED, "Choose a branch.", "branch", "Choose a branch."));

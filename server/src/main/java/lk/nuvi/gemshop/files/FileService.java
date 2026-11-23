@@ -259,6 +259,15 @@ public class FileService {
         }
     }
 
+    /** The file itself (e.g. bill photos for the tax pack), or empty when it is missing on disk. */
+    public java.util.Optional<byte[]> bytes(StoredFile f) {
+        if (!storage.exists(f.getStorageKey())) {
+            log.warn("File {} is missing on disk ({})", f.getPublicId(), f.getStorageKey());
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(storage.read(f.getStorageKey()));
+    }
+
     // ------------------------------------------------------------------ cleanup
 
     /** Every night: uploads never saved with a record (form closed without saving). */

@@ -24,6 +24,11 @@ public final class Downloads {
         return file(bytes, XLSX, name + ".xlsx", true);
     }
 
+    /** A ZIP folder (e.g. the tax pack). */
+    public static ResponseEntity<byte[]> zip(byte[] bytes, String name) {
+        return file(bytes, MediaType.parseMediaType("application/zip"), name + ".zip", true);
+    }
+
     /** "Activity log" → "Activity log 2026-11-22". */
     public static String dated(String name) {
         return name + " " + LocalDate.now(ZoneId.of("Asia/Colombo"));

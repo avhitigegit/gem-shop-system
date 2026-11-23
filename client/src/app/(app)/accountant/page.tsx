@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { HomeScreen } from "../home-screen";
+import { AccountantHome } from "./accountant-home";
 
 export const metadata: Metadata = { title: "Accountant home" };
 
-/** The Accountant opens here after sign-in (prototype n-accountant/dashboard.html).
-    Its numbers – month profit, tax pack, month closing – come with P5-03; until then the section tiles. */
+/** The Accountant opens here after sign-in (prototype n-accountant/dashboard.html). */
 export default function AccountantHomePage() {
-  return <HomeScreen />;
+  return <AccountantHome />;
 }
