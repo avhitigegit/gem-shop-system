@@ -3,47 +3,70 @@ package lk.nuvi.gemshop.common.mail;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.util.Properties;
 import lk.nuvi.gemshop.settings.shop.ShopSettings;
 import lk.nuvi.gemshop.settings.shop.ShopSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 /**
- * Sends email through the shop's own SMTP (invoices, quotations, password reset).
- * On your own computer it goes to MailHog (http://localhost:8025). Offers use Amazon SES later (P6-03).
- * The sender is the shop: "Ceylon Gem House &lt;sales@…&gt;" from Shop details.
+ * Sends email through the shop's own SMTP (invoices, quotations, password reset, messages).
+ * Until {@code app.mail.use-settings} is on (P6-03) every email goes to the test mail server from {@code spring.mail}
+ * (MailHog on your own computer, http://localhost:8025). With it on, the SMTP saved on the Email &amp; WhatsApp settings
+ * screen is used. Offers use Amazon SES (P4-05 / P6-03).
+ * The sender is the shop: "Ceylon Gem House &lt;sales@…&gt;" (the SMTP "From", else Shop details).
  */
 @Service
 public class MailService {
 
     private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
-    private final JavaMailSender sender;
+    private final JavaMailSender testSender;
     private final ShopSettingsRepository shops;
     private final String fallbackFrom;
+    private final ObjectProvider<SmtpSource> source;
+    private final boolean useSettings;
+    private volatile SmtpSource.Smtp cachedFor;
+    private volatile JavaMailSenderImpl cached;
 
     public MailService(JavaMailSender sender, ShopSettingsRepository shops,
-            @Value("${app.mail.from:Gem Shop System <no-reply@localhost>}") String fallbackFrom) {
-        this.sender = sender;
+            @Value("${app.mail.from:Gem Shop System <no-reply@localhost>}") String fallbackFrom, ObjectProvider<SmtpSource> source,
+            @Value("${app.mail.use-settings:false}") boolean useSettings) {
+        this.testSender = sender;
         this.shops = shops;
         this.fallbackFrom = fallbackFrom;
+        this.source = source;
+        this.useSettings = useSettings;
+    }
+
+    /** True while emails go to the test mail server, not through the shop's SMTP. */
+    public boolean testMode() {
+        return settings().isEmpty();
+    }
+
+    /** "smtp.gmail.com" or "the test mail server". */
+    public String via() {
+        return settings().map(SmtpSource.Smtp::host).orElse("the test mail server");
     }
 
     /** Plain text email (also sent as simple HTML). Returns false when sending failed (it is logged). */
     public boolean send(String to, String subject, String text) {
         try {
-            MimeMessage m = sender.createMimeMessage();
+            MimeMessage m = sender().createMimeMessage();
             MimeMessageHelper h = new MimeMessageHelper(m, true, StandardCharsets.UTF_8.name());
             h.setFrom(from());
             h.setTo(to);
             h.setSubject(subject);
             h.setText(text, html(text));
-            sender.send(m);
+            sender().send(m);
             return true;
         } catch (Exception e) {
             log.warn("Email to {} not sent ({}): {}", to, subject, e.getMessage());
@@ -54,14 +77,14 @@ public class MailService {
     /** Email with one attachment (an invoice or quotation PDF). Returns false when sending failed (it is logged). */
     public boolean send(String to, String subject, String text, String fileName, byte[] file, String contentType) {
         try {
-            MimeMessage m = sender.createMimeMessage();
+            MimeMessage m = sender().createMimeMessage();
             MimeMessageHelper h = new MimeMessageHelper(m, true, StandardCharsets.UTF_8.name());
             h.setFrom(from());
             h.setTo(to);
             h.setSubject(subject);
             h.setText(text, html(text));
             h.addAttachment(fileName, new org.springframework.core.io.ByteArrayResource(file), contentType);
-            sender.send(m);
+            sender().send(m);
             return true;
         } catch (Exception e) {
             log.warn("Email to {} not sent ({}): {}", to, subject, e.getMessage());
@@ -70,11 +93,57 @@ public class MailService {
     }
 
     InternetAddress from() throws Exception {
+        Optional<SmtpSource.Smtp> smtp = settings();
+        if (smtp.isPresent() && smtp.get().from() != null && !smtp.get().from().isBlank()) {
+            return InternetAddress.parse(smtp.get().from(), false)[0];
+        }
         ShopSettings s = shops.current().orElse(null);
         if (s != null && s.getEmail() != null && !s.getEmail().isBlank()) {
             return new InternetAddress(s.getEmail(), s.getName(), StandardCharsets.UTF_8.name());
         }
         return new InternetAddress(fallbackFrom);
+    }
+
+    private Optional<SmtpSource.Smtp> settings() {
+        if (!useSettings) {
+            return Optional.empty();
+        }
+        SmtpSource src = source.getIfAvailable();
+        return src == null ? Optional.empty() : src.smtp().filter(x -> x.host() != null && !x.host().isBlank());
+    }
+
+    private JavaMailSender sender() {
+        Optional<SmtpSource.Smtp> smtp = settings();
+        if (smtp.isEmpty()) {
+            return testSender;
+        }
+        SmtpSource.Smtp x = smtp.get();
+        if (!x.equals(cachedFor)) {
+            JavaMailSenderImpl s = new JavaMailSenderImpl();
+            s.setHost(x.host());
+            s.setPort(x.port());
+            s.setUsername(blankToNull(x.user()));
+            s.setPassword(blankToNull(x.password()));
+            s.setDefaultEncoding(StandardCharsets.UTF_8.name());
+            Properties p = s.getJavaMailProperties();
+            p.put("mail.smtp.auth", String.valueOf(x.user() != null && !x.user().isBlank()));
+            p.put("mail.smtp.connectiontimeout", "10000");
+            p.put("mail.smtp.timeout", "15000");
+            p.put("mail.smtp.writetimeout", "15000");
+            if ("SSL".equals(x.security())) {
+                p.put("mail.smtp.ssl.enable", "true");
+            } else if ("STARTTLS".equals(x.security())) {
+                p.put("mail.smtp.starttls.enable", "true");
+                p.put("mail.smtp.starttls.required", "true");
+            }
+            cached = s;
+            cachedFor = x;
+        }
+        return cached;
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s;
     }
 
     private static String html(String text) {

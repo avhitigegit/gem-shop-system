@@ -119,6 +119,7 @@ class InvoicesTest {
     void sendByEmailAndWhatsapp() throws Exception {
         doReturn(true).when(mail).send(anyString(), anyString(), anyString(), anyString(), any(byte[].class), anyString());
         jdbc.update("update sale set sent_email = false, sent_whatsapp = false where number = 'INV-000102'");
+        jdbc.update("update message_settings set email_on = true, wa_enabled = true, wa_verified = true");   // P4-04: WhatsApp on
 
         JsonNode r = read(json(post("/api/sales/INV-000102/send"),
                 Map.of("email", true, "emailTo", "buyer@example.com", "whatsapp", true, "whatsappTo", "+49 151 2345 6789"), SALES));
@@ -140,6 +141,15 @@ class InvoicesTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fieldErrors[0].field").value("whatsappTo"));
         mvc.perform(json(post("/api/sales/INV-000102/send"), Map.of("email", true, "whatsapp", false), ACCOUNTANT))
                 .andExpect(status().isForbidden());
+
+        // switched off on Email & WhatsApp settings → 409
+        jdbc.update("update message_settings set wa_enabled = false, wa_verified = false");
+        mvc.perform(json(post("/api/sales/INV-000102/send"), Map.of("email", false, "whatsapp", true, "whatsappTo", "+49 151 2345 6789"),
+                SALES)).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("WHATSAPP_OFF"));
+        jdbc.update("update message_settings set email_on = false");
+        mvc.perform(json(post("/api/sales/INV-000102/send"), Map.of("email", true, "emailTo", "a@b.lk", "whatsapp", false), SALES))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EMAIL_OFF"));
+        jdbc.update("update message_settings set email_on = true");
 
         // the email server fails → 409, nothing marked
         doReturn(false).when(mail).send(anyString(), anyString(), anyString(), anyString(), any(byte[].class), anyString());

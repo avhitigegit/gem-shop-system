@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 import lk.nuvi.gemshop.common.error.ApiException;
 import lk.nuvi.gemshop.common.error.ErrorCode;
-import lk.nuvi.gemshop.common.mail.MailService;
 import lk.nuvi.gemshop.customers.Customer;
-import lk.nuvi.gemshop.messaging.WhatsApp;
+import lk.nuvi.gemshop.messaging.MessageSettings;
+import lk.nuvi.gemshop.messaging.Messages;
 import lk.nuvi.gemshop.sales.api.SalesDtos.SendForm;
 import lk.nuvi.gemshop.sales.api.SalesDtos.SendResult;
 import lk.nuvi.gemshop.settings.shop.ShopSettings;
@@ -16,8 +16,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
- * Sends a document PDF (invoice, quotation) to the customer by email (shop SMTP) and / or WhatsApp (test mode until
- * P6-03). Checks the address and the number; an email that cannot be sent stops with 409 NOT_SENT.
+ * Sends a document PDF (invoice, quotation, credit note) to the customer by email (shop SMTP) and / or WhatsApp (test mode
+ * until P6-03). Email must be switched on, WhatsApp switched on and verified (Email &amp; WhatsApp settings, J7) – else 409
+ * EMAIL_OFF / WHATSAPP_OFF. Checks the address and the number; an email that cannot be sent stops with 409 NOT_SENT. Every
+ * message is written to the message log.
  */
 @Component
 class Delivery {
@@ -27,13 +29,11 @@ class Delivery {
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     private static final Pattern PHONE = Pattern.compile("^\\+?[0-9 ()-]{7,20}$");
 
-    private final MailService mail;
-    private final WhatsApp whatsapp;
+    private final Messages messages;
     private final ShopSettingsRepository shops;
 
-    Delivery(MailService mail, WhatsApp whatsapp, ShopSettingsRepository shops) {
-        this.mail = mail;
-        this.whatsapp = whatsapp;
+    Delivery(Messages messages, ShopSettingsRepository shops) {
+        this.messages = messages;
         this.shops = shops;
     }
 
@@ -58,6 +58,18 @@ class Delivery {
             throw ApiException.field(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED,
                     "Enter the WhatsApp number with the country code.", "whatsappTo", "e.g. +49 151 2345 6789");
         }
+        MessageSettings settings = messages.settings();
+        if (f.email() && !settings.emailOn()) {
+            throw ApiException.conflict(Messages.EMAIL_OFF,
+                    "Email messages are switched off. The owner can turn them on in Customers & guides → Email & WhatsApp settings.");
+        }
+        if (f.whatsapp() && !settings.whatsappReady()) {
+            throw ApiException.conflict(Messages.WHATSAPP_OFF,
+                    "WhatsApp is off or not verified. The owner can turn it on in Customers & guides → Email & WhatsApp settings.");
+        }
+        Messages.Kind kind = doc.startsWith("invoice") ? Messages.Kind.INVOICE
+                : doc.startsWith("credit") ? Messages.Kind.CREDIT_NOTE : Messages.Kind.QUOTATION;
+        String ref = doc.substring(doc.lastIndexOf(' ') + 1);
         ShopSettings shop = shops.current().orElse(null);
         String shopName = shop == null ? "our shop" : shop.getName();
         String first = c.getName().trim().split("\\s+")[0];
@@ -66,21 +78,21 @@ class Delivery {
         boolean mailed = false;
         if (f.email()) {
             String subject = "Your " + doc + " – " + shopName;
-            mailed = mail.send(email, subject, text, fileName, pdf, "application/pdf");
+            mailed = messages.email(kind, c.getId(), email, ref, subject, text, fileName, pdf, false);
             if (!mailed) {
                 throw ApiException.conflict(NOT_SENT, "The email could not be sent. Check the email settings, or try again.");
             }
         }
-        boolean wa = f.whatsapp() && whatsapp.send(phone, text, fileName, pdf);
+        boolean wa = f.whatsapp() && messages.whatsapp(kind, c.getId(), phone, ref, text, fileName, pdf, false);
         List<String> by = new ArrayList<>();
         if (mailed) {
             by.add("email (" + email + ")");
         }
         if (wa) {
-            by.add("WhatsApp (" + phone + ")" + (whatsapp.testMode() ? " – test mode" : ""));
+            by.add("WhatsApp (" + phone + ")" + (messages.whatsappTestMode() ? " – test mode" : ""));
         }
         String joined = String.join(" and ", by);
-        return new Sent(mailed, wa, joined, new SendResult(mailed, wa, wa && whatsapp.testMode(), "Sent by " + joined + "."));
+        return new Sent(mailed, wa, joined, new SendResult(mailed, wa, wa && messages.whatsappTestMode(), "Sent by " + joined + "."));
     }
 
     private static String trim(String given, String fallback) {

@@ -59,9 +59,13 @@ public class CustomerBook {
     private final CurrentUser current;
     private final ZoneId zone;
     private final String appUrl;
+    private final org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Messages> messageLog;
+    private final org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Birthdays> wishes;
 
     public CustomerBook(CustomerRepository customers, Customers rules, SaleRepository sales, QuoteRepository quotes,
-            ShopSettingsRepository shops, ActivityLog log, CurrentUser current, AppProperties app, AuthProperties auth) {
+            ShopSettingsRepository shops, ActivityLog log, CurrentUser current, AppProperties app, AuthProperties auth,
+            org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Messages> messageLog,
+            org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Birthdays> wishes) {
         this.customers = customers;
         this.rules = rules;
         this.sales = sales;
@@ -71,6 +75,8 @@ public class CustomerBook {
         this.current = current;
         this.zone = ZoneId.of(app.timezone());
         this.appUrl = auth.appUrl().replaceAll("/+$", "");
+        this.messageLog = messageLog;
+        this.wishes = wishes;
     }
 
     // ------------------------------------------------------------------ list and profile
@@ -108,6 +114,12 @@ public class CustomerBook {
                 messages.add(new CustomerMessage(q.getCreatedOn(), q.isReservation() ? "RESERVATION" : "QUOTATION",
                         (q.isReservation() ? "Reservation " : "Quotation ") + q.getNumber(), q.isSentEmail(), q.isSentWhatsapp()));
             }
+        }
+        for (Object[] r : messageLog.getObject().customerMessages(c.getId())) {   // thank-you messages (P4-04)
+            messages.add(new CustomerMessage((Instant) r[0], (String) r[1], "Thank-you message · " + r[2], (Boolean) r[3], (Boolean) r[4]));
+        }
+        for (Object[] r : wishes.getObject().ofCustomer(c.getId())) {              // birthday wishes (P4-04)
+            messages.add(new CustomerMessage((Instant) r[0], "BIRTHDAY", "Birthday wish", "sent".equals(r[1]), "sent".equals(r[2])));
         }
         messages.sort(Comparator.comparing(CustomerMessage::at).reversed());
         boolean hasPassport = c.getPassport() != null && !c.getPassport().isBlank();
@@ -220,7 +232,7 @@ public class CustomerBook {
     // ------------------------------------------------------------------ helpers
 
     /** Days until the next birthday (0 = today); 29 February counts as 28 February in other years. */
-    static Integer birthdayIn(String birthday, LocalDate today) {
+    public static Integer birthdayIn(String birthday, LocalDate today) {
         if (birthday == null || birthday.isBlank()) {
             return null;
         }

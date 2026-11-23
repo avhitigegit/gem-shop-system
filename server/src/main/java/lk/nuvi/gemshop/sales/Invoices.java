@@ -209,7 +209,12 @@ public class Invoices {
 
     @Transactional(readOnly = true)
     public byte[] pdf(String number) {
-        Sale s = require(number);
+        return pdf(require(number));
+    }
+
+    /** The invoice PDF without the branch check (automatic messages, no one signed in). */
+    @Transactional(readOnly = true)
+    public byte[] pdf(Sale s) {
         ShopSettings shop = shops.current().orElse(null);
         boolean cancelled = s.getStatus() == Sale.Status.CANCELLED;
         List<PdfDocuments.Line> head = new ArrayList<>(List.of(
