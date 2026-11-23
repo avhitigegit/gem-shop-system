@@ -134,7 +134,7 @@ class DailyCashTest {
         BigDecimal out = new BigDecimal("1200").add(limit).add(BigDecimal.ONE);
         assertThat(e.path("expected").path("lkr").decimalValue()).isEqualByComparingTo(before.path("expected").path("lkr").decimalValue()
                 .add(lkrPart).subtract(new BigDecimal("500")).subtract(out));
-        assertThat(after.path("expenses").size()).isEqualTo(2);
+        assertThat(after.path("expenses").size()).isEqualTo(day.path("expenses").size() + 2);
         assertThat(after.path("payments").findValuesAsString("paid")).anyMatch(p -> p.contains("USD 200"));
 
         // a refund credit note paid back from the drawer

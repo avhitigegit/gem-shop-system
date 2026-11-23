@@ -16,7 +16,8 @@ import lk.nuvi.gemshop.settings.branch.Branch;
 
 /**
  * A shop expense (EXP-…, BRD M1–M7) with a bill photo (rule 11). Above the owner's limit it waits for approval (M6). Paid
- * "Cash (drawer)" it comes off the day's expected cash (M4, I2). P3-06 records drawer expenses; P5-01 adds the rest.
+ * "Cash (drawer)" it comes off the day's expected cash (M4, I2). P3-06 records drawer expenses; P5-01 adds bank / card expenses,
+ * corrections and monthly bills.
  */
 @Entity
 @Table(name = "expense")
@@ -65,6 +66,14 @@ public class Expense extends BaseEntity {
     @JoinColumn(name = "staff_id")
     private UserAccount staff;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "monthly_bill_id")
+    private MonthlyBill monthlyBill;
+
+    /** Sample data only: the prototype's bill file name (there is no real photo). */
+    @Column(length = 120)
+    private String sampleBill;
+
     protected Expense() {}
 
     public Expense(String number, Instant spentAt, Branch branch, String expenseType, BigDecimal amount, String paidTo, Method method,
@@ -85,6 +94,31 @@ public class Expense extends BaseEntity {
         this.approvalNo = approvalNo;
     }
 
+    /** Corrected by the owner or the accountant (M2, N2). The status is set by the caller (approval rule). */
+    public void correct(Instant spentAt, Branch branch, String expenseType, BigDecimal amount, String paidTo, Method method, String note) {
+        this.spentAt = spentAt;
+        this.branch = branch;
+        this.expenseType = expenseType;
+        this.amount = amount;
+        this.paidTo = paidTo;
+        this.method = method;
+        this.note = note;
+    }
+
+    /** Above the limit after a correction: waits for the owner again. */
+    public void waitForOwner(String approvalNo) {
+        this.status = Status.PENDING;
+        this.approvalNo = approvalNo;
+    }
+
+    public void fromMonthlyBill(MonthlyBill b) {
+        this.monthlyBill = b;
+    }
+
+    public void sampleBill(String name) {
+        this.sampleBill = name;
+    }
+
     public void decided(boolean approved) {
         this.status = approved ? Status.APPROVED : Status.REJECTED;
     }
@@ -100,4 +134,6 @@ public class Expense extends BaseEntity {
     public String getApprovalNo() { return approvalNo; }
     public String getNote() { return note; }
     public UserAccount getStaff() { return staff; }
+    public MonthlyBill getMonthlyBill() { return monthlyBill; }
+    public String getSampleBill() { return sampleBill; }
 }
