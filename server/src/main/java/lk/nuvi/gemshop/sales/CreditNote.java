@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -53,6 +54,17 @@ public class CreditNote extends BaseEntity {
     @Column(nullable = false)
     private boolean sentWhatsapp;
 
+    /** A refund paid back in cash from the drawer (P3-06). */
+    private Instant cashRefundAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cash_refund_branch_id")
+    private lk.nuvi.gemshop.settings.branch.Branch cashRefundBranch;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cash_refund_by_id")
+    private lk.nuvi.gemshop.auth.user.UserAccount cashRefundBy;
+
     protected CreditNote() {}
 
     public CreditNote(String number, Instant issuedAt, SaleReturn r, BigDecimal guideComm, BigDecimal staffComm, String approvedBy) {
@@ -78,6 +90,18 @@ public class CreditNote extends BaseEntity {
     }
 
     public boolean isUsed() { return usedSaleNo != null; }
+
+    /** Paid back in cash from the drawer of {@code branch}. */
+    public void refundedFromDrawer(Instant at, lk.nuvi.gemshop.settings.branch.Branch branch, lk.nuvi.gemshop.auth.user.UserAccount by) {
+        this.cashRefundAt = at;
+        this.cashRefundBranch = branch;
+        this.cashRefundBy = by;
+    }
+
+    public boolean isRefundedFromDrawer() { return cashRefundAt != null; }
+    public Instant getCashRefundAt() { return cashRefundAt; }
+    public lk.nuvi.gemshop.settings.branch.Branch getCashRefundBranch() { return cashRefundBranch; }
+    public lk.nuvi.gemshop.auth.user.UserAccount getCashRefundBy() { return cashRefundBy; }
     public String getNumber() { return number; }
     public Instant getIssuedAt() { return issuedAt; }
     public SaleReturn getSaleReturn() { return saleReturn; }
