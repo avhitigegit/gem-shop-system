@@ -42,7 +42,7 @@ import lk.nuvi.gemshop.reports.api.ReportDtos.CashReport;
 import lk.nuvi.gemshop.reports.api.ReportDtos.CashReportRow;
 import lk.nuvi.gemshop.reports.api.ReportDtos.CommissionPersonRow;
 import lk.nuvi.gemshop.reports.api.ReportDtos.CommissionReport;
-import lk.nuvi.gemshop.reports.api.ReportDtos.DrawerAmounts;
+import lk.nuvi.gemshop.reports.api.ReportDtos.CashCount;
 import lk.nuvi.gemshop.reports.api.ReportDtos.ProfitReport;
 import lk.nuvi.gemshop.reports.api.ReportDtos.ProfitRow;
 import lk.nuvi.gemshop.reports.api.ReportDtos.PurchaseReport;
@@ -297,8 +297,8 @@ public class Reports {
         var e = c.expected();
         var n = c.counted();
         return new CashReportRow(c.getNumber(), c.getDay(), c.getBranch().getDisplayName(), c.getClosedBy().getName(), c.getClosedAt(),
-                new DrawerAmounts(e.lkr(), e.usd(), e.eur(), c.getCardExpected()),
-                new DrawerAmounts(n.lkr(), n.usd(), n.eur(), c.getCardCounted()),
+                new CashCount(e.lkr(), e.usd(), e.eur(), c.getCardExpected()),
+                new CashCount(n.lkr(), n.usd(), n.eur(), c.getCardCounted()),
                 c.getDifference(), c.getDifference().abs().compareTo(HALF) < 0, c.getNote(), c.isSentToOwner());
     }
 

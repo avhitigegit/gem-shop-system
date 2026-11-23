@@ -80,8 +80,8 @@ public final class ReportDtos {
 
     // ------------------------------------------------------------------ daily cash
 
-    /** Drawer cash per currency and the card machine total. */
-    public record DrawerAmounts(
+    /** Drawer cash per currency and the card machine total (name differs from the daily cash DrawerAmounts). */
+    public record CashCount(
             @Schema(requiredMode = REQUIRED) BigDecimal lkr,
             @Schema(requiredMode = REQUIRED) BigDecimal usd,
             @Schema(requiredMode = REQUIRED) BigDecimal eur,
@@ -93,8 +93,8 @@ public final class ReportDtos {
             @Schema(requiredMode = REQUIRED) String branch,
             @Schema(requiredMode = REQUIRED) String closedBy,
             @Schema(requiredMode = REQUIRED) Instant closedAt,
-            @Schema(requiredMode = REQUIRED) DrawerAmounts expected,
-            @Schema(requiredMode = REQUIRED) DrawerAmounts counted,
+            @Schema(requiredMode = REQUIRED) CashCount expected,
+            @Schema(requiredMode = REQUIRED) CashCount counted,
             @Schema(requiredMode = REQUIRED, description = "Counted − expected, all currencies in LKR") BigDecimal difference,
             @Schema(requiredMode = REQUIRED, description = "Difference under LKR 0.50") boolean balanced,
             String note,
