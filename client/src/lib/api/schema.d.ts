@@ -2102,6 +2102,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/customers/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One customer: details, purchases, reservations / quotations, messages */
+        get: operations["getCustomer"];
+        /** Edit a customer (empty passport keeps the saved one) */
+        put: operations["editCustomer"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{code}/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Permission for offers and birthday wishes on / off */
+        put: operations["setCustomerConsent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/whatsapp/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meta webhook check (hub.challenge) */
+        get: operations["whatsappWebhookVerify"];
+        put?: never;
+        /** Messages from WhatsApp (STOP = unsubscribe) */
+        post: operations["whatsappWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Unsubscribe link: who it is for (first name only) */
+        get: operations["unsubscribePage"];
+        put?: never;
+        /** Unsubscribe link: no more offers or birthday wishes */
+        post: operations["unsubscribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All customers with birthday, purchases in the branch and permission */
+        get: operations["listCustomers"];
+        put?: never;
+        /** Add a customer (name and country required; field errors are customer.*) */
+        post: operations["addCustomer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The customers list as PDF or Excel (owner) */
+        get: operations["exportCustomers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3923,6 +4029,113 @@ export interface components {
         ApiFieldError: {
             field: string;
             message: string;
+        };
+        CustomerDetailsForm: {
+            /** @example Anna Müller */
+            name: string;
+            /** @example Germany */
+            country: string;
+            email?: string;
+            whatsapp?: string;
+            /**
+             * @description MM-DD, day and month only (or empty)
+             * @example 04-17
+             */
+            birthday?: string;
+            /** @description Stored encrypted */
+            passport?: string;
+            /** @description Agrees to receive offers and birthday wishes (add only) */
+            consent?: boolean;
+        };
+        ConsentForm: {
+            consent: boolean;
+        };
+        CustomerRow: {
+            /** @example C-001 */
+            code: string;
+            name: string;
+            country: string;
+            email?: string;
+            whatsapp?: string;
+            /** @description MM-DD */
+            birthday?: string;
+            /**
+             * Format: int32
+             * @description Days until the next birthday (0 = today), shop time
+             */
+            birthdayIn?: number;
+            /** Format: int64 */
+            purchases: number;
+            spent: number;
+            consent: boolean;
+            /** Format: date-time */
+            consentAt?: string;
+            unsubscribed: boolean;
+            /** Format: date-time */
+            unsubscribedAt?: string;
+            /** @description May get offers and birthday wishes (consent and not unsubscribed) */
+            canMessage: boolean;
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        CustomerList: {
+            customers: components["schemas"]["CustomerRow"][];
+        };
+        CustomerGem: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+        };
+        CustomerPurchase: {
+            number: string;
+            /** Format: date-time */
+            soldAt: string;
+            branch: string;
+            gems: components["schemas"]["CustomerGem"][];
+            total: number;
+            /** @example COMPLETED */
+            status: string;
+        };
+        CustomerQuote: {
+            number: string;
+            /** @example RESERVATION */
+            kind: string;
+            /** Format: date-time */
+            createdOn: string;
+            gems: string[];
+            /** Format: date */
+            expires: string;
+            /** @example ACTIVE */
+            status: string;
+        };
+        CustomerMessage: {
+            /** Format: date-time */
+            at: string;
+            /** @example INVOICE */
+            kind: string;
+            /** @example Invoice INV-000140 */
+            text: string;
+            email: boolean;
+            whatsapp: boolean;
+        };
+        CustomerProfile: {
+            customer: components["schemas"]["CustomerRow"];
+            /** @description Owner only: "•••• 000" (stored encrypted) */
+            passport?: string;
+            /** @description A passport is saved (shown to the owner only) */
+            hasPassport: boolean;
+            /** @description LINK or WHATSAPP */
+            unsubVia?: string;
+            notes?: string;
+            purchases: components["schemas"]["CustomerPurchase"][];
+            quotes: components["schemas"]["CustomerQuote"][];
+            messages: components["schemas"]["CustomerMessage"][];
+        };
+        UnsubscribeView: {
+            firstName: string;
+            shop: string;
+            unsubscribed: boolean;
         };
     };
     responses: never;
@@ -8554,6 +8767,327 @@ export interface operations {
                 to?: string;
                 user?: string;
                 q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerProfile"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    editCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDetailsForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    setCustomerConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    whatsappWebhookVerify: {
+        parameters: {
+            query: {
+                "hub.mode"?: string;
+                "hub.verify_token"?: string;
+                "hub.challenge"?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    whatsappWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": string;
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unsubscribePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    unsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UnsubscribeView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listCustomers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    addCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDetailsForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportCustomers: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
             };
             header?: never;
             path?: never;

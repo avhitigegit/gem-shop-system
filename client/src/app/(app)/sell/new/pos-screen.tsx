@@ -51,7 +51,12 @@ export function PosScreen() {
   const confirm = useConfirm();
   const { role, user, branch, branchName, rates } = useSession();
   const owner = role === OWNER;
-  const [d, setD] = useState<Draft>(loadDraft);
+  // "New sale" on a customer's page opens with that customer chosen (?customer=C-001).
+  const [d, setD] = useState<Draft>(() => {
+    const draft = loadDraft();
+    const code = params.get("customer");
+    return code ? { ...draft, custMode: "existing", customer: code } : draft;
+  });
   const [check, setCheck] = useState<BillView | null>(null);
   const [held, setHeld] = useState<HeldView | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});

@@ -14,7 +14,8 @@ public record AppProperties(
         @DefaultValue SampleData sampleData,
         @DefaultValue Crypto crypto,
         @DefaultValue Files files,
-        @DefaultValue Push push) {
+        @DefaultValue Push push,
+        @DefaultValue Whatsapp whatsapp) {
 
     public record Cors(@DefaultValue("http://localhost:3000") List<String> allowedOrigins) {}
 
@@ -47,6 +48,15 @@ public record AppProperties(
             @DefaultValue({"fcm.googleapis.com", ".push.apple.com", ".push.services.mozilla.com", ".notify.windows.com"})
             List<String> allowedHosts,
             @DefaultValue("false") boolean allowHttp) {}
+
+    /**
+     * Messages coming in from WhatsApp (P4-03: a customer replies STOP). Meta calls the webhook
+     * {@code /api/public/whatsapp/webhook}; real numbers are connected in P6-03.
+     *
+     * @param verifyToken the word typed in the Meta app when the webhook is set up (empty = webhook off)
+     * @param appSecret   the Meta app secret: every call is signed with it (X-Hub-Signature-256); empty = webhook off
+     */
+    public record Whatsapp(String verifyToken, String appSecret) {}
 
     public record Files(@DefaultValue("./data/files") String dir, @DefaultValue("60") int linkMinutes,
             @DefaultValue("24") int keepUnattachedHours) {}

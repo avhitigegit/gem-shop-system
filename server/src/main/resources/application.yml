@@ -65,6 +65,9 @@ app:
     dir: ${FILES_DIR:./data/files}  # photos, bill photos, certificate scans (Docker volume on servers; nightly copy to S3)
     link-minutes: 60                # private download links stop working after this
     keep-unattached-hours: 24       # uploads never saved with a record are removed after this
+  whatsapp:                         # messages coming in (a customer replies STOP) – connected in P6-03
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:}   # the word typed in the Meta app for the webhook; empty = webhook off
+    app-secret: ${WHATSAPP_APP_SECRET:}       # Meta app secret: checks the signature of every call; empty = webhook off
 
 management:
   endpoints:
