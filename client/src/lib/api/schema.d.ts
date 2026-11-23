@@ -739,6 +739,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cash/refunds/{creditNote}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay a refund credit note back in cash from the drawer */
+        post: operations["payDrawerRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/opening": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start the day: cash in the drawer per currency (changeable until closed) */
+        post: operations["saveOpeningCash"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pay a small expense from the drawer (bill photo required; above the limit → owner) */
+        post: operations["payDrawerExpense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close the day: counted vs expected; the report goes to the owner; the day is locked */
+        post: operations["closeDay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/reset-password": {
         parameters: {
             query?: never;
@@ -1684,6 +1752,74 @@ export interface paths {
         };
         /** Code 39 barcode picture (PNG), e.g. for GEM-00131 */
         get: operations["getBarcode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cash & expenses home: day started / closed, waiting expenses, days not matching */
+        get: operations["cashSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Today's drawer: opening, expected cash, payments, pay-outs and the closing */
+        get: operations["cashDay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/closings/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One day closing */
+        get: operations["getClosing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cash/closings/{number}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The closing report as a PDF */
+        get: operations["closingPdf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2764,6 +2900,152 @@ export interface components {
             /** Format: int32 */
             lines: number;
         };
+        CashDay: {
+            branch: string;
+            branchName: string;
+            /** Format: date */
+            day: string;
+            opening?: components["schemas"]["OpeningView"];
+            /** @description Counted cash of the last closing (suggested opening) */
+            lastCounted?: components["schemas"]["DrawerAmounts"];
+            recentOpenings: components["schemas"]["OpeningRow"][];
+            expected: components["schemas"]["ExpectedCash"];
+            payments: components["schemas"]["DayPayment"][];
+            expenses: components["schemas"]["DrawerExpenseRow"][];
+            commissions: components["schemas"]["DrawerCommissionRow"][];
+            refunds: components["schemas"]["DrawerRefundRow"][];
+            /** @description Refund credit notes not paid back yet */
+            refundsToPay: components["schemas"]["DrawerRefundRow"][];
+            closing?: components["schemas"]["ClosingView"];
+            rateUsd: number;
+            rateEur: number;
+            expenseTypes: string[];
+            /** @description Expenses above this need the owner's approval */
+            largeExpenseLimit: number;
+        };
+        ClosingView: {
+            number: string;
+            /** Format: date */
+            day: string;
+            branch: string;
+            branchName: string;
+            expected: components["schemas"]["DrawerAmounts"];
+            counted: components["schemas"]["DrawerAmounts"];
+            cardExpected: number;
+            cardCounted: number;
+            cardFee: number;
+            salesTotal: number;
+            /** Format: int32 */
+            bills: number;
+            drawerOut: number;
+            rateUsd: number;
+            rateEur: number;
+            /** @description Counted − expected, all in LKR at the day's rates (card included) */
+            difference: number;
+            note?: string;
+            /** Format: date-time */
+            closedAt: string;
+            closedBy: string;
+            sentToOwner: boolean;
+        };
+        DayPayment: {
+            invoice: string;
+            /** Format: date-time */
+            soldAt: string;
+            /** @description "USD 400 + Card" */
+            paid: string;
+            change: number;
+        };
+        DrawerAmounts: {
+            lkr: number;
+            usd: number;
+            eur: number;
+        };
+        DrawerCommissionRow: {
+            payment: string;
+            /** Format: date-time */
+            at: string;
+            payee: string;
+            amount: number;
+        };
+        DrawerExpenseRow: {
+            number: string;
+            /** Format: date-time */
+            at: string;
+            expenseType: string;
+            paidTo: string;
+            amount: number;
+            /** @enum {string} */
+            status: "APPROVED" | "PENDING" | "REJECTED";
+            approvalNo?: string;
+            /** @description Bill photo (thumbnail link) */
+            bill?: string;
+        };
+        DrawerRefundRow: {
+            creditNote: string;
+            /** Format: date-time */
+            at: string;
+            customer: string;
+            invoice: string;
+            amount: number;
+        };
+        ExpectedCash: {
+            opening: components["schemas"]["DrawerAmounts"];
+            /** @description Cash taken per currency, LKR after change given */
+            cashIn: components["schemas"]["DrawerAmounts"];
+            /** @description Paid out of the drawer (LKR) */
+            drawerOut: number;
+            expected: components["schemas"]["DrawerAmounts"];
+            /** @description Card machine total = card sales (no fee added) */
+            card: number;
+            /** @description Bank fee on card sales – the shop pays it */
+            cardFee: number;
+            /** @description Cash sales in LKR after change */
+            cashSalesLkr: number;
+            changeGiven: number;
+            expensesOut: number;
+            commissionsOut: number;
+            refundsOut: number;
+            /** Format: int32 */
+            bills: number;
+            salesTotal: number;
+        };
+        OpeningRow: {
+            /** Format: date */
+            day: string;
+            cash: components["schemas"]["DrawerAmounts"];
+        };
+        OpeningView: {
+            cash: components["schemas"]["DrawerAmounts"];
+            /** Format: date-time */
+            enteredAt: string;
+            enteredBy: string;
+        };
+        OpeningForm: {
+            lkr: number;
+            usd: number;
+            eur: number;
+        };
+        DrawerExpenseForm: {
+            expenseType: string;
+            amount: number;
+            paidTo: string;
+            /**
+             * Format: uuid
+             * @description Uploaded bill photo (rule 11)
+             */
+            bill: string;
+            note?: string;
+        };
+        CloseDayForm: {
+            lkr: number;
+            usd: number;
+            eur: number;
+            /** @description Card machine total */
+            card: number;
+            /** @description Needed when there is a difference */
+            note?: string;
+        };
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
@@ -3335,6 +3617,19 @@ export interface components {
             /** @description Empty = the last level ("above …") */
             upTo?: number;
             amount: number;
+        };
+        CashSummary: {
+            /** @description The branch the drawer screens work on (empty = choose a branch) */
+            branch?: string;
+            opened: boolean;
+            closed: boolean;
+            /** Format: int64 */
+            expensesWaiting: number;
+            /**
+             * Format: int32
+             * @description Closings of the last 7 days that did not match
+             */
+            daysNotMatching: number;
         };
         DemoUser: {
             name: string;
@@ -5473,6 +5768,136 @@ export interface operations {
             };
         };
     };
+    payDrawerRefund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                creditNote: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CashDay"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveOpeningCash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpeningForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CashDay"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    payDrawerExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DrawerExpenseForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DrawerExpenseRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    closeDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseDayForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClosingView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     resetPassword: {
         parameters: {
             query?: never;
@@ -7242,6 +7667,128 @@ export interface operations {
                 };
                 content: {
                     "image/png": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cashSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CashSummary"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    cashDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CashDay"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getClosing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClosingView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    closingPdf: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
             /** @description Error (ApiError format) */
