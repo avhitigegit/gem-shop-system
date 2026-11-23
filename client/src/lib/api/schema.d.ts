@@ -1751,6 +1751,244 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reports home: today's sales */
+        get: operations["reportsSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock with photos, days in stock and value; slow-moving gems */
+        get: operations["stockReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/stock/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The stock report as PDF or Excel */
+        get: operations["exportStockReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales by day, month, branch, gem type, salesperson, guide, payment or country */
+        get: operations["salesReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/sales/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The sales report as PDF or Excel */
+        get: operations["exportSalesReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchases by supplier: bought, sold, returned */
+        get: operations["purchaseReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/purchases/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchases by supplier as PDF or Excel */
+        get: operations["exportPurchaseReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/profit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per gem sold: selling price − cost − commission share */
+        get: operations["profitReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/profit/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The profit report as PDF or Excel */
+        get: operations["exportProfitReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/expenses/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The expense report as PDF or Excel */
+        get: operations["exportExpenseReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/daily-cash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every day closing with differences highlighted */
+        get: operations["dailyCashReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/daily-cash/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The daily cash report as PDF or Excel */
+        get: operations["exportDailyCashReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/commissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Commission by guide / driver and by staff member */
+        get: operations["commissionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/commissions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The commission report as PDF or Excel */
+        get: operations["exportCommissionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/quotes/{number}": {
         parameters: {
             query?: never;
@@ -4428,6 +4666,226 @@ export interface components {
             customer: components["schemas"]["CustomerPick"];
             total: number;
             items: components["schemas"]["ReturnGem"][];
+        };
+        ReportsSummary: {
+            salesToday: number;
+            /** Format: int32 */
+            billsToday: number;
+        };
+        StockReport: {
+            /** @description Only gems not sold for more than slowDays */
+            slow: boolean;
+            /** Format: int32 */
+            slowDays: number;
+            /** @description Oldest first */
+            rows: components["schemas"]["StockReportRow"][];
+            /** Format: int32 */
+            items: number;
+            cost: number;
+            price: number;
+            /** Format: int64 */
+            averageDays: number;
+            gemTypes: string[];
+        };
+        StockReportRow: {
+            code: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            carat: number;
+            /** @description Branch code */
+            branch: string;
+            /** @enum {string} */
+            status: "IN_STOCK" | "NOT_READY" | "RESERVED" | "ON_HOLD" | "SOLD" | "RETURNED" | "IN_TRANSIT" | "WRITTEN_OFF" | "RETURNED_SUPPLIER";
+            /** Format: date-time */
+            addedAt: string;
+            /**
+             * Format: int64
+             * @description Days in stock
+             */
+            days: number;
+            cost: number;
+            price: number;
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
+        };
+        ReportOption: {
+            value: string;
+            label: string;
+        };
+        SalesReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @enum {string} */
+            by: "DAY" | "MONTH" | "BRANCH" | "GEM" | "STAFF" | "GUIDE" | "PAY" | "COUNTRY";
+            /** @description Days and months newest first, the rest biggest first */
+            rows: components["schemas"]["SalesRow"][];
+            /** Format: int32 */
+            bills: number;
+            /** Format: int32 */
+            items: number;
+            total: number;
+            averageBill: number;
+            gemTypes: string[];
+            /** @description Owner and salespeople (value = user id) */
+            staff: components["schemas"]["ReportOption"][];
+            /** @description Guides (value = code); "walkin" = sales without a guide */
+            guides: components["schemas"]["ReportOption"][];
+            /** @description Card, Cash LKR, Cash USD, Cash EUR, Credit note, Split */
+            payTypes: string[];
+        };
+        SalesRow: {
+            /** @description Sort key, e.g. 2026-11-24 for a day */
+            key: string;
+            /** @description What is shown, e.g. 24/11/2026, Blue Sapphire, Walk-in */
+            label: string;
+            /** Format: int32 */
+            bills: number;
+            /** Format: int32 */
+            items: number;
+            total: number;
+        };
+        PurchaseReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Biggest total first */
+            rows: components["schemas"]["SupplierReportRow"][];
+            /** Format: int32 */
+            purchases: number;
+            /** Format: int32 */
+            products: number;
+            /** Format: int32 */
+            sold: number;
+            cost: number;
+            returned: number;
+        };
+        SupplierReportRow: {
+            code: string;
+            name: string;
+            address?: string;
+            /** Format: int32 */
+            purchases: number;
+            /** Format: int32 */
+            products: number;
+            /**
+             * Format: int32
+             * @description Of these products, how many are sold
+             */
+            sold: number;
+            cost: number;
+            /** @description Refunds for gems returned to the supplier */
+            returned: number;
+            /** Format: date */
+            lastPurchase?: string;
+        };
+        ProfitReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Newest first */
+            rows: components["schemas"]["ProfitRow"][];
+            sales: number;
+            cost: number;
+            commission: number;
+            profit: number;
+            margin: number;
+            gemTypes: string[];
+        };
+        ProfitRow: {
+            gem: string;
+            name: string;
+            gemType: string;
+            productType: string;
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
+            /** Format: date-time */
+            soldAt: string;
+            invoice: string;
+            /** @description Agreed selling price */
+            price: number;
+            cost: number;
+            /** @description The bill's guide + staff commission, shared by price */
+            commission: number;
+            profit: number;
+            /** @description Profit ÷ price × 100 */
+            margin: number;
+            /** @description Sold below the minimum price (owner approved) */
+            belowMin: boolean;
+        };
+        CashCount: {
+            lkr: number;
+            usd: number;
+            eur: number;
+            card: number;
+        };
+        CashReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Newest first */
+            rows: components["schemas"]["CashReportRow"][];
+            /** Format: int32 */
+            days: number;
+            /** Format: int32 */
+            daysWithDifference: number;
+            /** @description In LKR */
+            netDifference: number;
+        };
+        CashReportRow: {
+            /** @example DC-20261124-COL */
+            number: string;
+            /** Format: date */
+            day: string;
+            branch: string;
+            closedBy: string;
+            /** Format: date-time */
+            closedAt: string;
+            expected: components["schemas"]["CashCount"];
+            counted: components["schemas"]["CashCount"];
+            /** @description Counted − expected, all currencies in LKR */
+            difference: number;
+            /** @description Difference under LKR 0.50 */
+            balanced: boolean;
+            note?: string;
+            sentToOwner: boolean;
+        };
+        CommissionPersonRow: {
+            /** @description GUIDE or STAFF */
+            payee: string;
+            /** @description Guide code (for the slip) or staff user id */
+            id: string;
+            name: string;
+            /** @description e.g. "Guide / driver · Van · 10%" or "Staff · fixed by price level" */
+            detail: string;
+            /** Format: int32 */
+            sales: number;
+            salesAmount: number;
+            earned: number;
+            /** @description Taken back after returns / cancelled invoices (negative) */
+            reversed: number;
+            paid: number;
+            unpaid: number;
+        };
+        CommissionReport: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            /** @description Biggest earned first */
+            rows: components["schemas"]["CommissionPersonRow"][];
+            /** Format: int32 */
+            sales: number;
+            salesAmount: number;
+            earned: number;
+            reversed: number;
+            paid: number;
+            unpaid: number;
         };
         QuoteList: {
             items: components["schemas"]["QuoteView"][];
@@ -9303,6 +9761,487 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReturnSale"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    reportsSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReportsSummary"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    stockReport: {
+        parameters: {
+            query?: {
+                gemType?: string;
+                /** @description Only gems not sold for more than slowDays */
+                slow?: boolean;
+                slowDays?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StockReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportStockReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                gemType?: string;
+                slow?: boolean;
+                slowDays?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    salesReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                gemType?: string;
+                /** @description A salesperson's user id */
+                staff?: number;
+                /** @description A guide code, or "walkin" for sales without a guide */
+                guide?: string;
+                /** @description Card, Cash LKR, Cash USD, Cash EUR, Credit note or Split */
+                pay?: string;
+                by?: "DAY" | "MONTH" | "BRANCH" | "GEM" | "STAFF" | "GUIDE" | "PAY" | "COUNTRY";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SalesReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportSalesReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                from?: string;
+                to?: string;
+                gemType?: string;
+                staff?: number;
+                guide?: string;
+                pay?: string;
+                by?: "DAY" | "MONTH" | "BRANCH" | "GEM" | "STAFF" | "GUIDE" | "PAY" | "COUNTRY";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    purchaseReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PurchaseReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportPurchaseReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    profitReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                gemType?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfitReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportProfitReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                from?: string;
+                to?: string;
+                gemType?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportExpenseReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    dailyCashReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                /** @description Only days that did not match */
+                onlyDifferences?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CashReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportDailyCashReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                from?: string;
+                to?: string;
+                onlyDifferences?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    commissionReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                /** @description GUIDE, STAFF or empty for both */
+                payee?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CommissionReport"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    exportCommissionReport: {
+        parameters: {
+            query: {
+                /** @description pdf or xlsx */
+                format: string;
+                from?: string;
+                to?: string;
+                payee?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
             /** @description Error (ApiError format) */

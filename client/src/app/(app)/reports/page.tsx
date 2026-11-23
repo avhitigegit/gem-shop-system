@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { SectionHome } from "@/components/shell/section-home";
+import { ReportsHome } from "./reports-home";
 
 export const metadata: Metadata = { title: "Reports" };
 
-/** Section home (prototype hub/reports.html). Attention items, counts and the side list come with the section's heading. */
+/** Section home (prototype hub/reports.html). */
 export default function Page() {
-  return <SectionHome sectionKey="reports" />;
+  return <ReportsHome />;
 }
