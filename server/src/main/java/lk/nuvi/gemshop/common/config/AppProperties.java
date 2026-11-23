@@ -13,7 +13,8 @@ public record AppProperties(
         @DefaultValue Cors cors,
         @DefaultValue SampleData sampleData,
         @DefaultValue Crypto crypto,
-        @DefaultValue Files files) {
+        @DefaultValue Files files,
+        @DefaultValue Push push) {
 
     public record Cors(@DefaultValue("http://localhost:3000") List<String> allowedOrigins) {}
 
@@ -35,6 +36,18 @@ public record AppProperties(
      * @param linkMinutes how long a download link works
      * @param keepUnattachedHours uploads never attached to a record are removed after this
      */
+    /**
+     * Web Push to the owner's phone (P4-02).
+     *
+     * @param subject      contact for the push services ("mailto:…" or "https://…"); empty = the shop's e-mail
+     * @param allowedHosts push services the server may send to (host or ".suffix")
+     * @param allowHttp    tests only: allow a plain-http push endpoint
+     */
+    public record Push(String subject,
+            @DefaultValue({"fcm.googleapis.com", ".push.apple.com", ".push.services.mozilla.com", ".notify.windows.com"})
+            List<String> allowedHosts,
+            @DefaultValue("false") boolean allowHttp) {}
+
     public record Files(@DefaultValue("./data/files") String dir, @DefaultValue("60") int linkMinutes,
             @DefaultValue("24") int keepUnattachedHours) {}
 }
