@@ -18,7 +18,7 @@ import lk.nuvi.gemshop.common.mail.SmtpSource;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.AutoView;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.BirthdayForm;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.BirthdayView;
-import lk.nuvi.gemshop.messaging.api.MessageDtos.LogRow;
+import lk.nuvi.gemshop.messaging.api.MessageDtos.MessageLogRow;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.MessageSettingsView;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.MessageStatus;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.SesForm;
@@ -232,11 +232,11 @@ public class Messages implements SmtpSource {
     }
 
     @Transactional(readOnly = true)
-    public List<LogRow> recent(int limit) {
+    public List<MessageLogRow> recent(int limit) {
         return jdbc.query("""
                 select l.at, l.kind, l.channel, l.recipient, c.name, l.ref, l.subject, l.status, l.automatic
                 from message_log l left join customer c on c.id = l.customer_id
-                order by l.at desc, l.id desc limit ?""", (rs, i) -> new LogRow(rs.getTimestamp(1).toInstant(), rs.getString(2),
+                order by l.at desc, l.id desc limit ?""", (rs, i) -> new MessageLogRow(rs.getTimestamp(1).toInstant(), rs.getString(2),
                 rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7), rs.getString(8), rs.getBoolean(9)),
                 Math.max(1, Math.min(limit, 500)));
     }

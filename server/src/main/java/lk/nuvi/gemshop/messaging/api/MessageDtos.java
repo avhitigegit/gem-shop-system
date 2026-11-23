@@ -145,7 +145,7 @@ public final class MessageDtos {
 
     // ------------------------------------------------------------------ message log
 
-    public record LogRow(
+    public record MessageLogRow(
             @Schema(requiredMode = REQUIRED) Instant at,
             @Schema(requiredMode = REQUIRED, example = "THANK_YOU") String kind,
             @Schema(requiredMode = REQUIRED, example = "EMAIL") String channel,
@@ -156,5 +156,5 @@ public final class MessageDtos {
             @Schema(requiredMode = REQUIRED, example = "SENT") String status,
             @Schema(requiredMode = REQUIRED) boolean automatic) {}
 
-    public record LogList(@Schema(requiredMode = REQUIRED) @Valid List<LogRow> rows) {}
+    public record MessageLogList(@Schema(requiredMode = REQUIRED) @Valid List<MessageLogRow> rows) {}
 }

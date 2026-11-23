@@ -8,7 +8,7 @@ import lk.nuvi.gemshop.messaging.Birthdays;
 import lk.nuvi.gemshop.messaging.Messages;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.BirthdayForm;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.BirthdayList;
-import lk.nuvi.gemshop.messaging.api.MessageDtos.LogList;
+import lk.nuvi.gemshop.messaging.api.MessageDtos.MessageLogList;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.MessageSettingsView;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.MessageStatus;
 import lk.nuvi.gemshop.messaging.api.MessageDtos.SendNowResult;
@@ -114,7 +114,7 @@ public class MessagesController {
     @GetMapping("/log")
     @PreAuthorize(Roles.OWNER)
     @Operation(operationId = "messageLog", summary = "The latest messages sent (newest first)")
-    public LogList log(@RequestParam(defaultValue = "100") int limit) {
-        return new LogList(messages.recent(limit));
+    public MessageLogList log(@RequestParam(defaultValue = "100") int limit) {
+        return new MessageLogList(messages.recent(limit));
     }
 }
