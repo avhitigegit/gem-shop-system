@@ -68,7 +68,7 @@ class CustomersTest {
         assertThat(list.size()).isGreaterThanOrEqualTo(25);
         JsonNode anna = find(list, "C-001");
         assertThat(anna.path("name").asString()).isEqualTo("Anna Müller");
-        assertThat(anna.path("birthday").asString()).matches("\d{2}-\d{2}"); // sample birthdays move with today
+        assertThat(anna.path("birthday").asString()).matches("\\d{2}-\\d{2}"); // sample birthdays move with today
         assertThat(anna.path("birthdayIn").asInt()).isBetween(0, 366);
         assertThat(anna.path("canMessage").asBoolean()).isTrue();
         assertThat(list.findValues("birthday").stream().filter(JsonNode::isNull).count()).isPositive(); // some gave none
