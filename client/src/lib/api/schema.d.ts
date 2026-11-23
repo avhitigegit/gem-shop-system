@@ -460,6 +460,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reservations or quotations (newest first) and the active counts */
+        get: operations["listQuotes"];
+        put?: never;
+        /** Keep the gems on the bill for the customer, or give a price quote */
+        post: operations["createQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{number}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the PDF by email and / or WhatsApp */
+        post: operations["sendQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{number}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release a reservation (gems back in stock) or withdraw a quotation */
+        post: operations["releaseQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{number}/extend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** New expiry date */
+        post: operations["extendQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/purchases": {
         parameters: {
             query?: never;
@@ -1033,6 +1102,40 @@ export interface paths {
         };
         /** Customers who came before (New sale) */
         get: operations["customers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One reservation or quotation */
+        get: operations["getQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{number}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The quotation / reservation as a PDF */
+        get: operations["quotePdf"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1954,6 +2057,8 @@ export interface components {
             guide?: string;
             /** @description HS-0001 when finishing an approved held sale */
             held?: string;
+            /** @description RS-0001 / QT-0001 when selling a reservation or quotation */
+            quote?: string;
             payments: components["schemas"]["PaymentForm"][];
             notes?: string;
         };
@@ -2091,6 +2196,10 @@ export interface components {
             items: components["schemas"]["LineForm"][];
             /** @description Guide code; empty = walk-in */
             guide?: string;
+            /** @description The held sale being finished (its gems are on hold) */
+            held?: string;
+            /** @description The reservation / quotation being sold (its gems are reserved) */
+            quote?: string;
         };
         BillLine: {
             gem: string;
@@ -2108,6 +2217,59 @@ export interface components {
              * @description Staff commission price level, 1 = lowest
              */
             level: number;
+        };
+        QuoteForm: {
+            /** @enum {string} */
+            kind: "RESERVATION" | "QUOTATION";
+            branch?: string;
+            items: components["schemas"]["LineForm"][];
+            customer: components["schemas"]["CustomerForm"];
+            /**
+             * Format: date
+             * @example 2026-11-26
+             */
+            expires: string;
+            /** @description Deposit taken for a reservation (LKR) */
+            deposit?: number;
+            notes?: string;
+        };
+        QuoteView: {
+            number: string;
+            /** @enum {string} */
+            kind: "RESERVATION" | "QUOTATION";
+            /** @enum {string} */
+            status: "ACTIVE" | "EXPIRED" | "RELEASED" | "CONVERTED";
+            /** Format: date-time */
+            createdOn: string;
+            branch: string;
+            staff: string;
+            customer: components["schemas"]["CustomerPick"];
+            /** Format: date */
+            expires: string;
+            /**
+             * Format: int64
+             * @description Days until the expiry date (0 = today)
+             */
+            daysLeft: number;
+            deposit: number;
+            notes?: string;
+            items: components["schemas"]["SaleLine"][];
+            total: number;
+            /** @description Invoice when sold */
+            saleNo?: string;
+            sentEmail: boolean;
+            sentWhatsapp: boolean;
+            /** @description Today's rates for the USD / EUR columns */
+            rateUsd?: number;
+            rateEur?: number;
+            shop: components["schemas"]["DocShop"];
+        };
+        ExtendForm: {
+            /**
+             * Format: date
+             * @example 2026-11-30
+             */
+            expires: string;
         };
         PurchaseForm: {
             /** Format: date */
@@ -2428,6 +2590,10 @@ export interface components {
             totalToday: number;
             held: components["schemas"]["HeldView"][];
             latest: components["schemas"]["SaleRow"][];
+            /** Format: int64 */
+            reservations: number;
+            /** Format: int64 */
+            quotations: number;
         };
         GemCard: {
             code: string;
@@ -2457,6 +2623,13 @@ export interface components {
             sellable: boolean;
             /** @description Why it cannot be sold, e.g. already sold on 24/10/2026 (INV-000101) */
             note?: string;
+        };
+        QuoteList: {
+            items: components["schemas"]["QuoteView"][];
+            /** Format: int64 */
+            reservations: number;
+            /** Format: int64 */
+            quotations: number;
         };
         PurchaseList: {
             items: components["schemas"]["PurchaseRow"][];
@@ -3937,6 +4110,171 @@ export interface operations {
             };
         };
     };
+    listQuotes: {
+        parameters: {
+            query?: {
+                kind?: "RESERVATION" | "QUOTATION";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    createQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuoteForm"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SendResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    releaseQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    extendQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     purchases: {
         parameters: {
             query?: {
@@ -5097,6 +5435,70 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CustomerPick"][];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QuoteView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    quotePdf: {
+        parameters: {
+            query?: {
+                download?: boolean;
+            };
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
             /** @description Error (ApiError format) */

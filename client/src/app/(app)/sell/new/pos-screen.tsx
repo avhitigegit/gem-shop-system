@@ -35,12 +35,14 @@ import {
   type GemCard,
   type HeldView,
   type PaymentForm,
+  type QuoteKind,
   type SaleView,
 } from "@/lib/sales";
 import { ALL_BRANCHES, useSession } from "@/lib/session";
 import { useLoad } from "@/lib/use-load";
 import { cn } from "@/lib/utils";
 import { PaymentModal } from "./payment-modal";
+import { QuoteModal, type QuoteChoice } from "./quote-modal";
 
 export function PosScreen() {
   const router = useRouter();
@@ -57,6 +59,8 @@ export function PosScreen() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<SaleView | null>(null);
   const [q, setQ] = useState("");
+  const [making, setMaking] = useState<QuoteKind | null>(null);
+  const [quoteErrors, setQuoteErrors] = useState<Record<string, string>>({});
   const [hits, setHits] = useState<GemCard[]>([]);
   const asked = useRef(0);
   const searched = useRef(0);
@@ -84,6 +88,8 @@ export function PosScreen() {
 
   // ---------------------------------------------------------------- the held sale: open from ?held=, ask every 3 s
   const heldParam = params.get("held");
+  const intentParam = params.get("intent");
+  const intent = intentParam === "reserve" || intentParam === "quote" ? intentParam : null;
   useEffect(() => {
     if (!heldParam) return;
     let stop = false;
@@ -115,6 +121,40 @@ export function PosScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heldParam]);
 
+  // ---------------------------------------------------------------- "Sell now" on a reservation / quotation: ?quote=
+  const quoteParam = params.get("quote");
+  useEffect(() => {
+    if (!quoteParam) return;
+    let stop = false;
+    void (async () => {
+      const { data: qv, error } = await api.GET("/api/quotes/{number}", { params: { path: { number: quoteParam } } });
+      if (stop) return;
+      if (!qv) return toast("Not found", errorMessage(error), "error");
+      if (qv.status !== "ACTIVE") {
+        router.replace("/sell/new");
+        return toast(`${qv.number} cannot be sold`, `It is ${qv.status.toLowerCase()}.`, "error");
+      }
+      const gems = await Promise.all(
+        qv.items.map((i) => api.GET("/api/sales/gems/{code}", { params: { path: { code: i.code } } })),
+      );
+      if (stop) return;
+      const items = qv.items
+        .map((i, k) => ({ gem: gems[k].data?.gem, agreed: Number(i.agreed) }))
+        .filter((x): x is { gem: GemCard; agreed: number } => !!x.gem && x.gem.status !== "SOLD");
+      update({ ...blankDraft(), items, custMode: "existing", customer: qv.customer.code, quote: qv.number });
+      setHeld(null);
+      toast(
+        `Loaded ${qv.number}`,
+        `Gems and prices from the ${qv.kind === "RESERVATION" ? "reservation" : "quotation"}.`,
+      );
+      router.replace("/sell/new");
+    })();
+    return () => {
+      stop = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteParam]);
+
   useEffect(() => {
     if (!d.held) return;
     const no = d.held;
@@ -135,7 +175,7 @@ export function PosScreen() {
   }, [d.held, toast]);
 
   // ---------------------------------------------------------------- prices, minimum and commission from the server
-  const sig = JSON.stringify([d.items.map((i) => [i.gem.code, i.agreed]), d.guide]);
+  const sig = JSON.stringify([d.items.map((i) => [i.gem.code, i.agreed]), d.guide, d.held, d.quote]);
   useEffect(() => {
     const items = d.items
       .filter((i) => Number(i.agreed) > 0)
@@ -143,7 +183,13 @@ export function PosScreen() {
     const n = ++asked.current;
     const t = setTimeout(async () => {
       const { data } = await api.POST("/api/sales/check", {
-        body: { items, guide: d.guide || undefined, branch: branch !== ALL_BRANCHES ? branch : undefined },
+        body: {
+          items,
+          guide: d.guide || undefined,
+          branch: branch !== ALL_BRANCHES ? branch : undefined,
+          held: d.held ?? undefined,
+          quote: d.quote ?? undefined,
+        },
       });
       if (n === asked.current) setCheck(data ?? null);
     }, 250);
@@ -242,6 +288,7 @@ export function PosScreen() {
         customer: customerForm(d),
         guide: d.guide || undefined,
         held: heldOpen ? (d.held ?? undefined) : undefined,
+        quote: d.quote ?? undefined,
         branch: branch !== ALL_BRANCHES ? branch : undefined,
         payments,
       },
@@ -258,6 +305,55 @@ export function PosScreen() {
     setCheck(null);
     reloadHeld();
     reloadCustomers();
+  };
+
+  // ---------------------------------------------------------------- keep for customer / give a quote
+  const askQuote = (kind: QuoteKind) => {
+    if (!d.items.length || locked) return;
+    if (d.items.some((i) => !(Number(i.agreed) > 0)))
+      return toast("Enter the agreed price for every gem", undefined, "error");
+    if (anyBelow && !owner)
+      return toast(
+        "A price is below the minimum",
+        "Reservations and quotes must be at or above the minimum price.",
+        "error",
+      );
+    if (!checkCustomer()) return;
+    setQuoteErrors({});
+    setMaking(kind);
+  };
+
+  const makeQuote = async (c: QuoteChoice) => {
+    if (!making) return;
+    setBusy(true);
+    const { data, error } = await api.POST("/api/quotes", {
+      body: {
+        kind: making,
+        items: d.items.map((i) => ({ gem: i.gem.code, agreed: Number(i.agreed) })),
+        customer: customerForm(d),
+        branch: branch !== ALL_BRANCHES ? branch : undefined,
+        expires: c.expires,
+        deposit: c.deposit,
+        notes: c.notes || undefined,
+      },
+    });
+    setBusy(false);
+    if (!data) {
+      const fe = fieldErrors(error);
+      setQuoteErrors(fe);
+      setErrors(fe);
+      return toast("Not saved", errorMessage(error), "error");
+    }
+    setMaking(null);
+    update(blankDraft());
+    setCheck(null);
+    reloadCustomers();
+    if (data.kind === "RESERVATION") {
+      toast(`${data.number} created`, `Kept for ${data.customer.name} until ${date(data.expires)}.`, "success");
+    } else {
+      toast(`${data.number} created`, "Opening the quotation…", "success");
+      router.push(`/sell/reserved/${data.number}/print`);
+    }
   };
 
   const clear = async () => {
@@ -380,7 +476,7 @@ export function PosScreen() {
   return (
     <>
       <PageHead
-        title={`New sale – ${branch === ALL_BRANCHES ? (d.items[0] ? branchName(d.items[0].gem.branch) : "all branches") : branchName(branch)}`}
+        title={`${intent === "reserve" ? "Keep a gem for a customer" : intent === "quote" ? "Give a price quote" : "New sale"} – ${branch === ALL_BRANCHES ? (d.items[0] ? branchName(d.items[0].gem.branch) : "all branches") : branchName(branch)}`}
         sub={`Salesperson: ${user.name} · ${date(new Date())} · Rates: USD ${num(rates.USD)} · EUR ${num(rates.EUR)}`}
         actions={
           <Link className={buttonClass("outline")} href="/sell/invoices">
@@ -388,6 +484,28 @@ export function PosScreen() {
           </Link>
         }
       />
+      {intent && !d.quote ? (
+        <div className="intent-banner mb">
+          <span style={{ fontSize: 24 }} aria-hidden="true">
+            {intent === "reserve" ? "📌" : "📝"}
+          </span>
+          <div>
+            <b>{intent === "reserve" ? "Keep a gem for a customer" : "Give a price quote"}</b>
+            <br />① Add the gem(s) and the agreed price · ② choose the customer · ③ press{" "}
+            <b>{intent === "reserve" ? "📌 Keep for customer" : "📝 Give a quote"}</b> at the bottom right.
+          </div>
+          <Link className={buttonClass("ghost", "sm")} href="/sell/new" style={{ marginLeft: "auto" }}>
+            This is a normal sale
+          </Link>
+        </div>
+      ) : null}
+      {d.quote ? (
+        <Alert tone="info" className="mb">
+          <b>Selling {d.quote}</b> – the gems and prices come from the{" "}
+          {d.quote.startsWith("RS") ? "reservation" : "quotation"}. Take payment as usual.{" "}
+          <Link href="/sell/reserved">Reserved &amp; quotes</Link>
+        </Alert>
+      ) : null}
       <nav className="flowbar no-print mb" aria-label="This sale">
         <span className="fb-title">This sale</span>
         <ol>
@@ -705,6 +823,28 @@ export function PosScreen() {
               >
                 {busy ? "Please wait…" : payLabel}
               </Button>
+              {!d.quote ? (
+                <div className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
+                  <Button
+                    id="reserveBtn"
+                    variant={intent === "reserve" ? "gold" : "outline"}
+                    style={{ flex: 1 }}
+                    disabled={!d.items.length || locked || busy}
+                    onClick={() => askQuote("RESERVATION")}
+                  >
+                    📌 Keep for customer
+                  </Button>
+                  <Button
+                    id="quoteBtn"
+                    variant={intent === "quote" ? "gold" : "outline"}
+                    style={{ flex: 1 }}
+                    disabled={!d.items.length || locked || busy}
+                    onClick={() => askQuote("QUOTATION")}
+                  >
+                    📝 Give a quote
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </Card>
 
@@ -714,6 +854,19 @@ export function PosScreen() {
           </Alert>
         </div>
       </div>
+
+      {making ? (
+        <QuoteModal
+          kind={making}
+          count={d.items.length}
+          total={total}
+          customer={d.custMode === "existing" ? (chosen?.name ?? d.customer) : d.newCust.name}
+          busy={busy}
+          errors={quoteErrors}
+          onClose={() => setMaking(null)}
+          onSave={(c) => void makeQuote(c)}
+        />
+      ) : null}
 
       {paying ? (
         <PaymentModal total={total} busy={busy} onClose={() => setPaying(false)} onPay={(p) => void complete(p)} />

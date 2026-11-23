@@ -1,7 +1,7 @@
 "use client";
 
 /* Sell home – prototype hub/sell.html: held sales (approved → finish; waiting → owner approves), sales today on
-   Invoices, and the latest invoices. Reservations, returns and credit notes come with their headings. */
+   Invoices, and the latest invoices. Reserved & quotes shows the active count; returns and credit notes come with their headings. */
 import Link from "next/link";
 import { SectionHome, type Attention } from "@/components/shell/section-home";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,7 @@ export function SellHome() {
         });
     }
     counts["/sell/invoices"] = `${s.salesToday} today`;
+    counts["/sell/reserved"] = `${s.reservations + s.quotations} active`;
   }
   return (
     <SectionHome

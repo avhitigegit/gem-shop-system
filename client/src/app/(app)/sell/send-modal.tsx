@@ -1,6 +1,6 @@
 "use client";
 
-/* Send invoice – the prototype's send window (BRD G4): email with the PDF (shop email) and / or WhatsApp. WhatsApp runs in
+/* Send an invoice or a quotation – the prototype's send window (BRD G4): email with the PDF (shop email) and / or WhatsApp. WhatsApp runs in
    test mode until the shop's WhatsApp Business account is connected (P6-03): the message is only written to the log. */
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -10,19 +10,26 @@ import { Modal } from "@/components/ui/dialog";
 import { Check, Field, Input } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
 import { api, errorMessage, fieldErrors } from "@/lib/api/client";
-import type { SaleView } from "@/lib/sales";
 import { useSession } from "@/lib/session";
 
-export function SendModal({ sale, onClose, onSent }: { sale: SaleView; onClose: () => void; onSent: () => void }) {
+type Doc = {
+  /** "invoice" for /api/sales/…/send, "quotation" / "reservation" for /api/quotes/…/send */
+  label: "invoice" | "quotation" | "reservation";
+  number: string;
+  branch: string;
+  customer: { name: string; email?: string | null; whatsapp?: string | null };
+};
+
+export function SendModal({ doc, onClose, onSent }: { doc: Doc; onClose: () => void; onSent: () => void }) {
   const toast = useToast();
   const { shop, branchName } = useSession();
   const [email, setEmail] = useState(true);
-  const [whatsapp, setWhatsapp] = useState(!!sale.customer.whatsapp);
-  const [emailTo, setEmailTo] = useState(sale.customer.email ?? "");
-  const [waTo, setWaTo] = useState(sale.customer.whatsapp ?? "");
+  const [whatsapp, setWhatsapp] = useState(!!doc.customer.whatsapp);
+  const [emailTo, setEmailTo] = useState(doc.customer.email ?? "");
+  const [waTo, setWaTo] = useState(doc.customer.whatsapp ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const first = sale.customer.name.trim().split(/\s+/)[0] || "customer";
+  const first = doc.customer.name.trim().split(/\s+/)[0] || "customer";
 
   const send = async () => {
     const e: Record<string, string> = {};
@@ -33,17 +40,19 @@ export function SendModal({ sale, onClose, onSent }: { sale: SaleView; onClose: 
     setErrors(e);
     if (Object.keys(e).length) return;
     setBusy(true);
-    const { data, error } = await api.POST("/api/sales/{number}/send", {
-      params: { path: { number: sale.number } },
-      body: { email, emailTo: emailTo.trim() || undefined, whatsapp, whatsappTo: waTo.trim() || undefined },
-    });
+    const body = { email, emailTo: emailTo.trim() || undefined, whatsapp, whatsappTo: waTo.trim() || undefined };
+    const path = { number: doc.number };
+    const { data, error } =
+      doc.label === "invoice"
+        ? await api.POST("/api/sales/{number}/send", { params: { path }, body })
+        : await api.POST("/api/quotes/{number}/send", { params: { path }, body });
     setBusy(false);
     if (!data) {
       setErrors(fieldErrors(error));
       return toast("Not sent", errorMessage(error), "error");
     }
     toast(
-      `Invoice ${sale.number} sent`,
+      `${title(doc.label)} ${doc.number} sent`,
       data.message + (data.whatsappTestMode ? " WhatsApp is in test mode – no real message yet." : ""),
       "success",
     );
@@ -54,7 +63,7 @@ export function SendModal({ sale, onClose, onSent }: { sale: SaleView; onClose: 
     <Modal
       open
       onOpenChange={(o) => !o && onClose()}
-      title={`Send invoice ${sale.number}`}
+      title={`Send ${doc.label} ${doc.number}`}
       desc="Send to the customer by email and / or WhatsApp"
       footer={
         <>
@@ -103,11 +112,13 @@ export function SendModal({ sale, onClose, onSent }: { sale: SaleView; onClose: 
           <CardContent style={{ fontSize: 12 }}>
             <b>Message preview</b>
             <br />
-            Dear {first}, thank you for shopping at {shop.name}, {branchName(sale.branch)}. Please find your invoice{" "}
-            {sale.number} attached as a PDF. Safe travels!
+            Dear {first}, thank you for visiting {shop.name}, {branchName(doc.branch)}. Please find your {doc.label}{" "}
+            {doc.number} attached as a PDF. Safe travels!
           </CardContent>
         </Card>
       </div>
     </Modal>
   );
 }
+
+const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

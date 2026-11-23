@@ -1,4 +1,5 @@
 /* New sale (P3-01): types, the unfinished bill kept in the browser, countries and months. */
+import { todayInShop } from "@/lib/format";
 import type { components } from "@/lib/api/schema";
 
 export type GemCard = components["schemas"]["GemCard"];
@@ -13,6 +14,11 @@ export type PaymentForm = components["schemas"]["PaymentForm"];
 export type InvoiceRow = components["schemas"]["InvoiceRow"];
 export type InvoicePage = components["schemas"]["InvoicePage"];
 export type SendResult = components["schemas"]["SendResult"];
+export type QuoteView = components["schemas"]["QuoteView"];
+export type QuoteKind = QuoteView["kind"];
+
+/** "2026-11-26" in the shop, n days from today. */
+export const inDays = (n: number) => todayInShop(new Date(Date.now() + n * 86_400_000));
 
 /** "Card" · "Cash USD" for one payment line. */
 export const payLabel = (p: { method: string; currency: string }) =>
@@ -36,6 +42,8 @@ export type Draft = {
   newCust: NewCustomer;
   guide: string;
   held: string | null;
+  /** RS-… / QT-… when selling a reservation or quotation. */
+  quote: string | null;
 };
 
 const KEY = "gemshop.pos.draft";
@@ -47,6 +55,7 @@ export const blankDraft = (): Draft => ({
   newCust: { name: "", country: "", email: "", whatsapp: "", day: "", month: "", consent: false },
   guide: "",
   held: null,
+  quote: null,
 });
 
 export function loadDraft(): Draft {
