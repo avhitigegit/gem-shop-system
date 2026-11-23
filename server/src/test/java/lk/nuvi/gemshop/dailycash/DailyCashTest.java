@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -66,6 +67,8 @@ class DailyCashTest {
         for (String e : new String[] {OWNER, SALES, STAFF, ACCOUNTANT}) {
             who.put(e, SignIn.login(mvc, e));
         }
+        // no mail server in CI: pretend the e-mail went out
+        doReturn(true).when(mail).send(anyString(), anyString(), anyString(), anyString(), any(), anyString());
     }
 
     @Test
