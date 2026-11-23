@@ -93,6 +93,11 @@ public class Sales {
     public static final String CREDIT_NOT_USABLE = "CREDIT_NOTE_NOT_USABLE";
     public static final String INVOICE_LINK = "/sell/invoices/";
 
+    /** A sale was completed (after it is saved: the invoice is emailed / sent on WhatsApp by itself, P4-04). */
+    public record Completed(String number) {}
+
+    private final org.springframework.context.ApplicationEventPublisher events;
+
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final DateTimeFormatter DMY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -122,7 +127,8 @@ public class Sales {
             CreditNoteRepository creditNotes, Gems gems, Customers customers, Guides guides, CommissionBook book,
             Commission commission, Rates rates, ShopSettingsRepository shops, Numbers numbers, Approvals approvals,
             ApprovalRepository approvalRepo, ActivityLog log, Alerts alerts, CurrentUser current, EntityManager em,
-            AppProperties app, GemPrints prints) {
+            AppProperties app, GemPrints prints, org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.sales = sales;
         this.held = held;
         this.quotes = quotes;
@@ -393,6 +399,7 @@ public class Sales {
         }
         alerts.raise(AlertType.SALE, "Sale " + no + " · " + lkr(total) + " · " + customer.getCountry(), INVOICE_LINK + no,
                 branch.getId());
+        events.publishEvent(new Completed(no));
         return view(s);
     }
 

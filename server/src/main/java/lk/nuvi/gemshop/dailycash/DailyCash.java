@@ -26,7 +26,8 @@ import lk.nuvi.gemshop.commissions.CommissionPayment;
 import lk.nuvi.gemshop.commissions.CommissionPaymentRepository;
 import lk.nuvi.gemshop.common.config.AppProperties;
 import lk.nuvi.gemshop.common.error.ApiException;
-import lk.nuvi.gemshop.common.mail.MailService;
+import lk.nuvi.gemshop.messaging.MessageSettings;
+import lk.nuvi.gemshop.messaging.Messages;
 import lk.nuvi.gemshop.common.numbers.Counter;
 import lk.nuvi.gemshop.common.numbers.Numbers;
 import lk.nuvi.gemshop.dailycash.api.CashDtos.CashDay;
@@ -105,7 +106,7 @@ public class DailyCash {
     private final Numbers numbers;
     private final ActivityLog log;
     private final Alerts alerts;
-    private final MailService mail;
+    private final Messages messages;
     private final ClosingReport report;
     private final CurrentUser current;
     private final ZoneId zone;
@@ -113,7 +114,7 @@ public class DailyCash {
     public DailyCash(CashOpeningRepository openings, DayClosingRepository closings, DayLock lock, SaleRepository sales,
             ExpenseRepository expenses, CommissionPaymentRepository commissionPayments, CreditNoteRepository creditNotes,
             BranchRepository branches, UserAccountRepository users, ShopSettingsRepository shops, Rates rates, Lists lists, FileService files,
-            Approvals approvals, Numbers numbers, ActivityLog log, Alerts alerts, MailService mail, ClosingReport report, CurrentUser current,
+            Approvals approvals, Numbers numbers, ActivityLog log, Alerts alerts, Messages messages, ClosingReport report, CurrentUser current,
             AppProperties app) {
         this.openings = openings;
         this.closings = closings;
@@ -132,7 +133,7 @@ public class DailyCash {
         this.numbers = numbers;
         this.log = log;
         this.alerts = alerts;
-        this.mail = mail;
+        this.messages = messages;
         this.report = report;
         this.current = current;
         this.zone = ZoneId.of(app.timezone());
@@ -395,8 +396,15 @@ public class DailyCash {
         return c;
     }
 
-    /** The closing report goes to every owner by email (I4); the alert shows it in the app. */
+    /**
+     * The closing report goes to every owner by email (I4) when "Send the day-end closing report to the owner" and email are on;
+     * the alert shows it in the app either way.
+     */
     private boolean sendToOwners(DayClosing c, String subject) {
+        MessageSettings m = messages.settings();
+        if (!m.emailOn() || !m.auto().ownerClosing()) {
+            return false; // switched off on the Email & WhatsApp settings screen (J5, J7)
+        }
         byte[] pdf = report.pdf(view(c));
         boolean any = false;
         for (UserAccount u : users.findAll()) {
@@ -404,7 +412,8 @@ public class DailyCash {
                 String body = subject + "\n\nClosed by " + c.getClosedBy().getName() + " at "
                         + DateTimeFormatter.ofPattern("HH:mm").format(c.getClosedAt().atZone(zone)) + "."
                         + (c.getNote() == null ? "" : "\nNote: " + c.getNote()) + "\n\nThe closing report is attached.";
-                any |= mail.send(u.getEmail(), subject, body, "Day closing " + c.getNumber() + ".pdf", pdf, "application/pdf");
+                any |= messages.email(Messages.Kind.CLOSING_REPORT, null, u.getEmail(), c.getNumber(), subject, body,
+                        "Day closing " + c.getNumber() + ".pdf", pdf, true);
             }
         }
         return any;

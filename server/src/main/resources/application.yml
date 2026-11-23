@@ -57,6 +57,7 @@ app:
     demo-logins: false              # "Demo: sign in as…" buttons – local / dev only
   mail:
     from: ${MAIL_FROM:Gem Shop System <no-reply@localhost>}   # used until Shop details has an email
+    use-settings: ${MAIL_USE_SETTINGS:false}  # false = every email goes to the test mail server above (MailHog); true (P6-03) = the SMTP saved on Email & WhatsApp settings
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
   crypto:
