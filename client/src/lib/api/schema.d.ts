@@ -1760,6 +1760,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Home figures for the signed-in person and the branch at the top */
+        get: operations["getHome"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/phone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Owner phone view: today's sales, cash, stock, approvals, sold gems, alerts */
+        get: operations["getPhoneView"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cash/summary": {
         parameters: {
             query?: never;
@@ -3617,6 +3651,73 @@ export interface components {
             /** @description Empty = the last level ("above …") */
             upTo?: number;
             amount: number;
+        };
+        SoldGem: {
+            invoice: string;
+            /** Format: date-time */
+            soldAt: string;
+            gem: string;
+            name: string;
+            gemType: string;
+            /** @description First photo (small), or null = draw the gem */
+            photo?: string;
+            agreed: number;
+            belowMin: boolean;
+            country?: string;
+            staff: string;
+            /** @description Guide / driver, or null = walk-in */
+            guide?: string;
+        };
+        DrawerNow: {
+            lkr: number;
+            usd: number;
+            eur: number;
+            card: number;
+        };
+        HomeFigures: {
+            /** Format: date */
+            day: string;
+            /** @description Today's sales total (owner, salesperson) */
+            salesTotal?: number;
+            /** Format: int32 */
+            bills: number;
+            cash?: components["schemas"]["DrawerNow"];
+            /** Format: int64 */
+            approvalsWaiting: number;
+            /** Format: int64 */
+            gemsInStock: number;
+            /** Format: int64 */
+            onTheWay: number;
+            /** Format: int64 */
+            customers: number;
+            dayStarted?: boolean;
+            dayClosed?: boolean;
+            /** Format: int32 */
+            licenceDays?: number;
+            /** Format: date */
+            licenceExpiry?: string;
+            soldToday: components["schemas"]["SoldGem"][];
+        };
+        PhoneView: {
+            branch: string;
+            /** Format: date */
+            day: string;
+            salesTotal: number;
+            /** Format: int32 */
+            bills: number;
+            /** Format: int32 */
+            items: number;
+            profit: number;
+            cash: components["schemas"]["DrawerNow"];
+            /** Format: int64 */
+            stockCount: number;
+            stockValue: number;
+            stockCost: number;
+            /** Format: int64 */
+            approvalsWaiting: number;
+            approvals: components["schemas"]["ApprovalView"][];
+            soldToday: components["schemas"]["SoldGem"][];
+            alerts: components["schemas"]["AlertView"][];
         };
         CashSummary: {
             /** @description The branch the drawer screens work on (empty = choose a branch) */
@@ -7676,6 +7777,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getHome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HomeFigures"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getPhoneView: {
+        parameters: {
+            query?: {
+                /** @description Branch code, or "all" */
+                branch?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhoneView"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiError"];
                 };
             };
         };
