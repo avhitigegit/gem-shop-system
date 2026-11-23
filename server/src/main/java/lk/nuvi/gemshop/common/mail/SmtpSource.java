@@ -13,4 +13,9 @@ public interface SmtpSource {
 
     /** The saved settings, or empty when the host is not filled in. */
     Optional<Smtp> smtp();
+
+    /** Amazon SES for offers (its SMTP interface), when switched on and filled in. */
+    default Optional<Smtp> ses() {
+        return Optional.empty();
+    }
 }

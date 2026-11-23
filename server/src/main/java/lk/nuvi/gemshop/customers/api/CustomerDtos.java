@@ -67,10 +67,10 @@ public final class CustomerDtos {
             @Schema(requiredMode = REQUIRED) LocalDate expires,
             @Schema(requiredMode = REQUIRED, example = "ACTIVE") String status) {}
 
-    /** A message sent to the customer: invoice or quote, thank-you, birthday wish (offers come with P4-05). */
+    /** A message sent to the customer: invoice or quote, thank-you, birthday wish, offer. */
     public record CustomerMessage(
             @Schema(requiredMode = REQUIRED) Instant at,
-            @Schema(requiredMode = REQUIRED, example = "INVOICE", description = "INVOICE, RESERVATION, QUOTATION, THANK_YOU, BIRTHDAY") String kind,
+            @Schema(requiredMode = REQUIRED, example = "INVOICE", description = "INVOICE, RESERVATION, QUOTATION, THANK_YOU, BIRTHDAY, OFFER") String kind,
             @Schema(requiredMode = REQUIRED, example = "Invoice INV-000140") String text,
             @Schema(requiredMode = REQUIRED) boolean email,
             @Schema(requiredMode = REQUIRED) boolean whatsapp) {}

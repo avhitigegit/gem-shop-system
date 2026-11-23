@@ -59,13 +59,18 @@ public class CustomerBook {
     private final CurrentUser current;
     private final ZoneId zone;
     private final String appUrl;
+    private final org.springframework.context.ApplicationEventPublisher events;
+
+    /** A customer unsubscribed (link or WhatsApp STOP): offer results count it (P4-05). */
+    public record Unsubscribed(long customerId, Instant at) {}
     private final org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Messages> messageLog;
     private final org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Birthdays> wishes;
 
     public CustomerBook(CustomerRepository customers, Customers rules, SaleRepository sales, QuoteRepository quotes,
             ShopSettingsRepository shops, ActivityLog log, CurrentUser current, AppProperties app, AuthProperties auth,
             org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Messages> messageLog,
-            org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Birthdays> wishes) {
+            org.springframework.beans.factory.ObjectProvider<lk.nuvi.gemshop.messaging.Birthdays> wishes,
+            org.springframework.context.ApplicationEventPublisher events) {
         this.customers = customers;
         this.rules = rules;
         this.sales = sales;
@@ -77,6 +82,7 @@ public class CustomerBook {
         this.appUrl = auth.appUrl().replaceAll("/+$", "");
         this.messageLog = messageLog;
         this.wishes = wishes;
+        this.events = events;
     }
 
     // ------------------------------------------------------------------ list and profile
@@ -116,7 +122,8 @@ public class CustomerBook {
             }
         }
         for (Object[] r : messageLog.getObject().customerMessages(c.getId())) {   // thank-you messages (P4-04)
-            messages.add(new CustomerMessage((Instant) r[0], (String) r[1], "Thank-you message · " + r[2], (Boolean) r[3], (Boolean) r[4]));
+            String what = "OFFER".equals(r[1]) ? "Offer " : "Thank-you message · ";
+            messages.add(new CustomerMessage((Instant) r[0], (String) r[1], what + r[2], (Boolean) r[3], (Boolean) r[4]));
         }
         for (Object[] r : wishes.getObject().ofCustomer(c.getId())) {              // birthday wishes (P4-04)
             messages.add(new CustomerMessage((Instant) r[0], "BIRTHDAY", "Birthday wish", "sent".equals(r[1]), "sent".equals(r[2])));
@@ -192,6 +199,7 @@ public class CustomerBook {
         Customer c = byToken(token);
         if (c.unsubscribe(Instant.now(), Customer.UnsubVia.LINK)) {
             log.addSystem("Unsubscribed", c.getCode() + " · " + c.getName() + " clicked the unsubscribe link", null);
+            events.publishEvent(new Unsubscribed(c.getId(), c.getUnsubscribedAt()));
         }
         return new UnsubscribeView(firstName(c.getName()), shopName(), true);
     }
@@ -215,6 +223,7 @@ public class CustomerBook {
         for (Customer c : customers.findByWhatsappIsNotNull()) {
             if (number.equals(digits(c.getWhatsapp())) && c.unsubscribe(Instant.now(), Customer.UnsubVia.WHATSAPP)) {
                 log.addSystem("Unsubscribed", c.getCode() + " · " + c.getName() + " sent STOP on WhatsApp", null);
+                events.publishEvent(new Unsubscribed(c.getId(), c.getUnsubscribedAt()));
                 n++;
             }
         }

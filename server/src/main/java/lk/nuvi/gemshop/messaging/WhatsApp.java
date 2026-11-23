@@ -21,6 +21,14 @@ public class WhatsApp {
 
     /** Returns true when the message was accepted (in test mode: always, after writing it to the log). */
     public boolean send(String to, String text, String fileName, byte[] file) {
+        return send(to, text, fileName, file, null);
+    }
+
+    /**
+     * @param callback sent to Meta as {@code biz_opaque_callback_data}; Meta returns it with the "delivered" and "read"
+     *     statuses (offer results, P4-05)
+     */
+    public boolean send(String to, String text, String fileName, byte[] file, String callback) {
         log.info("WhatsApp (test mode) to {}: {} [attachment {} – {} bytes]", to, text.replace('\n', ' '), fileName,
                 file == null ? 0 : file.length);
         return true;
