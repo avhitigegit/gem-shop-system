@@ -43,6 +43,7 @@ import lk.nuvi.gemshop.common.error.ApiException;
 import lk.nuvi.gemshop.common.error.ErrorCode;
 import lk.nuvi.gemshop.common.numbers.Counter;
 import lk.nuvi.gemshop.common.numbers.Numbers;
+import lk.nuvi.gemshop.dailycash.DayLock;
 import lk.nuvi.gemshop.files.pdf.PdfBody;
 import lk.nuvi.gemshop.files.pdf.PdfDocuments;
 import lk.nuvi.gemshop.sales.Sale;
@@ -79,13 +80,14 @@ public class Commissions {
     private final Sales sell;
     private final Numbers numbers;
     private final PdfDocuments pdfs;
+    private final DayLock lock;
     private final ActivityLog log;
     private final CurrentUser current;
     private final ZoneId zone;
 
     public Commissions(CommissionLineRepository lines, CommissionPaymentRepository payments, SaleRepository sales, GuideRepository guideRepo,
             Guides guides, UserAccountRepository users, Commission commission, Sales sell, Numbers numbers, PdfDocuments pdfs,
-            ActivityLog log, CurrentUser current, AppProperties app) {
+            DayLock lock, ActivityLog log, CurrentUser current, AppProperties app) {
         this.lines = lines;
         this.payments = payments;
         this.sales = sales;
@@ -96,6 +98,7 @@ public class Commissions {
         this.sell = sell;
         this.numbers = numbers;
         this.pdfs = pdfs;
+        this.lock = lock;
         this.log = log;
         this.current = current;
         this.zone = ZoneId.of(app.timezone());
@@ -195,6 +198,9 @@ public class Commissions {
             throw ApiException.badRequest(ONE_BRANCH, "Cash from the drawer is paid in one branch – choose the branch at the top first.");
         }
         Branch branch = branchIds.size() == 1 ? chosen.get(0).getBranch() : null;
+        if (f.method() == PayMethod.DRAWER) {
+            lock.checkOpen(branch.getId(), f.paidOn());
+        }
         String payee = chosen.stream().map(CommissionLine::personName).distinct().collect(Collectors.joining(", "));
         Instant at = f.paidOn().equals(today) ? Instant.now() : f.paidOn().atTime(LocalTime.NOON).atZone(zone).toInstant();
         CommissionPayment p = payments.save(new CommissionPayment(numbers.next(Counter.COMMISSION_PAYMENT), f.paidOn(), at, f.method(),

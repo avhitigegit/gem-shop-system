@@ -6,6 +6,10 @@ import static lk.nuvi.gemshop.SignIn.SALES;
 import static lk.nuvi.gemshop.SignIn.STAFF;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -28,12 +32,12 @@ import lk.nuvi.gemshop.TestcontainersConfiguration;
 import lk.nuvi.gemshop.audit.alert.AlertType;
 import lk.nuvi.gemshop.audit.alert.Alerts;
 import lk.nuvi.gemshop.audit.approval.Approval;
-import lk.nuvi.gemshop.audit.approval.ApprovalHandler;
 import lk.nuvi.gemshop.audit.approval.ApprovalType;
 import lk.nuvi.gemshop.audit.approval.Approvals;
 import lk.nuvi.gemshop.auth.security.CurrentUser;
 import lk.nuvi.gemshop.auth.security.Roles;
 import lk.nuvi.gemshop.common.error.ApiException;
+import lk.nuvi.gemshop.expenses.ExpenseApproval;
 import lk.nuvi.gemshop.settings.branch.BranchRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +49,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -56,7 +60,7 @@ import tools.jackson.databind.json.JsonMapper;
 /** P1-04: activity log (read only), owner approvals and alerts. */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, AuditTest.TestApi.class, AuditTest.ExpenseHandler.class})
+@Import({TestcontainersConfiguration.class, AuditTest.TestApi.class})
 class AuditTest {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -64,7 +68,8 @@ class AuditTest {
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
     @Autowired PasswordEncoder encoder;
-    @Autowired ExpenseHandler handler;
+    @MockitoSpyBean ExpenseApproval expenses;
+    private final List<String> calls = new ArrayList<>();
 
     private final Map<String, Signed> who = new LinkedHashMap<>();
 
@@ -75,8 +80,11 @@ class AuditTest {
         for (String e : new String[] {OWNER, SALES, STAFF, ACCOUNTANT}) {
             who.put(e, SignIn.login(mvc, e));
         }
-        handler.calls.clear();
-        handler.fail = false;
+        calls.clear();
+        doAnswer(inv -> {
+            calls.add(((Approval) inv.getArgument(0)).getNumber() + "=" + inv.getArgument(1));
+            return inv.callRealMethod();
+        }).when(expenses).decided(any(), anyBoolean());
     }
 
     // ---------------------------------------------------------------- sample data
@@ -181,7 +189,7 @@ class AuditTest {
                         .content("{\"note\":\"OK, pay by bank\"}").with(who.get(OWNER).bearer()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("APPROVED"))
                 .andExpect(jsonPath("$.decidedBy").value("Ruwan Perera")).andExpect(jsonPath("$.note").value("OK, pay by bank"));
-        assertThat(handler.calls).containsExactly(no + "=true");
+        assertThat(calls).containsExactly(no + "=true");
         // the person who asked sees the answer on the waiting screen
         mvc.perform(get("/api/approvals/" + no + "/status").with(who.get(ACCOUNTANT).bearer()))
                 .andExpect(jsonPath("$.status").value("APPROVED")).andExpect(jsonPath("$.note").value("OK, pay by bank"));
@@ -191,7 +199,7 @@ class AuditTest {
         // only once
         mvc.perform(post("/api/approvals/" + no + "/reject").with(who.get(OWNER).bearer()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ALREADY_DECIDED"));
-        assertThat(handler.calls).hasSize(1);
+        assertThat(calls).hasSize(1);
     }
 
     @Test
@@ -199,7 +207,7 @@ class AuditTest {
         String no = request(ACCOUNTANT, "ella", "Large expense: test reject");
         mvc.perform(post("/api/approvals/" + no + "/reject").with(who.get(OWNER).bearer()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));
-        assertThat(handler.calls).containsExactly(no + "=false");
+        assertThat(calls).containsExactly(no + "=false");
         mvc.perform(get("/api/approvals").param("tab", "done").param("type", "EXPENSE").with(who.get(OWNER).bearer()))
                 .andExpect(jsonPath("$.items[*].number", hasItem(no)));
     }
@@ -207,7 +215,7 @@ class AuditTest {
     @Test
     void whenTheActionFailsNothingIsDecided() throws Exception {
         String no = request(ACCOUNTANT, "ella", "Large expense: test fail");
-        handler.fail = true;
+        doThrow(ApiException.conflict("EXPENSE_GONE", "The expense was deleted meanwhile.")).when(expenses).decided(any(), anyBoolean());
         mvc.perform(post("/api/approvals/" + no + "/approve").with(who.get(OWNER).bearer()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EXPENSE_GONE"));
         mvc.perform(get("/api/approvals/" + no + "/status").with(who.get(OWNER).bearer()))
@@ -320,26 +328,6 @@ class AuditTest {
     private long unread(String branch) throws Exception {
         return JSON.readTree(mvc.perform(get("/api/alerts/unread-count").header(CurrentUser.BRANCH_HEADER, branch)
                 .with(who.get(OWNER).bearer())).andReturn().getResponse().getContentAsString()).path("unread").asLong();
-    }
-
-    /** Stands in for the expenses module (P5-01): records what the owner decided, or fails on purpose. */
-    @Component
-    static class ExpenseHandler implements ApprovalHandler {
-        final List<String> calls = new ArrayList<>();
-        volatile boolean fail;
-
-        @Override
-        public ApprovalType type() {
-            return ApprovalType.EXPENSE;
-        }
-
-        @Override
-        public void decided(Approval a, boolean approved) {
-            if (fail) {
-                throw ApiException.conflict("EXPENSE_GONE", "The expense was deleted meanwhile.");
-            }
-            calls.add(a.getNumber() + "=" + approved);
-        }
     }
 
     /** What a module would do: send a request, raise an alert, write an automatic log line. */
