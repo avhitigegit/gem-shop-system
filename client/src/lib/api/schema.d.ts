@@ -2395,6 +2395,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/offers/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test to my email / phone (not counted) */
+        post: operations["sendOfferTest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save and send to every customer chosen who gave permission */
+        post: operations["sendOffer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save a draft (new, or the draft with this code) */
+        post: operations["saveOfferDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/audience": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** How many customers will receive it (permission only) and the cost */
+        post: operations["offerAudience"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Offer results: every offer with sent, delivered, opened, clicked, unsubscribed */
+        get: operations["listOffers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One offer (to edit a draft) */
+        get: operations["getOffer"];
+        put?: never;
+        post?: never;
+        /** Delete a draft */
+        delete: operations["deleteOfferDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/offers/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Countries, gem types, WhatsApp templates and whether email / WhatsApp can send */
+        get: operations["offerOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4501,6 +4621,151 @@ export interface components {
              * @description When this year's wish went out
              */
             sentAt?: string;
+        };
+        OfferForm: {
+            /** @description A draft being edited; empty = new */
+            code?: string;
+            /** @example EMAIL */
+            channel: string;
+            /** @example New Padparadscha arrivals */
+            name: string;
+            /** @description Email only */
+            subject?: string;
+            /** @description WhatsApp only: new_arrivals, festive_offer, thank_you */
+            template?: string;
+            /** @description Email text, or WhatsApp "your text"; {name} = first name */
+            body: string;
+            /** @description Gem picture chosen (e.g. Padparadscha), "upload", or empty = no picture */
+            picture?: string;
+            /** @description The picture as a data URL (PNG / JPEG, up to 2 MB); empty = keep the saved one */
+            photo?: string;
+            countries?: string[];
+            gems?: string[];
+        };
+        OfferTestResult: {
+            to: string;
+            testMode: boolean;
+        };
+        OfferRow: {
+            /** @example OF-0001 */
+            code: string;
+            /** @example EMAIL */
+            channel: string;
+            name: string;
+            subject?: string;
+            /** @example Germany, Netherlands · Moonstone */
+            audience: string;
+            /** Format: date-time */
+            sentAt?: string;
+            sentBy?: string;
+            /** @example SENT */
+            status: string;
+            /** Format: int32 */
+            sent: number;
+            /** Format: int32 */
+            delivered: number;
+            /** Format: int32 */
+            opened: number;
+            /** Format: int32 */
+            clicked: number;
+            /** Format: int32 */
+            unsubscribed: number;
+        };
+        OfferDetail: {
+            code: string;
+            channel: string;
+            name: string;
+            subject?: string;
+            template?: string;
+            body: string;
+            picture?: string;
+            /** @description data URL */
+            photo?: string;
+            countries: string[];
+            gems: string[];
+            status: string;
+        };
+        OfferAudienceForm: {
+            /** @example EMAIL */
+            channel: string;
+            /** @description Countries; empty = all */
+            countries?: string[];
+            /** @description Gem types bought before; empty = any */
+            gems?: string[];
+            /** @description WhatsApp template (for the cost) */
+            template?: string;
+        };
+        OfferAudience: {
+            /**
+             * Format: int32
+             * @description Customers who match the countries and gems
+             */
+            matching: number;
+            /**
+             * Format: int32
+             * @description Who will receive it: permission, not unsubscribed, email / number
+             */
+            recipients: number;
+            /**
+             * Format: int32
+             * @description No permission, unsubscribed or no email / number
+             */
+            excluded: number;
+            /**
+             * @description First name of the first recipient, for the preview
+             * @example Anna
+             */
+            firstName: string;
+            /** @description Estimated cost in US$ (Amazon SES or Meta) */
+            costUsd: number;
+        };
+        OfferList: {
+            offers: components["schemas"]["OfferRow"][];
+            totals: components["schemas"]["OfferTotals"];
+        };
+        OfferTotals: {
+            /**
+             * Format: int32
+             * @description Offers sent
+             */
+            offers: number;
+            /** Format: int32 */
+            sent: number;
+            /** Format: int32 */
+            delivered: number;
+            /** Format: int32 */
+            opened: number;
+            /** Format: int32 */
+            clicked: number;
+            /** Format: int32 */
+            unsubscribed: number;
+        };
+        OfferOptions: {
+            countries: string[];
+            gemTypes: string[];
+            templates: components["schemas"]["OfferTemplate"][];
+            /** @description Email on and Amazon SES on */
+            emailReady: boolean;
+            emailOn: boolean;
+            /** @description WhatsApp on and verified */
+            whatsappReady: boolean;
+            emailTestMode: boolean;
+            whatsappTestMode: boolean;
+            shopName: string;
+            shopAddress?: string;
+            website?: string;
+            /** @description Where "Send test to me" goes */
+            myEmail: string;
+            myPhone?: string;
+        };
+        OfferTemplate: {
+            /** @example new_arrivals */
+            key: string;
+            /** @example new_arrivals (Marketing) */
+            label: string;
+            /** @description With {name}, {shop} and {text} */
+            text: string;
+            marketing: boolean;
         };
     };
     responses: never;
@@ -9809,6 +10074,256 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BirthdayList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendOfferTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferTestResult"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sendOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferRow"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saveOfferDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    offerAudience: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OfferAudienceForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferAudience"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    listOffers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferList"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferDetail"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    deleteOfferDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    offerOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OfferOptions"];
                 };
             };
             /** @description Error (ApiError format) */

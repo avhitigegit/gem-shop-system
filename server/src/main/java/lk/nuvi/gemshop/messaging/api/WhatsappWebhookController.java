@@ -38,11 +38,13 @@ public class WhatsappWebhookController {
     private static final Logger LOG = LoggerFactory.getLogger(WhatsappWebhookController.class);
 
     private final CustomerBook customers;
+    private final lk.nuvi.gemshop.offers.Offers offers;
     private final AppProperties.Whatsapp cfg;
     private final ObjectMapper json;
 
-    public WhatsappWebhookController(CustomerBook customers, AppProperties app, ObjectMapper json) {
+    public WhatsappWebhookController(CustomerBook customers, lk.nuvi.gemshop.offers.Offers offers, AppProperties app, ObjectMapper json) {
         this.customers = customers;
+        this.offers = offers;
         this.cfg = app.whatsapp();
         this.json = json;
     }
@@ -83,6 +85,12 @@ public class WhatsappWebhookController {
         int n = 0;
         for (JsonNode entry : root.path("entry")) {
             for (JsonNode change : entry.path("changes")) {
+                for (JsonNode st : change.path("value").path("statuses")) {   // delivered / read of an offer (P4-05)
+                    String token = st.path("biz_opaque_callback_data").asString("");
+                    if (!token.isEmpty()) {
+                        offers.whatsappStatus(token, st.path("status").asString(""));
+                    }
+                }
                 for (JsonNode m : change.path("value").path("messages")) {
                     String text = switch (m.path("type").asString("")) {
                         case "text" -> m.path("text").path("body").asString("");

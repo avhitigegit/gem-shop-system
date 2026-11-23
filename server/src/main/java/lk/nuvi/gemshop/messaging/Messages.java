@@ -47,7 +47,7 @@ public class Messages implements SmtpSource {
     public static final String NOT_SENT = "NOT_SENT";
 
     /** What a message is about (message_log.kind). */
-    public enum Kind { INVOICE, QUOTATION, CREDIT_NOTE, THANK_YOU, CLOSING_REPORT, BIRTHDAY, TEST }
+    public enum Kind { INVOICE, QUOTATION, CREDIT_NOTE, THANK_YOU, CLOSING_REPORT, BIRTHDAY, TEST, OFFER }
 
     private final JdbcTemplate jdbc;
     private final FieldCrypto crypto;
@@ -79,6 +79,17 @@ public class Messages implements SmtpSource {
             return Optional.empty();
         }
         return Optional.of(new Smtp(s.host(), s.port() == null ? 587 : s.port(), s.security(), s.user(), s.password(), s.from()));
+    }
+
+    /** Amazon SES through its SMTP interface (email-smtp.&lt;region&gt;.amazonaws.com, SMTP credentials of an IAM user). */
+    @Override
+    public Optional<Smtp> ses() {
+        MessageSettings.Ses e = settings().ses();
+        if (!e.enabled() || blank(e.region()) || blank(e.from()) || blank(e.accessKey()) || blank(e.secret())) {
+            return Optional.empty();
+        }
+        return Optional.of(new Smtp("email-smtp." + e.region().trim() + ".amazonaws.com", 587, "STARTTLS", e.accessKey(), e.secret(),
+                e.from()));
     }
 
     @Transactional(readOnly = true)
@@ -213,6 +224,26 @@ public class Messages implements SmtpSource {
         return ok;
     }
 
+    /** Sends an offer email (Amazon SES when real sending is on) and writes it to the message log. Returns SENT / TEST_MODE / FAILED. */
+    public String offerEmail(Long customerId, String ref, MailService.Rich r) {
+        boolean ok = mail.send(r);
+        String status = !ok ? "FAILED" : mail.bulkTestMode() ? "TEST_MODE" : "SENT";
+        write(Kind.OFFER, "EMAIL", customerId, r.to(), ref, r.subject(), status, false);
+        return status;
+    }
+
+    /** Sends an offer on WhatsApp (approved template; test mode until P6-03). {@code token} comes back in Meta's status callbacks. */
+    public String offerWhatsapp(Long customerId, String to, String ref, String text, String fileName, byte[] image, String token) {
+        boolean ok = whatsapp.send(to, text, fileName, image, token);
+        String status = !ok ? "FAILED" : whatsapp.testMode() ? "TEST_MODE" : "SENT";
+        write(Kind.OFFER, "WHATSAPP", customerId, to, ref, null, status, false);
+        return status;
+    }
+
+    public boolean emailTestMode() {
+        return mail.bulkTestMode();
+    }
+
     /** Sends a WhatsApp message (test mode until P6-03) and writes it to the message log. */
     public boolean whatsapp(Kind kind, Long customerId, String to, String ref, String text, String fileName, byte[] file,
             boolean automatic) {
@@ -241,12 +272,12 @@ public class Messages implements SmtpSource {
                 Math.max(1, Math.min(limit, 500)));
     }
 
-    /** One customer's thank-you messages (the customer page, P4-03). Rows: at, kind, email sent, WhatsApp sent. */
+    /** One customer's thank-you messages and offers (the customer page, P4-03). Rows: at, kind, email sent, WhatsApp sent. */
     @Transactional(readOnly = true)
     public List<Object[]> customerMessages(long customerId) {
         return jdbc.query("""
                 select max(at), kind, ref, bool_or(channel = 'EMAIL' and status <> 'FAILED'), bool_or(channel = 'WHATSAPP' and status <> 'FAILED')
-                from message_log where customer_id = ? and kind = 'THANK_YOU'
+                from message_log where customer_id = ? and kind in ('THANK_YOU', 'OFFER')
                 group by kind, ref""", (rs, i) -> new Object[] {rs.getTimestamp(1).toInstant(), rs.getString(2), rs.getString(3),
                 rs.getBoolean(4), rs.getBoolean(5)}, customerId);
     }

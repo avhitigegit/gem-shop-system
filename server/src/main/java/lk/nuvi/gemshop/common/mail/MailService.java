@@ -36,6 +36,15 @@ public class MailService {
     private final boolean useSettings;
     private volatile SmtpSource.Smtp cachedFor;
     private volatile JavaMailSenderImpl cached;
+    private volatile SmtpSource.Smtp cachedSesFor;
+    private volatile JavaMailSenderImpl cachedSes;
+
+    /**
+     * An offer email (P4-05): text + HTML, an optional picture shown in the email (inline, {@code cid:picture}) and the
+     * unsubscribe link as the List-Unsubscribe header. {@code bulk} = goes through Amazon SES when real sending is on.
+     */
+    public record Rich(String to, String subject, String text, String html, byte[] image, String imageType, String unsubscribeUrl,
+            boolean bulk) {}
 
     public MailService(JavaMailSender sender, ShopSettingsRepository shops,
             @Value("${app.mail.from:Gem Shop System <no-reply@localhost>}") String fallbackFrom, ObjectProvider<SmtpSource> source,
@@ -92,6 +101,53 @@ public class MailService {
         }
     }
 
+    /** True while offer emails go to the test mail server, not through Amazon SES. */
+    public boolean bulkTestMode() {
+        return ses().isEmpty();
+    }
+
+    /** Sends an offer email. Returns false when sending failed (it is logged). */
+    public boolean send(Rich r) {
+        try {
+            Optional<SmtpSource.Smtp> ses = r.bulk() ? ses() : Optional.empty();
+            JavaMailSender via = ses.isPresent() ? sesSender(ses.get()) : sender();
+            MimeMessage m = via.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(m, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
+            h.setFrom(ses.isPresent() && ses.get().from() != null ? InternetAddress.parse(ses.get().from(), false)[0] : from());
+            h.setTo(r.to());
+            h.setSubject(r.subject());
+            h.setText(r.text(), r.html());
+            if (r.image() != null && r.image().length > 0) {
+                h.addInline("picture", new org.springframework.core.io.ByteArrayResource(r.image()), r.imageType());
+            }
+            if (r.unsubscribeUrl() != null) {
+                m.setHeader("List-Unsubscribe", "<" + r.unsubscribeUrl() + ">");
+                m.setHeader("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+            }
+            via.send(m);
+            return true;
+        } catch (Exception e) {
+            log.warn("Email to {} not sent ({}): {}", r.to(), r.subject(), e.getMessage());
+            return false;
+        }
+    }
+
+    private Optional<SmtpSource.Smtp> ses() {
+        if (!useSettings) {
+            return Optional.empty();
+        }
+        SmtpSource src = source.getIfAvailable();
+        return src == null ? Optional.empty() : src.ses();
+    }
+
+    private JavaMailSender sesSender(SmtpSource.Smtp x) {
+        if (!x.equals(cachedSesFor)) {
+            cachedSes = build(x);
+            cachedSesFor = x;
+        }
+        return cachedSes;
+    }
+
     InternetAddress from() throws Exception {
         Optional<SmtpSource.Smtp> smtp = settings();
         if (smtp.isPresent() && smtp.get().from() != null && !smtp.get().from().isBlank()) {
@@ -119,27 +175,31 @@ public class MailService {
         }
         SmtpSource.Smtp x = smtp.get();
         if (!x.equals(cachedFor)) {
-            JavaMailSenderImpl s = new JavaMailSenderImpl();
-            s.setHost(x.host());
-            s.setPort(x.port());
-            s.setUsername(blankToNull(x.user()));
-            s.setPassword(blankToNull(x.password()));
-            s.setDefaultEncoding(StandardCharsets.UTF_8.name());
-            Properties p = s.getJavaMailProperties();
-            p.put("mail.smtp.auth", String.valueOf(x.user() != null && !x.user().isBlank()));
-            p.put("mail.smtp.connectiontimeout", "10000");
-            p.put("mail.smtp.timeout", "15000");
-            p.put("mail.smtp.writetimeout", "15000");
-            if ("SSL".equals(x.security())) {
-                p.put("mail.smtp.ssl.enable", "true");
-            } else if ("STARTTLS".equals(x.security())) {
-                p.put("mail.smtp.starttls.enable", "true");
-                p.put("mail.smtp.starttls.required", "true");
-            }
-            cached = s;
+            cached = build(x);
             cachedFor = x;
         }
         return cached;
+    }
+
+    private static JavaMailSenderImpl build(SmtpSource.Smtp x) {
+        JavaMailSenderImpl s = new JavaMailSenderImpl();
+        s.setHost(x.host());
+        s.setPort(x.port());
+        s.setUsername(blankToNull(x.user()));
+        s.setPassword(blankToNull(x.password()));
+        s.setDefaultEncoding(StandardCharsets.UTF_8.name());
+        Properties p = s.getJavaMailProperties();
+        p.put("mail.smtp.auth", String.valueOf(x.user() != null && !x.user().isBlank()));
+        p.put("mail.smtp.connectiontimeout", "10000");
+        p.put("mail.smtp.timeout", "15000");
+        p.put("mail.smtp.writetimeout", "15000");
+        if ("SSL".equals(x.security())) {
+            p.put("mail.smtp.ssl.enable", "true");
+        } else if ("STARTTLS".equals(x.security())) {
+            p.put("mail.smtp.starttls.enable", "true");
+            p.put("mail.smtp.starttls.required", "true");
+        }
+        return s;
     }
 
     private static String blankToNull(String s) {
