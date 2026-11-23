@@ -177,9 +177,13 @@ public final class SettingsDtos {
             @Schema(requiredMode = REQUIRED) BigDecimal defaultGuidePct,
             @Schema(requiredMode = REQUIRED) List<LevelDto> levels,
             @Schema(requiredMode = REQUIRED, description = "The BRD example levels (button \"Use BRD example levels\")")
-            List<LevelDto> exampleLevels) {}
+            List<LevelDto> exampleLevels,
+            @Schema(requiredMode = REQUIRED, description = "Each guide / driver with their own %")
+            List<lk.nuvi.gemshop.commissions.api.CommissionDtos.GuidePct> guides) {}
 
     public record CommissionForm(
             @Schema(requiredMode = REQUIRED) @NotNull BigDecimal defaultGuidePct,
-            @Schema(requiredMode = REQUIRED) @NotNull @Size(min = 2, max = 10) List<@Valid LevelDto> levels) {}
+            @Schema(requiredMode = REQUIRED) @NotNull @Size(min = 2, max = 10) List<@Valid LevelDto> levels,
+            @Schema(description = "Each guide's own % (only the ones sent are changed)")
+            @Size(max = 500) List<lk.nuvi.gemshop.commissions.api.CommissionDtos.@Valid GuidePctForm> guides) {}
 }

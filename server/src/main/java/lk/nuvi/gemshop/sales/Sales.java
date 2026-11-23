@@ -26,6 +26,7 @@ import lk.nuvi.gemshop.auth.security.CurrentUser;
 import lk.nuvi.gemshop.auth.security.CurrentUser.Who;
 import lk.nuvi.gemshop.auth.user.Role;
 import lk.nuvi.gemshop.auth.user.UserAccount;
+import lk.nuvi.gemshop.commissions.CommissionBook;
 import lk.nuvi.gemshop.commissions.Guide;
 import lk.nuvi.gemshop.commissions.Guides;
 import lk.nuvi.gemshop.common.config.AppProperties;
@@ -103,6 +104,7 @@ public class Sales {
     private final Gems gems;
     private final Customers customers;
     private final Guides guides;
+    private final CommissionBook book;
     private final Commission commission;
     private final Rates rates;
     private final ShopSettingsRepository shops;
@@ -117,7 +119,7 @@ public class Sales {
     private final ZoneId zone;
 
     public Sales(SaleRepository sales, HeldSaleRepository held, QuoteRepository quotes, SaleReturnRepository returns,
-            CreditNoteRepository creditNotes, Gems gems, Customers customers, Guides guides,
+            CreditNoteRepository creditNotes, Gems gems, Customers customers, Guides guides, CommissionBook book,
             Commission commission, Rates rates, ShopSettingsRepository shops, Numbers numbers, Approvals approvals,
             ApprovalRepository approvalRepo, ActivityLog log, Alerts alerts, CurrentUser current, EntityManager em,
             AppProperties app, GemPrints prints) {
@@ -129,6 +131,7 @@ public class Sales {
         this.gems = gems;
         this.customers = customers;
         this.guides = guides;
+        this.book = book;
         this.commission = commission;
         this.rates = rates;
         this.shops = shops;
@@ -361,6 +364,7 @@ public class Sales {
         }
         paid.forEach(p -> s.pay(p.method, p.currency, p.amount, p.rate, p.lkr, p.feePct, p.fee));
         sales.save(s);
+        book.earned(s);
         for (Line l : lines) {
             l.gem.sold(no, now);
             gems.addHistory(l.gem, "Sold", "Invoice " + no + " · " + lkr(l.agreed));
@@ -569,7 +573,7 @@ public class Sales {
     }
 
     /** Shop details for the invoice header and footer. */
-    DocShop docShop() {
+    public DocShop docShop() {
         ShopSettings sh = shops.current().orElse(null);
         if (sh == null) {
             return new DocShop("Gem Shop", null, null, null, null, null, null, 7, null);

@@ -4,6 +4,7 @@ import java.time.Instant;
 import lk.nuvi.gemshop.audit.approval.Approval;
 import lk.nuvi.gemshop.audit.approval.ApprovalHandler;
 import lk.nuvi.gemshop.audit.approval.ApprovalType;
+import lk.nuvi.gemshop.commissions.CommissionBook;
 import lk.nuvi.gemshop.gems.Gem;
 import lk.nuvi.gemshop.gems.GemStatus;
 import lk.nuvi.gemshop.gems.Gems;
@@ -19,10 +20,12 @@ class CancelInvoiceApproval implements ApprovalHandler {
 
     private final SaleRepository sales;
     private final Gems gems;
+    private final CommissionBook book;
 
-    CancelInvoiceApproval(SaleRepository sales, Gems gems) {
+    CancelInvoiceApproval(SaleRepository sales, Gems gems, CommissionBook book) {
         this.sales = sales;
         this.gems = gems;
+        this.book = book;
     }
 
     @Override
@@ -36,7 +39,9 @@ class CancelInvoiceApproval implements ApprovalHandler {
         if (s == null || s.getStatus() == Sale.Status.CANCELLED || !approved) {
             return;
         }
-        s.cancel(approval.getDecidedAt() == null ? Instant.now() : approval.getDecidedAt(), Sales.name(approval.getDecidedBy()));
+        Instant at = approval.getDecidedAt() == null ? Instant.now() : approval.getDecidedAt();
+        s.cancel(at, Sales.name(approval.getDecidedBy()));
+        book.cancelled(s, at);
         for (SaleItem i : s.getItems()) {
             if (i.isReleased()) {
                 continue;

@@ -21,5 +21,7 @@ public enum Counter {
     RETURN,
     STOCK_CORRECTION,
     SUPPLIER_RETURN,
-    STOCK_CHECK
+    STOCK_CHECK,
+    /** Commission paid to a guide / driver or staff (CP-…, P3-05). */
+    COMMISSION_PAYMENT
 }

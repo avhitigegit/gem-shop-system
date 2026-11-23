@@ -8,6 +8,7 @@ import lk.nuvi.gemshop.audit.alert.Alerts;
 import lk.nuvi.gemshop.audit.approval.Approval;
 import lk.nuvi.gemshop.audit.approval.ApprovalHandler;
 import lk.nuvi.gemshop.audit.approval.ApprovalType;
+import lk.nuvi.gemshop.commissions.CommissionBook;
 import lk.nuvi.gemshop.common.numbers.Counter;
 import lk.nuvi.gemshop.common.numbers.Numbers;
 import lk.nuvi.gemshop.gems.Gem;
@@ -31,15 +32,17 @@ class ReturnApproval implements ApprovalHandler {
     private final Commission commission;
     private final Numbers numbers;
     private final Alerts alerts;
+    private final CommissionBook book;
 
     ReturnApproval(SaleReturnRepository returns, CreditNoteRepository creditNotes, Gems gems, Commission commission, Numbers numbers,
-            Alerts alerts) {
+            Alerts alerts, CommissionBook book) {
         this.returns = returns;
         this.creditNotes = creditNotes;
         this.gems = gems;
         this.commission = commission;
         this.numbers = numbers;
         this.alerts = alerts;
+        this.book = book;
     }
 
     @Override
@@ -73,6 +76,7 @@ class ReturnApproval implements ApprovalHandler {
         item.release();
         CreditNote cn = creditNotes.save(new CreditNote(numbers.next(Counter.CREDIT_NOTE),
                 a.getDecidedAt() == null ? Instant.now() : a.getDecidedAt(), r, guide, staff, Sales.name(a.getDecidedBy())));
+        book.takeBack(s, guide, staff, cn.getIssuedAt(), "Taken back – return " + r.getNumber());
         Gem g = r.getGem();
         if (g.getStatus() == GemStatus.SOLD && s.getNumber().equals(g.getSaleNo())) {
             g.returnedByCustomer();
