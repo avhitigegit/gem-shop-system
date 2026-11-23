@@ -14,7 +14,7 @@ import { useSession } from "@/lib/session";
 
 type Doc = {
   /** "invoice" for /api/sales/…/send, "quotation" / "reservation" for /api/quotes/…/send */
-  label: "invoice" | "quotation" | "reservation";
+  label: "invoice" | "quotation" | "reservation" | "credit note";
   number: string;
   branch: string;
   customer: { name: string; email?: string | null; whatsapp?: string | null };
@@ -45,7 +45,9 @@ export function SendModal({ doc, onClose, onSent }: { doc: Doc; onClose: () => v
     const { data, error } =
       doc.label === "invoice"
         ? await api.POST("/api/sales/{number}/send", { params: { path }, body })
-        : await api.POST("/api/quotes/{number}/send", { params: { path }, body });
+        : doc.label === "credit note"
+          ? await api.POST("/api/credit-notes/{number}/send", { params: { path }, body })
+          : await api.POST("/api/quotes/{number}/send", { params: { path }, body });
     setBusy(false);
     if (!data) {
       setErrors(fieldErrors(error));

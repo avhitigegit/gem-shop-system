@@ -22,17 +22,23 @@ const KINDS: { value: Line["kind"]; label: string }[] = [
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function PaymentModal({
-  total,
+  total: bill,
+  credit,
   busy,
   onClose,
   onPay,
 }: {
   total: number;
+  /** Exchange (P3-04): the credit note pays this much of the bill first. */
+  credit?: { number: string; amount: number } | null;
   busy: boolean;
   onClose: () => void;
   onPay: (payments: PaymentForm[]) => void;
 }) {
   const { rates } = useSession();
+  const used = credit ? Math.min(credit.amount, bill) : 0;
+  const giveBack = credit ? r2(Math.max(0, credit.amount - bill)) : 0;
+  const total = r2(bill - used);
   const [lines, setLines] = useState<Line[]>([]);
   const rate = (k: Line["kind"]) => (k === "CASH-USD" ? rates.USD : k === "CASH-EUR" ? rates.EUR : 1);
   const toLkr = (l: Line) => r2((l.amount || 0) * rate(l.kind));
@@ -84,7 +90,7 @@ export function PaymentModal({
           </Button>
           <Button
             variant="success"
-            disabled={busy || remaining > 0 || cardOver || !lines.length}
+            disabled={busy || remaining > 0 || cardOver || (!lines.length && total > 0)}
             onClick={confirm}
             id="payDone"
           >
@@ -94,6 +100,11 @@ export function PaymentModal({
       }
     >
       <div className="pay-due">
+        {credit ? (
+          <div className="muted-on-dark" style={{ fontSize: 12 }} id="creditLine">
+            Bill {lkr(bill)} − credit note {credit.number} {lkr(used)}
+          </div>
+        ) : null}
         <div className="muted-on-dark">Amount to pay</div>
         <div className="pay-big">{lkr(total)}</div>
         <div className="text-gold">
@@ -180,6 +191,11 @@ export function PaymentModal({
           {change > 0 ? <small className="muted"> (USD {num(change / rates.USD)})</small> : null}
         </dd>
       </dl>
+      {giveBack > 0 ? (
+        <Alert tone="warning" className="mt-s">
+          The credit note is worth {lkr(credit?.amount ?? 0)}: give back <b>{lkr(giveBack)}</b> to the customer.
+        </Alert>
+      ) : null}
       {cardOver ? (
         <Alert tone="danger" className="mt-s">
           Card payments cannot be more than the amount due. Reduce the card amount.

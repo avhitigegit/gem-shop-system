@@ -121,6 +121,40 @@ export function PosScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heldParam]);
 
+  // ---------------------------------------------------------------- exchange: ?credit=CN-…&customer=C-… (P3-04)
+  const creditParam = params.get("credit");
+  const customerParam = params.get("customer");
+  useEffect(() => {
+    if (!creditParam) return;
+    void (async () => {
+      const { data, error } = await api.GET("/api/credit-notes/{number}", {
+        params: { path: { number: creditParam } },
+      });
+      router.replace("/sell/new");
+      if (!data) return toast("Credit note not found", errorMessage(error), "error");
+      update({
+        ...blankDraft(),
+        credit: data.number,
+        custMode: "existing",
+        customer: customerParam ?? data.customer.code,
+      });
+      setHeld(null);
+      toast(`Exchange – ${data.number}`, `Pays ${lkr(data.amount)} of the new bill.`);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creditParam]);
+  const [creditNote, setCredit] = useState<{ number: string; amount: number; used: string | null } | null>(null);
+  const credit = d.credit && creditNote?.number === d.credit ? creditNote : null;
+  useEffect(() => {
+    if (!d.credit) return;
+    const no = d.credit;
+    void (async () => {
+      const { data, error } = await api.GET("/api/credit-notes/{number}", { params: { path: { number: no } } });
+      if (!data) return toast("Credit note not found", errorMessage(error), "error");
+      setCredit({ number: data.number, amount: Number(data.amount), used: data.usedSaleNo ?? null });
+    })();
+  }, [d.credit, toast]);
+
   // ---------------------------------------------------------------- "Sell now" on a reservation / quotation: ?quote=
   const quoteParam = params.get("quote");
   useEffect(() => {
@@ -289,6 +323,7 @@ export function PosScreen() {
         guide: d.guide || undefined,
         held: heldOpen ? (d.held ?? undefined) : undefined,
         quote: d.quote ?? undefined,
+        creditNote: d.credit ?? undefined,
         branch: branch !== ALL_BRANCHES ? branch : undefined,
         payments,
       },
@@ -498,6 +533,27 @@ export function PosScreen() {
             This is a normal sale
           </Link>
         </div>
+      ) : null}
+      {d.credit ? (
+        <Alert tone={credit?.used ? "danger" : "info"} className="mb">
+          <b>Exchange – credit note {d.credit}</b>
+          {credit ? (
+            credit.used ? (
+              <> was already used on {credit.used}.</>
+            ) : (
+              <> pays {lkr(credit.amount)} of this bill. Scan the new gem; the rest is paid as usual.</>
+            )
+          ) : null}{" "}
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              update({ ...d, credit: null });
+            }}
+          >
+            Remove
+          </a>
+        </Alert>
       ) : null}
       {d.quote ? (
         <Alert tone="info" className="mb">
@@ -869,7 +925,13 @@ export function PosScreen() {
       ) : null}
 
       {paying ? (
-        <PaymentModal total={total} busy={busy} onClose={() => setPaying(false)} onPay={(p) => void complete(p)} />
+        <PaymentModal
+          total={total}
+          credit={credit && !credit.used ? credit : null}
+          busy={busy}
+          onClose={() => setPaying(false)}
+          onPay={(p) => void complete(p)}
+        />
       ) : null}
 
       {done ? (
@@ -905,7 +967,13 @@ export function PosScreen() {
             <dt>Paid</dt>
             <dd>
               {done.payments
-                .map((p) => (p.method === "CARD" ? `Card ${lkr(p.lkr)}` : `Cash ${p.currency} ${num(p.amount)}`))
+                .map((p) =>
+                  p.method === "CARD"
+                    ? `Card ${lkr(p.lkr)}`
+                    : p.method === "CREDIT"
+                      ? `Credit note ${lkr(p.lkr)}`
+                      : `Cash ${p.currency} ${num(p.amount)}`,
+                )
                 .join(" + ")}
             </dd>
             <dt>Change due</dt>

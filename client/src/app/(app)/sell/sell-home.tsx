@@ -1,7 +1,7 @@
 "use client";
 
 /* Sell home – prototype hub/sell.html: held sales (approved → finish; waiting → owner approves), sales today on
-   Invoices, and the latest invoices. Reserved & quotes shows the active count; returns and credit notes come with their headings. */
+   Invoices, and the latest invoices. Reserved & quotes shows the active count; Returns the ones waiting for the owner. */
 import Link from "next/link";
 import { SectionHome, type Attention } from "@/components/shell/section-home";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,21 @@ export function SellHome() {
           button: owner ? "Approve" : "Open",
         });
     }
+    for (const r of s.returnsWaiting)
+      attention.push({
+        tone: "warning",
+        icon: "↩️",
+        text: (
+          <>
+            <b>{owner ? "Return needs your approval" : "Return waiting for the owner"}</b> – {r.gem} (
+            {r.kind === "EXCHANGE" ? "exchange" : "refund"}).
+          </>
+        ),
+        href: role === "ACCOUNTANT" ? undefined : `/sell/returns/new?id=${r.number}`,
+        button: owner ? "Approve" : "View",
+      });
     counts["/sell/invoices"] = `${s.salesToday} today`;
+    counts["/sell/returns"] = s.returnsWaiting.length ? `${s.returnsWaiting.length} waiting` : "none waiting";
     counts["/sell/reserved"] = `${s.reservations + s.quotations} active`;
   }
   return (
