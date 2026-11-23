@@ -95,7 +95,7 @@ class PushTest {
         String key = read(get("/api/push/key"), OWNER).path("publicKey").asString();
         assertThat(WebPushCrypto.unb64(key)).hasSize(65);
         assertThat(read(get("/api/push/key"), OWNER).path("publicKey").asString()).isEqualTo(key);   // kept, not made again
-        assertThat(jdbc.queryForObject("select private_key from push_key", String.class)).doesNotContain("MIG"); // encrypted
+        assertThat(jdbc.queryForObject("select secret_key from push_key", String.class)).doesNotContain("MIG"); // encrypted
 
         String endpoint = signUp();
         JsonNode settings = read(get("/api/push/settings"), OWNER);

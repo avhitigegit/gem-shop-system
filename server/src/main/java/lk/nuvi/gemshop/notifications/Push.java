@@ -77,7 +77,8 @@ public class Push {
 
     @Transactional
     public PushDeviceView addDevice(DeviceForm f) {
-        long me = current.require().id();
+        CurrentUser.Who who = current.require();
+        long me = who.id();
         checkEndpoint(f.endpoint());
         byte[] p256dh = WebPushCrypto.unb64(f.p256dh());
         if (p256dh.length != 65 || WebPushCrypto.unb64(f.auth()).length != 16) {
@@ -85,10 +86,12 @@ public class Push {
         }
         Timestamp now = Timestamp.from(Instant.now());
         jdbc.update("""
-                insert into push_device (user_id, endpoint, p256dh, auth, device, created_at) values (?, ?, ?, ?, ?, ?)
+                insert into push_device (user_id, endpoint, p256dh, auth, device, created_at, created_by, updated_at, updated_by)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 on conflict (endpoint) do update set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth,
-                    device = excluded.device, failures = 0""",
-                me, f.endpoint(), f.p256dh(), f.auth(), blank(f.device()), now);
+                    device = excluded.device, failures = 0, updated_at = excluded.updated_at, updated_by = excluded.updated_by,
+                    version = push_device.version + 1""",
+                me, f.endpoint(), f.p256dh(), f.auth(), blank(f.device()), now, who.email(), now, who.email());
         return jdbc.queryForObject("select id, device, created_at, last_sent_at from push_device where endpoint = ?", Push::view, f.endpoint());
     }
 
@@ -108,11 +111,15 @@ public class Push {
 
     @Transactional
     public PushSettings saveSettings(Map<PushKind, Boolean> kinds) {
-        long me = current.require().id();
+        CurrentUser.Who who = current.require();
+        long me = who.id();
+        Timestamp now = Timestamp.from(Instant.now());
         kinds.forEach((k, v) -> {
             if (k != null && v != null) {
-                jdbc.update("insert into push_setting (user_id, kind, enabled) values (?, ?, ?) "
-                        + "on conflict (user_id, kind) do update set enabled = excluded.enabled", me, k.name(), v);
+                jdbc.update("insert into push_setting (user_id, kind, enabled, created_at, created_by, updated_at, updated_by) "
+                        + "values (?, ?, ?, ?, ?, ?, ?) on conflict (user_id, kind) do update set enabled = excluded.enabled, "
+                        + "updated_at = excluded.updated_at, updated_by = excluded.updated_by, version = push_setting.version + 1",
+                        me, k.name(), v, now, who.email(), now, who.email());
             }
         });
         return settings();
