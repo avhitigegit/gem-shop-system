@@ -2,7 +2,7 @@
 
 /* Owner phone view – prototype k-owner-control/owner-mobile.html (Guide 54; BRD K1). Today at a glance for one branch
    or all: sales and profit, approvals waiting (approve / reject right here), cash, card, stock value, gems sold today and
-   the newest alerts. Adding it to the phone's home screen and push alerts come with P4-02. */
+   the newest alerts. Installed on the phone's home screen it opens like an app; push alerts are set on Alerts. */
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -208,8 +208,9 @@ export function PhoneScreen() {
           </Card>
           <Alert className="mt">
             <span style={{ fontSize: 12 }}>
-              Adding this page to the phone&apos;s home screen and instant push alerts for sales and approvals come with
-              the phone app.
+              Install this page on the phone&apos;s home screen (Android: menu → Install app; iPhone: Share → Add to
+              Home Screen) and turn on <Link href="/approvals/alerts#pushCard">push alerts</Link> for instant alerts of
+              sales, approvals and cash differences.
             </span>
           </Alert>
         </>
