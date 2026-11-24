@@ -38,10 +38,14 @@ public class Customer extends BaseEntity {
     @Column(nullable = false, length = 60)
     private String country;
 
-    @Column(length = 160)
+    /** Encrypted in the database (PDPA); checked to 160 characters by {@link Customers#check}. */
+    @Convert(converter = EncryptedString.class)
+    @Column(columnDefinition = "text")
     private String email;
 
-    @Column(length = 40)
+    /** Encrypted in the database (PDPA); checked to 40 characters by {@link Customers#check}. */
+    @Convert(converter = EncryptedString.class)
+    @Column(columnDefinition = "text")
     private String whatsapp;
 
     @Column(length = 5)

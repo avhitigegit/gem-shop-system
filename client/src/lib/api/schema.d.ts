@@ -1275,6 +1275,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/two-step/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** New secret for the authenticator app (QR code); stays off until confirmed */
+        post: operations["startTwoStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-step/off": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Switch two-step sign-in off (password needed) */
+        post: operations["turnOffTwoStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-step/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn two-step on with the first code; returns the backup codes (shown once) */
+        post: operations["confirmTwoStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/reset-password": {
         parameters: {
             query?: never;
@@ -2850,6 +2901,23 @@ export interface paths {
         };
         /** The closing report as a PDF */
         get: operations["closingPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Is two-step sign-in on for my login? */
+        get: operations["getTwoStep"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4546,6 +4614,21 @@ export interface components {
             /** @description Needed when there is a difference */
             note?: string;
         };
+        TwoStepSetup: {
+            secret: string;
+            uri: string;
+            /** @description QR code of the link as a PNG data URL */
+            qr: string;
+        };
+        TwoStepOffRequest: {
+            password: string;
+        };
+        TwoStepCodeRequest: {
+            code: string;
+        };
+        TwoStepBackupCodes: {
+            codes: string[];
+        };
         ResetPasswordRequest: {
             token: string;
             newPassword: string;
@@ -4556,6 +4639,8 @@ export interface components {
             password: string;
             /** @description Keep me signed in on this device (not on shared shop computers) */
             remember?: boolean;
+            /** @description Two-step sign-in: 6-digit code from the authenticator app, or a backup code. Asked for (TWO_STEP_CODE_NEEDED) after the right password when two-step is on. */
+            code?: string;
         };
         ForgotPasswordRequest: {
             /** Format: email */
@@ -5721,6 +5806,14 @@ export interface components {
              * @description Closings of the last 7 days that did not match
              */
             daysNotMatching: number;
+        };
+        TwoStepStatus: {
+            on: boolean;
+            /** Format: date-time */
+            since?: string;
+            /** Format: int32 */
+            backupCodesLeft: number;
+            allowed: boolean;
         };
         DemoUser: {
             name: string;
@@ -9162,6 +9255,99 @@ export interface operations {
             };
         };
     };
+    startTwoStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TwoStepSetup"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    turnOffTwoStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoStepOffRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    confirmTwoStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoStepCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TwoStepBackupCodes"];
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     resetPassword: {
         parameters: {
             query?: never;
@@ -12146,6 +12332,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
+                };
+            };
+            /** @description Error (ApiError format) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    getTwoStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TwoStepStatus"];
                 };
             };
             /** @description Error (ApiError format) */

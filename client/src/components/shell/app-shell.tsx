@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AccessDenied } from "@/components/shell/access-denied";
 import { ChangePasswordDialog } from "@/components/shell/change-password";
+import { TwoStepDialog } from "@/components/shell/two-step";
 import { FlowBar } from "@/components/ui/steps";
 import { useToast } from "@/components/ui/toast";
 import { useApprovalsWaiting } from "@/lib/approvals";
@@ -251,6 +252,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
   const router = useRouter();
   const toast = useToast();
   const [changePw, setChangePw] = useState(false);
+  const [twoStep, setTwoStep] = useState(false);
   const canAll = seesAllBranches(s.role);
   const options = [
     ...(canAll ? [{ v: ALL_BRANCHES, l: "All branches" }] : []),
@@ -354,6 +356,11 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
         <button className="dp-item" onClick={() => setChangePw(true)}>
           Change password
         </button>
+        {owner && (
+          <button className="dp-item" onClick={() => setTwoStep(true)}>
+            Two-step sign-in <small className="muted">(code from your phone)</small>
+          </button>
+        )}
         <Link className="dp-item" href="/design">
           Design kit <small className="muted">(how the screens look)</small>
         </Link>
@@ -370,6 +377,7 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
         </button>
       </Dropdown>
       <ChangePasswordDialog open={changePw} onOpenChange={setChangePw} />
+      {owner && <TwoStepDialog open={twoStep} onOpenChange={setTwoStep} />}
     </header>
   );
 }

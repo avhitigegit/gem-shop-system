@@ -36,7 +36,7 @@ function PurchaseBody({ number }: { number: string }) {
         image ? (
           <a href={p.bill.url} target="_blank" rel="noreferrer">
             {/* eslint-disable-next-line @next/next/no-img-element -- bill photo from the file store */}
-            <img src={p.bill.url} alt={`Bill ${p.number}`} className="bill-photo" />
+            <img src={p.bill.url} loading="lazy" alt={`Bill ${p.number}`} className="bill-photo" />
           </a>
         ) : (
           <a href={p.bill.url} target="_blank" rel="noreferrer">

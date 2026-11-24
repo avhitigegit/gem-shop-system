@@ -41,6 +41,8 @@ server:
 app:
   name: Gem Shop System
   environment: ${APP_ENV:local}
+  limits:
+    enabled: true                   # per-address limit on sign in, reset password, setup and public links (RequestLimits)
   timezone: Asia/Colombo          # business day (opening cash, close the day, birthdays) is Sri Lanka time
   sample-data:
     enabled: false                # switched on in local / dev / uat only

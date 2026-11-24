@@ -151,6 +151,7 @@ function Expense({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={d.bill.thumbUrl ?? d.bill.url}
+                  loading="lazy"
                   alt={`Bill photo ${x.number}`}
                   style={{ maxWidth: "100%", maxHeight: 360, borderRadius: 8, border: "1px solid var(--line)" }}
                 />

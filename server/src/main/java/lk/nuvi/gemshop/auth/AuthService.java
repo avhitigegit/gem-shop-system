@@ -73,11 +73,13 @@ public class AuthService {
     private final MailService mail;
     private final AuthProperties props;
     private final ActivityLog activity;
+    private final TwoStep twoStep;
 
     public AuthService(UserAccountRepository users, RefreshTokenRepository refreshTokens, PasswordResetTokenRepository resetTokens,
             BranchRepository branches, ShopSettingsRepository shops, ExchangeRateRepository rates, PasswordEncoder encoder,
-            TokenService tokens, MailService mail, AuthProperties props, ActivityLog activity) {
+            TokenService tokens, MailService mail, AuthProperties props, ActivityLog activity, TwoStep twoStep) {
         this.activity = activity;
+        this.twoStep = twoStep;
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.resetTokens = resetTokens;
@@ -98,6 +100,16 @@ public class AuthService {
     /** Checks email and password. Wrong tries are saved even though the sign-in fails. */
     @Transactional(noRollbackFor = ApiException.class)
     public Result login(String email, String password, boolean remember, String device) {
+        return login(email, password, null, remember, device);
+    }
+
+    /**
+     * Checks email, password and – when the owner has two-step sign-in on – the code from the phone. Without a code the
+     * answer is {@link TwoStep#CODE_NEEDED}, so the screen asks for it and sends everything again. A wrong code counts as
+     * a wrong try (5 lock the login).
+     */
+    @Transactional(noRollbackFor = ApiException.class)
+    public Result login(String email, String password, String code, boolean remember, String device) {
         Instant now = Instant.now();
         UserAccount u = users.findByEmail(UserAccount.normalise(email)).orElse(null);
         if (u == null) {
@@ -118,6 +130,21 @@ public class AuthService {
         }
         if (!u.isActive()) {
             throw new ApiException(HttpStatus.FORBIDDEN, ACCOUNT_DISABLED, "Account disabled. Ask the owner to activate it.");
+        }
+        if (u.isTwoStepOn()) {
+            if (code == null || code.isBlank()) {
+                throw new ApiException(HttpStatus.UNAUTHORIZED, TwoStep.CODE_NEEDED, "Enter the 6-digit code from the app on your phone.");
+            }
+            if (!twoStep.check(u, code, now)) {
+                boolean nowLocked = u.wrongPassword(props.maxFailedLogins(), now.plus(props.lockMinutes(), ChronoUnit.MINUTES));
+                log.info("Wrong two-step code for {}{}", u.getEmail(), nowLocked ? " – login locked" : "");
+                if (nowLocked) {
+                    activity.addSystem("Login locked", u.getName() + " · " + props.maxFailedLogins() + " wrong codes – locked for "
+                            + props.lockMinutes() + " minutes", branchOf(u));
+                    throw locked();
+                }
+                throw new ApiException(HttpStatus.UNAUTHORIZED, TwoStep.WRONG_CODE, "That code is not right. Try the newest code in the app.");
+            }
         }
         return signIn(u, remember, device, now);
     }

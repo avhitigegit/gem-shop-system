@@ -1,7 +1,9 @@
 "use client";
 
 /* Sign in – prototype auth/login.html. Each person has their own login and role.
-   Wrong password 5 times locks the login for 15 minutes. "Keep me signed in" is for the person's own device;
+   Wrong password 5 times locks the login for 15 minutes.
+   Owner with two-step sign-in on (P6-01): after the right password the screen asks for the 6-digit code from the
+   authenticator app (or a backup code) and sends everything again. "Keep me signed in" is for the person's own device;
    on shared shop computers 15 minutes without use signs out.
    The "Demo: sign in as…" buttons only show on your own computer / dev (the backend says if they exist). */
 import Link from "next/link";
@@ -31,7 +33,9 @@ export function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; code?: string }>({});
+  const [codeStep, setCodeStep] = useState(false);
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [shopName, setShopName] = useState<string | null>(null);
   const [setupNeeded, setSetupNeeded] = useState(false);
@@ -62,7 +66,13 @@ export function LoginScreen() {
 
   const failed = (error: unknown) => {
     const code = errorCode(error);
-    if (code === "BAD_LOGIN") toast("Wrong email or password", "", "error");
+    if (code === "TWO_STEP_CODE_NEEDED") {
+      setCodeStep(true);
+      setTimeout(() => document.getElementById("otp")?.focus(), 0);
+    } else if (code === "TWO_STEP_WRONG_CODE") {
+      setErrors((x) => ({ ...x, code: "That code is not right." }));
+      toast("Wrong code", errorMessage(error), "error");
+    } else if (code === "BAD_LOGIN") toast("Wrong email or password", "", "error");
     else if (code === "ACCOUNT_DISABLED") toast("Account disabled", "Ask the owner to activate it.", "error");
     else if (code === "ACCOUNT_LOCKED") toast("Login locked", errorMessage(error), "error");
     else toast("Could not sign in", errorMessage(error), "error");
@@ -72,14 +82,17 @@ export function LoginScreen() {
     const e: typeof errors = {};
     if (!email.trim() || !emailOk(email)) e.email = "This field is required.";
     if (!password) e.password = "This field is required.";
+    if (codeStep && !code.trim()) e.code = "Enter the 6-digit code.";
     setErrors(e);
     if (Object.keys(e).length) {
       toast("Please complete the required fields", "Fields marked * are required.", "error");
-      (document.getElementById(e.email ? "em" : "pw") as HTMLInputElement | null)?.focus();
+      (document.getElementById(e.email ? "em" : e.password ? "pw" : "otp") as HTMLInputElement | null)?.focus();
       return;
     }
     setBusy(true);
-    const { data, error } = await api.POST("/api/auth/login", { body: { email: email.trim(), password, remember } });
+    const { data, error } = await api.POST("/api/auth/login", {
+      body: { email: email.trim(), password, remember, ...(codeStep ? { code: code.trim() } : {}) },
+    });
     if (data) go(data);
     else failed(error);
     setBusy(false);
@@ -147,7 +160,12 @@ export function LoginScreen() {
                     autoComplete="username"
                     placeholder="you@ceylongemhouse.lk"
                     value={email}
-                    onChange={(e) => (setEmail(e.target.value), setErrors((x) => ({ ...x, email: undefined })))}
+                    onChange={(e) => (
+                      setEmail(e.target.value),
+                      setErrors((x) => ({ ...x, email: undefined })),
+                      setCodeStep(false),
+                      setCode("")
+                    )}
                   />
                 </Field>
                 <div className={cn("field", errors.password && "invalid")}>
@@ -174,6 +192,26 @@ export function LoginScreen() {
                     </span>
                   )}
                 </div>
+                {codeStep && (
+                  <Field
+                    label="Code from your phone"
+                    htmlFor="otp"
+                    required
+                    hint="Open the authenticator app and type the 6-digit code. Lost your phone? Type a backup code."
+                    error={errors.code}
+                  >
+                    <Input
+                      id="otp"
+                      name="one-time-code"
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      maxLength={20}
+                      placeholder="123 456"
+                      value={code}
+                      onChange={(e) => (setCode(e.target.value), setErrors((x) => ({ ...x, code: undefined })))}
+                    />
+                  </Field>
+                )}
                 <Check checked={remember} onChange={setRemember}>
                   Keep me signed in on this device <small className="muted">(not on shared shop computers)</small>
                 </Check>

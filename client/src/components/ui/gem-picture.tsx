@@ -135,6 +135,8 @@ export function GemPicture({
         // eslint-disable-next-line @next/next/no-img-element -- photos come from the backend file store
         <img
           src={photoUrl}
+          loading="lazy"
+          decoding="async"
           alt={alt ?? `${gem ?? "Gem"} photo`}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
