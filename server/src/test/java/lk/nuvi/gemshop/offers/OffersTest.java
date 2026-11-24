@@ -52,6 +52,7 @@ class OffersTest {
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
+    @Autowired lk.nuvi.gemshop.common.crypto.FieldCrypto crypto;
     @Autowired PasswordEncoder encoder;
     @MockitoSpyBean MailService mail;
 
@@ -90,8 +91,8 @@ class OffersTest {
     @Test
     void emailOfferOnlyWithPermissionThenResults() throws Exception {
         jdbc.update("update customer set country = 'Iceland', consent = true, unsubscribed = false, unsubscribed_at = null,"
-                + " email = 'anna@example.is' where code = 'C-001'");
-        jdbc.update("update customer set country = 'Iceland', consent = false, email = 'no@example.is' where code = 'C-002'");
+                + " email = ? where code = 'C-001'", crypto.encrypt("anna@example.is"));
+        jdbc.update("update customer set country = 'Iceland', consent = false, email = ? where code = 'C-002'", crypto.encrypt("no@example.is"));
         Map<String, Object> aud = Map.of("channel", "EMAIL", "countries", List.of("Iceland"));
         JsonNode a = read(json(post("/api/offers/audience"), aud));
         assertThat(a.path("matching").asInt()).isEqualTo(2);

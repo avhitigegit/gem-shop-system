@@ -55,6 +55,7 @@ class MessagesTest {
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
+    @Autowired lk.nuvi.gemshop.common.crypto.FieldCrypto crypto;
     @Autowired PasswordEncoder encoder;
     @Autowired AutoMessages auto;
     @Autowired PlatformTransactionManager txm;
@@ -145,8 +146,8 @@ class MessagesTest {
     void birthdayWishesOncePerYearAndOnlyWithPermission() throws Exception {
         String today = LocalDate.now(COLOMBO).toString().substring(5);
         jdbc.update("update customer set birthday = null where birthday = ?", today);
-        jdbc.update("update customer set birthday = ?, consent = true, unsubscribed = false, email = 'anna@example.de' where code = 'C-001'",
-                today);
+        jdbc.update("update customer set birthday = ?, consent = true, unsubscribed = false, email = ? where code = 'C-001'",
+                today, crypto.encrypt("anna@example.de"));
         jdbc.update("update customer set birthday = ?, consent = false where code = 'C-002'", today);
         jdbc.update("delete from birthday_wish where customer_id in (select id from customer where code in ('C-001', 'C-002'))");
 

@@ -30,7 +30,14 @@ export function QrCode({ text, size = 84 }: { text: string; size?: number }) {
   const url = useCodeImage(`/api/codes/qr?size=${Math.max(120, size * 3)}&text=${encodeURIComponent(text)}`);
   return url ? (
     // eslint-disable-next-line @next/next/no-img-element -- picture made by the backend
-    <img src={url} alt={`QR code ${text}`} width={size} height={size} style={{ imageRendering: "pixelated" }} />
+    <img
+      src={url}
+      loading="lazy"
+      alt={`QR code ${text}`}
+      width={size}
+      height={size}
+      style={{ imageRendering: "pixelated" }}
+    />
   ) : (
     <span style={{ display: "inline-block", width: size, height: size }} aria-hidden="true" />
   );
@@ -42,7 +49,12 @@ export function Barcode({ text, height = 42 }: { text: string; height?: number }
   );
   return url ? (
     // eslint-disable-next-line @next/next/no-img-element -- picture made by the backend
-    <img src={url} alt={`Barcode ${text}`} style={{ width: "100%", height, objectFit: "fill", display: "block" }} />
+    <img
+      src={url}
+      loading="lazy"
+      alt={`Barcode ${text}`}
+      style={{ width: "100%", height, objectFit: "fill", display: "block" }}
+    />
   ) : (
     <span style={{ display: "block", height }} aria-hidden="true" />
   );

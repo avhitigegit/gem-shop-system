@@ -65,7 +65,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(operationId = "login", summary = "Sign in with email and password")
     public Session login(@Valid @RequestBody LoginRequest body, HttpServletRequest req, HttpServletResponse res) {
-        return send(auth.login(body.email(), body.password(), body.keep(), device(req)), res);
+        return send(auth.login(body.email(), body.password(), body.code(), body.keep(), device(req)), res);
     }
 
     @PublicApi

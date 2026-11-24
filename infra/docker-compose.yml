@@ -34,6 +34,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: local
       APP_ENV: local
+      # sign-in limit per address (RequestLimits): off on this computer so the browser tests can sign in many times;
+      # always on in UAT and production
+      APP_LIMITS_ENABLED: ${APP_LIMITS_ENABLED:-false}
       PORT: "8081"
       DB_HOST: db
       DB_PORT: "5432"

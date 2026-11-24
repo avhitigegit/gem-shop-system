@@ -419,6 +419,7 @@ function GemFormInner({ gem }: { gem: GemView | null }) {
                       {/* eslint-disable-next-line @next/next/no-img-element -- photo from the file store */}
                       <img
                         src={p.url}
+                        loading="lazy"
                         alt={`Photo ${i + 1}`}
                         width={56}
                         height={56}

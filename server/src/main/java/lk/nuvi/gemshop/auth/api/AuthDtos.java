@@ -3,6 +3,7 @@ package lk.nuvi.gemshop.auth.api;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -16,7 +17,13 @@ public final class AuthDtos {
     public record LoginRequest(
             @NotBlank(message = "Email is required.") @Email(message = "Enter a valid email.") String email,
             @NotBlank(message = "Password is required.") String password,
-            @Schema(description = "Keep me signed in on this device (not on shared shop computers)") Boolean remember) {
+            @Schema(description = "Keep me signed in on this device (not on shared shop computers)") Boolean remember,
+            @Schema(description = "Two-step sign-in: 6-digit code from the authenticator app, or a backup code. "
+                    + "Asked for (TWO_STEP_CODE_NEEDED) after the right password when two-step is on.") @Size(max = 20) String code) {
+
+        public LoginRequest(String email, String password, Boolean remember) {
+            this(email, password, remember, null);
+        }
 
         public boolean keep() {
             return Boolean.TRUE.equals(remember);
@@ -24,6 +31,26 @@ public final class AuthDtos {
     }
 
     public record DemoLoginRequest(@NotBlank @Email String email) {}
+
+    /** Two-step sign-in (owner): on or off, since when, backup codes left; {@code allowed} = this login may use it. */
+    public record TwoStepStatus(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean on,
+            Instant since,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int backupCodesLeft,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean allowed) {}
+
+    /** Set-up: the secret for the app (typed in by hand) and the otpauth link shown as a QR code. */
+    public record TwoStepSetup(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String secret,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String uri,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "QR code of the link as a PNG data URL") String qr) {}
+
+    public record TwoStepCodeRequest(@NotBlank(message = "Enter the 6-digit code.") @Size(max = 20) String code) {}
+
+    public record TwoStepOffRequest(@NotBlank(message = "Password is required.") String password) {}
+
+    /** Backup codes, shown once after turning two-step on. */
+    public record TwoStepBackupCodes(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> codes) {}
 
     public record ChangePasswordRequest(
             @NotBlank(message = "Current password is required.") String currentPassword,

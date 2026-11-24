@@ -334,7 +334,7 @@ export function GemScreen({ code }: { code: string }) {
           size="lg"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- scan from the file store */}
-          <img src={g.certScan.url} alt="Certificate scan" style={{ maxWidth: "100%" }} />
+          <img src={g.certScan.url} loading="lazy" alt="Certificate scan" style={{ maxWidth: "100%" }} />
         </Modal>
       ) : null}
     </>

@@ -1,6 +1,7 @@
 package lk.nuvi.gemshop.auth.user;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Locale;
+import lk.nuvi.gemshop.common.crypto.EncryptedString;
 import lk.nuvi.gemshop.common.persistence.BaseEntity;
 import lk.nuvi.gemshop.settings.branch.Branch;
 
@@ -53,6 +55,24 @@ public class UserAccount extends BaseEntity {
     private Instant lockedUntil;
 
     private Instant passwordChangedAt;
+
+    /** Two-step sign-in (P6-01): a code from an authenticator app after the password. */
+    @Column(nullable = false)
+    private boolean twoStepOn;
+
+    /** The app's secret (base32), encrypted. Also kept while setting up, before the first code turns it on. */
+    @Convert(converter = EncryptedString.class)
+    @Column(columnDefinition = "text")
+    private String twoStepSecret;
+
+    /** Last 30-second step whose code was used: a code works only once. */
+    private Long twoStepLastStep;
+
+    /** SHA-256 of the backup codes not used yet, comma separated. */
+    @Column(columnDefinition = "text")
+    private String twoStepBackup;
+
+    private Instant twoStepOnAt;
 
     protected UserAccount() {}
 
@@ -166,6 +186,43 @@ public class UserAccount extends BaseEntity {
         this.passwordChangedAt = at;
         this.failedLogins = 0;
         this.lockedUntil = null;
+    }
+
+    public boolean isTwoStepOn() { return twoStepOn; }
+    public String getTwoStepSecret() { return twoStepSecret; }
+    public Long getTwoStepLastStep() { return twoStepLastStep; }
+    public String getTwoStepBackup() { return twoStepBackup; }
+    public Instant getTwoStepOnAt() { return twoStepOnAt; }
+
+    /** A new secret while setting up (two-step stays off until the first code is right). */
+    public void startTwoStep(String secret) {
+        this.twoStepOn = false;
+        this.twoStepSecret = secret;
+        this.twoStepLastStep = null;
+        this.twoStepBackup = null;
+    }
+
+    public void twoStepOn(long step, String backupHashes, Instant at) {
+        this.twoStepOn = true;
+        this.twoStepLastStep = step;
+        this.twoStepBackup = backupHashes;
+        this.twoStepOnAt = at;
+    }
+
+    public void twoStepUsed(long step) {
+        this.twoStepLastStep = step;
+    }
+
+    public void twoStepBackupLeft(String backupHashes) {
+        this.twoStepBackup = backupHashes;
+    }
+
+    public void twoStepOff() {
+        this.twoStepOn = false;
+        this.twoStepSecret = null;
+        this.twoStepLastStep = null;
+        this.twoStepBackup = null;
+        this.twoStepOnAt = null;
     }
 
     /** The owner unlocks a locked login (Settings → Staff logins). */
